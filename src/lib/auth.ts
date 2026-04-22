@@ -1,23 +1,34 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { prisma } from "@/lib/db";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getProviderUser } from "@/lib/auth-provider";
 
-export async function getCurrentUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+async function readCurrentUser() {
+  const user = await getProviderUser();
 
-  if (!user || !user.email) {
-    return null;
-  }
+  if (!user) return null;
 
   const membership = await prisma.membership.findFirst({
     where: { authUserId: user.id },
-    include: { household: true },
+    select: {
+      id: true,
+      authUserId: true,
+      householdId: true,
+      role: true,
+      createdAt: true,
+      household: {
+        select: {
+          id: true,
+          name: true,
+          baseCurrency: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
     orderBy: { createdAt: "asc" },
   });
 
@@ -28,9 +39,10 @@ export async function getCurrentUser() {
     },
     membership: membership ?? null,
     household: membership?.household ?? null,
-    supabase,
   };
 }
+
+export const getCurrentUser = cache(readCurrentUser);
 
 export async function requireUser() {
   const current = await getCurrentUser();
@@ -51,8 +63,6 @@ export async function requireHousehold() {
 export async function redirectIfAuthenticated() {
   const current = await getCurrentUser();
   if (!current) return;
-  if (current.household) {
-    redirect("/");
-  }
+  if (current.household) redirect("/");
   redirect("/onboarding");
 }

@@ -4,8 +4,20 @@ const money = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 0,
 });
 
-export function formatArs(value: number) {
-  return money.format(value);
+type MoneyLike = number | string | { toString(): string };
+
+export function toNumber(value: MoneyLike) {
+  const parsed = typeof value === "number" ? value : Number(value.toString());
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function moneyInputValue(value: MoneyLike) {
+  const parsed = toNumber(value);
+  return Number.isInteger(parsed) ? String(parsed) : parsed.toFixed(2);
+}
+
+export function formatArs(value: MoneyLike) {
+  return money.format(toNumber(value));
 }
 
 export function formatDate(date: Date) {

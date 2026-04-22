@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireHousehold, requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { assertOptionalOwnedResource, assertOwnedResource } from "@/lib/db/ownership";
 import { seedHousehold } from "@/lib/seed-household";
+import { recordAuditEvent, requireMutationContext } from "@/lib/security";
 import {
   accountSchema,
   categorySchema,
@@ -28,17 +30,6 @@ function optionalString(value: string) {
 function toNullableId(value: string) {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
-}
-
-async function validateScopedResource<T extends { id: string; householdId: string }>(
-  loader: () => Promise<T | null>,
-  householdId: string,
-) {
-  const row = await loader();
-  if (!row || row.householdId !== householdId) {
-    throw new Error("No encontramos ese registro dentro de tu hogar.");
-  }
-  return row;
 }
 
 export async function completeOnboardingAction(formData: FormData) {
@@ -80,11 +71,20 @@ export async function completeOnboardingAction(formData: FormData) {
     return createdHousehold;
   });
 
+  await recordAuditEvent({
+    userId: current.user.id,
+    householdId: household.id,
+    action: "onboarding.complete",
+    targetType: "household",
+    targetId: household.id,
+    after: { householdId: household.id },
+  });
+
   redirect("/?message=Tu hogar ya está listo para empezar.");
 }
 
 export async function saveCategoryAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("category.save");
   const parsed = categorySchema.safeParse({
     id: optionalString(getString(formData, "id")),
     name: getString(formData, "name"),
@@ -96,12 +96,9 @@ export async function saveCategoryAction(formData: FormData) {
   }
 
   if (parsed.data.id) {
-    await validateScopedResource(
-      () => prisma.category.findUnique({ where: { id: parsed.data.id! } }),
-      household.id,
-    );
-    await prisma.category.update({
-      where: { id: parsed.data.id },
+    await assertOwnedResource("category", parsed.data.id, household.id);
+    await prisma.category.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         name: parsed.data.name,
         isActive: parsed.data.isActive,
@@ -117,24 +114,35 @@ export async function saveCategoryAction(formData: FormData) {
     });
   }
 
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "category.update" : "category.create",
+    targetType: "category",
+    targetId: parsed.data.id,
+    after: { name: parsed.data.name, isActive: parsed.data.isActive },
+  });
+
   revalidatePath("/categorias");
   revalidatePath("/");
 }
 
 export async function deleteCategoryAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("category.delete");
   const id = getString(formData, "id");
-  await validateScopedResource(() => prisma.category.findUnique({ where: { id } }), household.id);
-  const usageCount = await prisma.transaction.count({ where: { householdId: household.id, categoryId: id } });
+  await assertOwnedResource("category", id, household.id);
+  const usageCount = await prisma.transaction.count({ where: { householdId: household.id, categoryId: id, deletedAt: null } });
   if (usageCount > 0) {
     redirect("/categorias?error=Esa categoría ya tiene movimientos. Desactívala en lugar de borrarla.");
   }
-  await prisma.category.delete({ where: { id } });
+  await prisma.category.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "category.delete", targetType: "category", targetId: id });
   revalidatePath("/categorias");
 }
 
 export async function savePaymentMethodAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("paymentMethod.save");
   const parsed = paymentMethodSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     name: getString(formData, "name"),
@@ -146,12 +154,9 @@ export async function savePaymentMethodAction(formData: FormData) {
   }
 
   if (parsed.data.id) {
-    await validateScopedResource(
-      () => prisma.paymentMethod.findUnique({ where: { id: parsed.data.id! } }),
-      household.id,
-    );
-    await prisma.paymentMethod.update({
-      where: { id: parsed.data.id },
+    await assertOwnedResource("paymentMethod", parsed.data.id, household.id);
+    await prisma.paymentMethod.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         name: parsed.data.name,
         isActive: parsed.data.isActive,
@@ -167,27 +172,38 @@ export async function savePaymentMethodAction(formData: FormData) {
     });
   }
 
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "payment_method.update" : "payment_method.create",
+    targetType: "paymentMethod",
+    targetId: parsed.data.id,
+    after: { name: parsed.data.name, isActive: parsed.data.isActive },
+  });
+
   revalidatePath("/medios-de-pago");
   revalidatePath("/");
 }
 
 export async function deletePaymentMethodAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("paymentMethod.delete");
   const id = getString(formData, "id");
-  await validateScopedResource(() => prisma.paymentMethod.findUnique({ where: { id } }), household.id);
+  await assertOwnedResource("paymentMethod", id, household.id);
   const [txCount, billCount] = await Promise.all([
-    prisma.transaction.count({ where: { householdId: household.id, paymentMethodId: id } }),
-    prisma.recurringBill.count({ where: { householdId: household.id, paymentMethodId: id } }),
+    prisma.transaction.count({ where: { householdId: household.id, paymentMethodId: id, deletedAt: null } }),
+    prisma.recurringBill.count({ where: { householdId: household.id, paymentMethodId: id, deletedAt: null } }),
   ]);
   if (txCount > 0 || billCount > 0) {
     redirect("/medios-de-pago?error=Ese medio ya está en uso. Desactívalo en lugar de borrarlo.");
   }
-  await prisma.paymentMethod.delete({ where: { id } });
+  await prisma.paymentMethod.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "payment_method.delete", targetType: "paymentMethod", targetId: id });
   revalidatePath("/medios-de-pago");
 }
 
 export async function saveAccountAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("account.save");
   const parsed = accountSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     name: getString(formData, "name"),
@@ -200,9 +216,9 @@ export async function saveAccountAction(formData: FormData) {
   }
 
   if (parsed.data.id) {
-    await validateScopedResource(() => prisma.account.findUnique({ where: { id: parsed.data.id! } }), household.id);
-    await prisma.account.update({
-      where: { id: parsed.data.id },
+    await assertOwnedResource("account", parsed.data.id, household.id);
+    await prisma.account.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         name: parsed.data.name,
         type: parsed.data.type,
@@ -220,24 +236,35 @@ export async function saveAccountAction(formData: FormData) {
     });
   }
 
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "account.update" : "account.create",
+    targetType: "account",
+    targetId: parsed.data.id,
+    after: { name: parsed.data.name, type: parsed.data.type, isActive: parsed.data.isActive },
+  });
+
   revalidatePath("/cuentas");
   revalidatePath("/movimientos");
 }
 
 export async function deleteAccountAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("account.delete");
   const id = getString(formData, "id");
-  await validateScopedResource(() => prisma.account.findUnique({ where: { id } }), household.id);
-  const usageCount = await prisma.transaction.count({ where: { householdId: household.id, accountId: id } });
+  await assertOwnedResource("account", id, household.id);
+  const usageCount = await prisma.transaction.count({ where: { householdId: household.id, accountId: id, deletedAt: null } });
   if (usageCount > 0) {
     redirect("/cuentas?error=La cuenta ya tiene movimientos. Desactívala en lugar de borrarla.");
   }
-  await prisma.account.delete({ where: { id } });
+  await prisma.account.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "account.delete", targetType: "account", targetId: id });
   revalidatePath("/cuentas");
 }
 
 export async function saveTransactionAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("transaction.save");
   const parsed = transactionSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     date: getString(formData, "date"),
@@ -254,9 +281,12 @@ export async function saveTransactionAction(formData: FormData) {
   }
 
   if (parsed.data.id) {
-    await validateScopedResource(() => prisma.transaction.findUnique({ where: { id: parsed.data.id! } }), household.id);
-    await prisma.transaction.update({
-      where: { id: parsed.data.id },
+    await assertOwnedResource("transaction", parsed.data.id, household.id);
+    await assertOptionalOwnedResource("account", toNullableId(parsed.data.accountId ?? ""), household.id);
+    await assertOptionalOwnedResource("category", toNullableId(parsed.data.categoryId ?? ""), household.id);
+    await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+    await prisma.transaction.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         date: new Date(parsed.data.date),
         amount: parsed.data.amount,
@@ -268,6 +298,9 @@ export async function saveTransactionAction(formData: FormData) {
       },
     });
   } else {
+    await assertOptionalOwnedResource("account", toNullableId(parsed.data.accountId ?? ""), household.id);
+    await assertOptionalOwnedResource("category", toNullableId(parsed.data.categoryId ?? ""), household.id);
+    await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
     await prisma.transaction.create({
       data: {
         householdId: household.id,
@@ -282,21 +315,32 @@ export async function saveTransactionAction(formData: FormData) {
     });
   }
 
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "transaction.update" : "transaction.create",
+    targetType: "transaction",
+    targetId: parsed.data.id,
+    after: { amount: parsed.data.amount, type: parsed.data.type, date: parsed.data.date },
+  });
+
   revalidatePath("/movimientos");
   revalidatePath("/");
 }
 
 export async function deleteTransactionAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("transaction.delete");
   const id = getString(formData, "id");
-  await validateScopedResource(() => prisma.transaction.findUnique({ where: { id } }), household.id);
-  await prisma.transaction.delete({ where: { id } });
+  await assertOwnedResource("transaction", id, household.id);
+  await prisma.transaction.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date() } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "transaction.delete", targetType: "transaction", targetId: id });
   revalidatePath("/movimientos");
   revalidatePath("/");
 }
 
 export async function saveDebtAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("debt.save");
   const parsed = debtSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     entityName: getString(formData, "entityName"),
@@ -312,9 +356,9 @@ export async function saveDebtAction(formData: FormData) {
   }
 
   if (parsed.data.id) {
-    await validateScopedResource(() => prisma.debt.findUnique({ where: { id: parsed.data.id! } }), household.id);
-    await prisma.debt.update({
-      where: { id: parsed.data.id },
+    await assertOwnedResource("debt", parsed.data.id, household.id);
+    await prisma.debt.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         entityName: parsed.data.entityName,
         direction: parsed.data.direction,
@@ -338,19 +382,30 @@ export async function saveDebtAction(formData: FormData) {
     });
   }
 
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "debt.update" : "debt.create",
+    targetType: "debt",
+    targetId: parsed.data.id,
+    after: { entityName: parsed.data.entityName, direction: parsed.data.direction, remainingBalance: parsed.data.remainingBalance },
+  });
+
   revalidatePath("/deudas");
 }
 
 export async function deleteDebtAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("debt.delete");
   const id = getString(formData, "id");
-  await validateScopedResource(() => prisma.debt.findUnique({ where: { id } }), household.id);
-  await prisma.debt.delete({ where: { id } });
+  await assertOwnedResource("debt", id, household.id);
+  await prisma.debt.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "debt.delete", targetType: "debt", targetId: id });
   revalidatePath("/deudas");
 }
 
 export async function saveRecurringBillAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("recurringBill.save");
   const parsed = recurringBillSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     name: getString(formData, "name"),
@@ -366,9 +421,10 @@ export async function saveRecurringBillAction(formData: FormData) {
   }
 
   if (parsed.data.id) {
-    await validateScopedResource(() => prisma.recurringBill.findUnique({ where: { id: parsed.data.id! } }), household.id);
-    await prisma.recurringBill.update({
-      where: { id: parsed.data.id },
+    await assertOwnedResource("recurringBill", parsed.data.id, household.id);
+    await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+    await prisma.recurringBill.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         name: parsed.data.name,
         amount: parsed.data.amount,
@@ -379,6 +435,7 @@ export async function saveRecurringBillAction(formData: FormData) {
       },
     });
   } else {
+    await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
     await prisma.recurringBill.create({
       data: {
         householdId: household.id,
@@ -392,13 +449,24 @@ export async function saveRecurringBillAction(formData: FormData) {
     });
   }
 
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "recurring_bill.update" : "recurring_bill.create",
+    targetType: "recurringBill",
+    targetId: parsed.data.id,
+    after: { name: parsed.data.name, amount: parsed.data.amount, dueDay: parsed.data.dueDay },
+  });
+
   revalidatePath("/gastos-fijos");
 }
 
 export async function deleteRecurringBillAction(formData: FormData) {
-  const { household } = await requireHousehold();
+  const { user, household, requestId } = await requireMutationContext("recurringBill.delete");
   const id = getString(formData, "id");
-  await validateScopedResource(() => prisma.recurringBill.findUnique({ where: { id } }), household.id);
-  await prisma.recurringBill.delete({ where: { id } });
+  await assertOwnedResource("recurringBill", id, household.id);
+  await prisma.recurringBill.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "recurring_bill.delete", targetType: "recurringBill", targetId: id });
   revalidatePath("/gastos-fijos");
 }

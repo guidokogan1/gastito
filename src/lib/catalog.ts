@@ -25,4 +25,5 @@ export const DEFAULT_ACCOUNTS = [
   { name: "Efectivo", type: "cash" },
   { name: "Banco principal", type: "bank" },
   { name: "Billetera virtual", type: "wallet" },
-];
+] satisfies Array<{ name: string; type: AccountType }>;
+import type { AccountType } from "@prisma/client";

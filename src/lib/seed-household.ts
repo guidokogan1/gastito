@@ -1,5 +1,5 @@
 import { DEFAULT_ACCOUNTS, DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS } from "@/lib/catalog";
-import type { Prisma, PrismaClient } from "@/generated/prisma";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 type SeedDb = PrismaClient | Prisma.TransactionClient;
 

@@ -9,6 +9,7 @@ Versión publicable y separada de la plataforma original. Esta app está pensada
 - Dashboard simple
 - CRUD de movimientos, categorías, medios de pago, cuentas, deudas y gastos fijos
 - Ownership por `householdId` en todos los datos operativos
+- Design system basado en `Economía Familiar` (tokens + componentes shadcn/ui)
 
 ## Qué deja afuera a propósito
 
@@ -42,6 +43,10 @@ pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+## Design system
+
+Guía y reglas de UI: `docs/design-system.md`.
 
 ## Flujo correcto de arranque
 

@@ -8,7 +8,6 @@ import { CrudLayout } from "@/components/app/crud-layout";
 import { SubmitButton } from "@/components/app/submit-button";
 import { CheckboxLine } from "@/components/ui/checkbox-line";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardPage } from "@/components/ui/card-page";
 import { Label } from "@/components/ui/label";
@@ -99,14 +98,32 @@ export default async function DebtsPage({
                         <Input id={`${prefix}-entityName`} name="entityName" defaultValue={debt.entityName} />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor={`${prefix}-direction`}>Tipo</Label>
-                        <NativeSelect id={`${prefix}-direction`} name="direction" defaultValue={debt.direction}>
-                          {DEBT_DIRECTIONS.map((d) => (
-                            <option key={d.value} value={d.value}>
-                              {d.label}
-                            </option>
-                          ))}
-                        </NativeSelect>
+                        <Label>Tipo</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {DEBT_DIRECTIONS.map((d) => {
+                            const inputId = `${prefix}-direction-${d.value}`;
+                            const checked = debt.direction === d.value;
+                            return (
+                              <label
+                                key={d.value}
+                                htmlFor={inputId}
+                                className="group inline-flex cursor-pointer items-center"
+                              >
+                                <input
+                                  id={inputId}
+                                  type="radio"
+                                  name="direction"
+                                  value={d.value}
+                                  defaultChecked={checked}
+                                  className="peer sr-only"
+                                />
+                                <span className="inline-flex h-9 items-center rounded-full border border-border/60 bg-background px-4 text-sm font-medium text-muted-foreground transition-colors peer-checked:border-transparent peer-checked:bg-foreground peer-checked:text-background group-hover:bg-muted/40">
+                                  {d.label}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor={`${prefix}-originalAmount`}>Monto original</Label>
@@ -163,14 +180,28 @@ export default async function DebtsPage({
                 <Input id="entityName" name="entityName" required autoFocus />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="direction">Tipo</Label>
-                <NativeSelect id="direction" name="direction" defaultValue="we_owe">
-                  {DEBT_DIRECTIONS.map((d) => (
-                    <option key={d.value} value={d.value}>
-                      {d.label}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <Label>Tipo</Label>
+                <div className="flex flex-wrap gap-2">
+                  {DEBT_DIRECTIONS.map((d) => {
+                    const inputId = `direction-${d.value}`;
+                    const checked = d.value === "we_owe";
+                    return (
+                      <label key={d.value} htmlFor={inputId} className="group inline-flex cursor-pointer items-center">
+                        <input
+                          id={inputId}
+                          type="radio"
+                          name="direction"
+                          value={d.value}
+                          defaultChecked={checked}
+                          className="peer sr-only"
+                        />
+                        <span className="inline-flex h-9 items-center rounded-full border border-border/60 bg-background px-4 text-sm font-medium text-muted-foreground transition-colors peer-checked:border-transparent peer-checked:bg-foreground peer-checked:text-background group-hover:bg-muted/40">
+                          {d.label}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="originalAmount">Monto original</Label>

@@ -8,11 +8,12 @@ import { CrudLayout } from "@/components/app/crud-layout";
 import { SubmitButton } from "@/components/app/submit-button";
 import { CheckboxLine } from "@/components/ui/checkbox-line";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardPage } from "@/components/ui/card-page";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DayOfMonthField } from "@/components/app/day-of-month-field";
+import { PaymentMethodField } from "@/components/app/payment-method-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, moneyInputValue } from "@/lib/format";
@@ -45,6 +46,43 @@ export default async function BillsPage({
       orderBy: { name: "asc" },
     }),
   ]);
+
+  const quickDays = (() => {
+    const counts = new Map<number, number>();
+    for (const bill of bills) {
+      counts.set(bill.dueDay, (counts.get(bill.dueDay) ?? 0) + 1);
+    }
+    const ranked = [...counts.entries()]
+      .sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]))
+      .map(([day]) => day);
+    return ranked.slice(0, 8);
+  })();
+
+  const quickPaymentMethods = await (async () => {
+    try {
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const grouped = await prisma.transaction.groupBy({
+        by: ["paymentMethodId"],
+        where: {
+          householdId: household.id,
+          deletedAt: null,
+          date: { gte: monthStart },
+          paymentMethodId: { not: null },
+        },
+        _count: { _all: true },
+        orderBy: { _count: { paymentMethodId: "desc" } },
+        take: 8,
+      });
+
+      const ids = grouped.map((row) => row.paymentMethodId).filter(Boolean) as string[];
+      const ranked = ids
+        .map((id) => paymentMethods.find((method) => method.id === id))
+        .filter((method): method is { id: string; name: string } => Boolean(method));
+      return ranked.slice(0, 6);
+    } catch {
+      return paymentMethods.slice(0, 6);
+    }
+  })();
 
   return (
     <div className="space-y-8">
@@ -108,22 +146,16 @@ export default async function BillsPage({
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor={`${prefix}-dueDay`}>Día de vencimiento</Label>
-                        <Input id={`${prefix}-dueDay`} name="dueDay" type="number" min="1" max="31" defaultValue={bill.dueDay} />
+                        <DayOfMonthField id={`${prefix}-dueDay`} name="dueDay" defaultValue={bill.dueDay} quickDays={quickDays} />
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label htmlFor={`${prefix}-paymentMethodId`}>Medio de pago</Label>
-                        <NativeSelect
-                          id={`${prefix}-paymentMethodId`}
+                        <Label>Medio de pago</Label>
+                        <PaymentMethodField
                           name="paymentMethodId"
                           defaultValue={bill.paymentMethodId ?? ""}
-                        >
-                          <option value="">Sin medio</option>
-                          {paymentMethods.map((method) => (
-                            <option key={method.id} value={method.id}>
-                              {method.name}
-                            </option>
-                          ))}
-                        </NativeSelect>
+                          methods={paymentMethods}
+                          quickMethods={quickPaymentMethods}
+                        />
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
                         <Label htmlFor={`${prefix}-notes`}>Notas</Label>
@@ -163,18 +195,16 @@ export default async function BillsPage({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="dueDay">Día de vencimiento</Label>
-                <Input id="dueDay" name="dueDay" type="number" min="1" max="31" required />
+                <DayOfMonthField id="dueDay" name="dueDay" defaultValue={1} quickDays={quickDays.length ? quickDays : undefined} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="paymentMethodId">Medio de pago</Label>
-                <NativeSelect id="paymentMethodId" name="paymentMethodId" defaultValue="">
-                  <option value="">Sin medio</option>
-                  {paymentMethods.map((method) => (
-                    <option key={method.id} value={method.id}>
-                      {method.name}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <Label>Medio de pago</Label>
+                <PaymentMethodField
+                  name="paymentMethodId"
+                  defaultValue=""
+                  methods={paymentMethods}
+                  quickMethods={quickPaymentMethods}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="notes">Notas</Label>

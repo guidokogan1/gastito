@@ -13,6 +13,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardPage } from "@/components/ui/card-page";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchPicker } from "@/components/ui/search-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
@@ -123,8 +124,54 @@ export function TransactionsPanel({
     ? "Ajustá fecha, monto, tipo y categorías. Guardá para aplicar cambios."
     : "Cargá un ingreso o gasto. Todo queda dentro de tu hogar.";
 
-  const quickCategories = useMemo(() => categories.slice(0, 8), [categories]);
-  const quickMethods = useMemo(() => methods.slice(0, 6), [methods]);
+  const quickPicks = useMemo(() => {
+    const byTypeCategory = {
+      expense: new Map<string, number>(),
+      income: new Map<string, number>(),
+    } as const;
+    const byTypeMethod = {
+      expense: new Map<string, number>(),
+      income: new Map<string, number>(),
+    } as const;
+
+    for (const row of transactions) {
+      const type = row.type;
+      if (row.categoryId) {
+        byTypeCategory[type].set(row.categoryId, (byTypeCategory[type].get(row.categoryId) ?? 0) + 1);
+      }
+      if (row.paymentMethodId) {
+        byTypeMethod[type].set(row.paymentMethodId, (byTypeMethod[type].get(row.paymentMethodId) ?? 0) + 1);
+      }
+    }
+
+    const rankByCount = (options: SelectOption[], counts: Map<string, number>, limit: number) => {
+      const sorted = [...options]
+        .map((o) => ({ ...o, count: counts.get(o.id) ?? 0 }))
+        .sort((a, b) => (b.count - a.count) || a.name.localeCompare(b.name, "es"));
+
+      const picked = sorted.filter((o) => o.count > 0).slice(0, limit);
+      if (picked.length < limit) {
+        const pickedIds = new Set(picked.map((p) => p.id));
+        const fill = sorted.filter((o) => !pickedIds.has(o.id)).slice(0, limit - picked.length);
+        return [...picked, ...fill];
+      }
+      return picked;
+    };
+
+    return {
+      expense: {
+        categories: rankByCount(categories, byTypeCategory.expense, 8),
+        methods: rankByCount(methods, byTypeMethod.expense, 6),
+      },
+      income: {
+        categories: rankByCount(categories, byTypeCategory.income, 8),
+        methods: rankByCount(methods, byTypeMethod.income, 6),
+      },
+    } as const;
+  }, [categories, methods, transactions]);
+
+  const quickCategories = quickPicks[formType].categories;
+  const quickMethods = quickPicks[formType].methods;
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -480,24 +527,15 @@ export function TransactionsPanel({
                     {category.name}
                   </Button>
                 ))}
-                <Select
-                  value={formCategoryId === "" ? "none" : formCategoryId}
-                  onValueChange={(value) => {
-                    setFormCategoryId(value === "none" ? "" : value);
-                  }}
-                >
-                  <SelectTrigger className="h-9 rounded-full bg-background">
-                    <SelectValue placeholder="Más..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin categoría</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchPicker
+                  value={formCategoryId}
+                  placeholder="Más…"
+                  options={[
+                    { value: "", label: "Sin categoría" },
+                    ...categories.map((category) => ({ value: category.id, label: category.name })),
+                  ]}
+                  onValueChange={setFormCategoryId}
+                />
               </div>
             </div>
 
@@ -525,24 +563,15 @@ export function TransactionsPanel({
                     {method.name}
                   </Button>
                 ))}
-                <Select
-                  value={formPaymentMethodId === "" ? "none" : formPaymentMethodId}
-                  onValueChange={(value) => {
-                    setFormPaymentMethodId(value === "none" ? "" : value);
-                  }}
-                >
-                  <SelectTrigger className="h-9 rounded-full bg-background">
-                    <SelectValue placeholder="Más..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin medio</SelectItem>
-                    {methods.map((method) => (
-                      <SelectItem key={method.id} value={method.id}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchPicker
+                  value={formPaymentMethodId}
+                  placeholder="Más…"
+                  options={[
+                    { value: "", label: "Sin medio" },
+                    ...methods.map((method) => ({ value: method.id, label: method.name })),
+                  ]}
+                  onValueChange={setFormPaymentMethodId}
+                />
               </div>
             </div>
 

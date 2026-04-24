@@ -43,6 +43,12 @@ export default async function DashboardPage({
       />
 
       <FlashMessage message={params.message} tone="success" />
+      {snapshot.degraded ? (
+        <FlashMessage
+          tone="warning"
+          message="No pudimos conectar a la base de datos en este momento. Mostramos un resumen vacío para que puedas seguir navegando."
+        />
+      ) : null}
 
       <section className="dashboard-metrics stats-grid">
         <StatCard

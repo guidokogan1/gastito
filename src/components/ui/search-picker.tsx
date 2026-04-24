@@ -24,6 +24,9 @@ export function SearchPicker({
   emptyLabel = "Sin resultados",
   inputPlaceholder = "Buscar…",
   showSelectedLabel = true,
+  side,
+  align,
+  sideOffset,
 }: {
   value: string;
   options: SearchPickerOption[];
@@ -34,9 +37,13 @@ export function SearchPicker({
   emptyLabel?: string;
   inputPlaceholder?: string;
   showSelectedLabel?: boolean;
+  side?: React.ComponentProps<typeof PopoverContent>["side"];
+  align?: React.ComponentProps<typeof PopoverContent>["align"];
+  sideOffset?: React.ComponentProps<typeof PopoverContent>["sideOffset"];
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   const selected = React.useMemo(() => {
     if (!showSelectedLabel) return null;
@@ -56,6 +63,12 @@ export function SearchPicker({
     if (!open) setQuery("");
   }, [open]);
 
+  React.useEffect(() => {
+    if (!open) return;
+    const handle = window.setTimeout(() => inputRef.current?.focus(), 10);
+    return () => window.clearTimeout(handle);
+  }, [open]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -72,9 +85,15 @@ export function SearchPicker({
           <ChevronDown className="h-4 w-4 opacity-70" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-[min(22rem,calc(100vw-2rem))] p-2", contentClassName)} align="start">
+      <PopoverContent
+        className={cn("w-[min(22rem,calc(100vw-2rem))] p-2", contentClassName)}
+        align={align ?? "start"}
+        side={side}
+        sideOffset={sideOffset}
+      >
         <div className="flex items-center gap-2 px-1 pb-2">
           <Input
+            ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={inputPlaceholder}

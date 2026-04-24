@@ -389,17 +389,31 @@ export function TransactionsPanel({
                       {filteredTransactions.map((row) => {
                         const active = drawerOpen && row.id === selectedId;
                         return (
-                          <TableRow key={row.id} className={cn(active ? "bg-muted/40" : "")}>
+                          <TableRow
+                            key={row.id}
+                            className={cn(active ? "bg-muted/40" : "", "cursor-pointer")}
+                            onClick={() => {
+                              setSelectedId(row.id);
+                              setDrawerOpen(true);
+                            }}
+                          >
                             <TableCell className="whitespace-nowrap">{formatDate(row.date)}</TableCell>
                             <TableCell>
                               <div className="space-y-0.5">
                                 <p className="font-medium">{toDetail(row)}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  {[row.accountName, row.paymentMethodName].filter(Boolean).join(" · ")}
+                                  {[row.categoryName, row.accountName, row.paymentMethodName].filter(Boolean).join(" · ")}
                                 </p>
                               </div>
                             </TableCell>
-                            <TableCell className="whitespace-nowrap tabular-nums">{formatArs(row.amount)}</TableCell>
+                            <TableCell
+                              className={cn(
+                                "whitespace-nowrap tabular-nums",
+                                row.type === "income" ? "text-emerald-700 dark:text-emerald-300" : "",
+                              )}
+                            >
+                              {formatArs(row.amount)}
+                            </TableCell>
                             <TableCell className="whitespace-nowrap">
                               {row.type === "income" ? "Ingreso" : "Gasto"}
                             </TableCell>
@@ -409,7 +423,8 @@ export function TransactionsPanel({
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => {
+                                  onClick={(event) => {
+                                    event.stopPropagation();
                                     setSelectedId(row.id);
                                     setDrawerOpen(true);
                                   }}
@@ -421,7 +436,12 @@ export function TransactionsPanel({
                                   confirm="¿Borrar este movimiento? Esta acción no se puede deshacer."
                                 >
                                   <input type="hidden" name="id" value={row.id} />
-                                  <SubmitButton variant="destructive" size="sm" pendingText="Borrando...">
+                                  <SubmitButton
+                                    variant="destructive"
+                                    size="sm"
+                                    pendingText="Borrando..."
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     Borrar
                                   </SubmitButton>
                                 </ConfirmForm>
@@ -595,6 +615,7 @@ export function TransactionsPanel({
                 onValueChange={setFormAccountId}
                 className="w-full justify-between rounded-2xl"
                 contentClassName="w-[min(28rem,calc(100vw-2rem))]"
+                side="top"
               />
             </div>
           </section>

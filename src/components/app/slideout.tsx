@@ -49,7 +49,7 @@ export function Slideout({
         className={cn(
           "slideout-panel motion-safe:animate-[slideout-in-right_220ms_cubic-bezier(0.2,0.8,0.2,1)]",
           "absolute right-0 top-0 h-full w-full max-w-[520px] border-l border-border/70 bg-background shadow-xl",
-          "p-5 sm:p-6",
+          "flex flex-col overflow-hidden p-5 sm:p-6",
           className,
         )}
       >
@@ -62,7 +62,7 @@ export function Slideout({
             <X className="size-4" aria-hidden />
           </Button>
         </div>
-        <div className="mt-5">{children}</div>
+        <div className="mt-5 flex-1 overflow-y-auto pr-1">{children}</div>
       </aside>
     </div>
   );

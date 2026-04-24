@@ -591,21 +591,23 @@ export function TransactionsPanel({
             </div>
           </section>
 
-          <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
-            <SubmitButton type="submit" className="w-full sm:w-auto" pendingText="Guardando...">
-              {selected ? "Guardar cambios" : "Guardar movimiento"}
-            </SubmitButton>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={() => {
-                setDrawerOpen(false);
-                setSelectedId(null);
-              }}
-            >
-              Cancelar
-            </Button>
+          <div className="sticky bottom-0 mt-6 -mx-4 border-t border-border/60 bg-background/85 px-4 py-4 backdrop-blur sm:-mx-5 sm:px-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <SubmitButton type="submit" className="w-full sm:w-auto" pendingText="Guardando...">
+                {selected ? "Guardar cambios" : "Guardar movimiento"}
+              </SubmitButton>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  setSelectedId(null);
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
           </div>
         </form>
       </Slideout>

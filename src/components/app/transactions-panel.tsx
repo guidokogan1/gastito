@@ -48,6 +48,10 @@ function toDetail(row: TransactionRow): string {
   return row.detail?.trim() || row.categoryName?.trim() || "Movimiento sin detalle";
 }
 
+function optionName(options: SelectOption[], id: string) {
+  return options.find((o) => o.id === id)?.name ?? null;
+}
+
 export function TransactionsPanel({
   monthKey,
   transactions,
@@ -72,6 +76,7 @@ export function TransactionsPanel({
   const [categoryFilterId, setCategoryFilterId] = useState<"all" | "none" | string>("all");
   const [methodFilterId, setMethodFilterId] = useState<"all" | "none" | string>("all");
   const [formType, setFormType] = useState<"expense" | "income">("expense");
+  const [formDate, setFormDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [formCategoryId, setFormCategoryId] = useState<string>("");
   const [formPaymentMethodId, setFormPaymentMethodId] = useState<string>("");
   const [formAccountId, setFormAccountId] = useState<string>("");
@@ -171,14 +176,50 @@ export function TransactionsPanel({
 
   const quickCategories = quickPicks[formType].categories;
   const quickMethods = quickPicks[formType].methods;
+  const selectedCategoryName = useMemo(
+    () => (formCategoryId ? optionName(categories, formCategoryId) : null),
+    [categories, formCategoryId],
+  );
+  const selectedMethodName = useMemo(
+    () => (formPaymentMethodId ? optionName(methods, formPaymentMethodId) : null),
+    [formPaymentMethodId, methods],
+  );
+  const selectedAccountName = useMemo(
+    () => (formAccountId ? optionName(accounts, formAccountId) : null),
+    [accounts, formAccountId],
+  );
+
+  const categoryPills = useMemo(() => {
+    const base = quickCategories;
+    if (!formCategoryId) return base;
+    if (base.some((c) => c.id === formCategoryId)) return base;
+    if (!selectedCategoryName) return base;
+    return [{ id: formCategoryId, name: selectedCategoryName }, ...base].slice(0, 9);
+  }, [formCategoryId, quickCategories, selectedCategoryName]);
+
+  const methodPills = useMemo(() => {
+    const base = quickMethods;
+    if (!formPaymentMethodId) return base;
+    if (base.some((m) => m.id === formPaymentMethodId)) return base;
+    if (!selectedMethodName) return base;
+    return [{ id: formPaymentMethodId, name: selectedMethodName }, ...base].slice(0, 7);
+  }, [formPaymentMethodId, quickMethods, selectedMethodName]);
 
   useEffect(() => {
     if (!drawerOpen) return;
     setFormType((selected?.type ?? "expense") as "expense" | "income");
+    setFormDate((selected?.date ?? new Date()).toISOString().slice(0, 10));
     setFormCategoryId(selected?.categoryId ?? "");
     setFormPaymentMethodId(selected?.paymentMethodId ?? "");
     setFormAccountId(selected?.accountId ?? "");
-  }, [drawerOpen, selected?.accountId, selected?.categoryId, selected?.paymentMethodId, selected?.type]);
+  }, [
+    drawerOpen,
+    selected?.accountId,
+    selected?.categoryId,
+    selected?.date,
+    selected?.paymentMethodId,
+    selected?.type,
+  ]);
 
   const metrics = useMemo(() => {
     const expenses = filteredTransactions
@@ -475,11 +516,16 @@ export function TransactionsPanel({
         <form key={formKey} action={saveAction} className="mt-4 space-y-5">
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
           <input type="hidden" name="type" value={formType} />
+          <input type="hidden" name="date" value={formDate} />
           <input type="hidden" name="categoryId" value={formCategoryId} />
           <input type="hidden" name="paymentMethodId" value={formPaymentMethodId} />
           <input type="hidden" name="accountId" value={formAccountId} />
 
           <section className="rounded-2xl border border-border/70 bg-card/30 p-4 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-medium">Datos</p>
+              <p className="text-xs text-muted-foreground">{selected ? "Editando" : "Nuevo"}</p>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
@@ -503,11 +549,42 @@ export function TransactionsPanel({
 
             <div className="space-y-2">
               <Label htmlFor="date">Fecha</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-9 rounded-full bg-background"
+                  onClick={() => {
+                    const today = new Date();
+                    const value = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+                      .toISOString()
+                      .slice(0, 10);
+                    setFormDate(value);
+                  }}
+                >
+                  Hoy
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-9 rounded-full bg-background"
+                  onClick={() => {
+                    const today = new Date();
+                    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+                    const value = yesterday.toISOString().slice(0, 10);
+                    setFormDate(value);
+                  }}
+                >
+                  Ayer
+                </Button>
+              </div>
               <DateField
                 id="date"
-                name="date"
                 required
-                defaultValue={(selected?.date ?? new Date()).toISOString().slice(0, 10)}
+                value={formDate}
+                onValueChange={setFormDate}
               />
             </div>
 
@@ -531,6 +608,10 @@ export function TransactionsPanel({
           </section>
 
           <section className="rounded-2xl border border-border/70 bg-card/30 p-4 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-medium">Etiquetas</p>
+              <p className="text-xs text-muted-foreground">Pills + búsqueda</p>
+            </div>
             <div className="space-y-2">
               <Label>Categoría</Label>
               <div className="flex flex-wrap gap-2">
@@ -543,7 +624,7 @@ export function TransactionsPanel({
                 >
                   Sin categoría
                 </Button>
-                {quickCategories.map((category) => (
+                {categoryPills.map((category) => (
                   <Button
                     key={category.id}
                     type="button"
@@ -555,16 +636,19 @@ export function TransactionsPanel({
                     {category.name}
                   </Button>
                 ))}
-                <SearchPicker
-                  value={formCategoryId}
-                  placeholder="Más…"
-                  options={[
-                    ...categories.map((category) => ({ value: category.id, label: category.name })),
-                  ]}
-                  onValueChange={setFormCategoryId}
-                  showSelectedLabel={false}
-                />
+                {categories.length > categoryPills.length ? (
+                  <SearchPicker
+                    value={formCategoryId}
+                    placeholder="Más…"
+                    options={[...categories.map((category) => ({ value: category.id, label: category.name }))]}
+                    onValueChange={setFormCategoryId}
+                    showSelectedLabel={false}
+                  />
+                ) : null}
               </div>
+              {formCategoryId && selectedCategoryName ? (
+                <p className="text-xs text-muted-foreground">Seleccionada: {selectedCategoryName}</p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -579,7 +663,7 @@ export function TransactionsPanel({
                 >
                   Sin medio
                 </Button>
-                {quickMethods.map((method) => (
+                {methodPills.map((method) => (
                   <Button
                     key={method.id}
                     type="button"
@@ -591,16 +675,19 @@ export function TransactionsPanel({
                     {method.name}
                   </Button>
                 ))}
-                <SearchPicker
-                  value={formPaymentMethodId}
-                  placeholder="Más…"
-                  options={[
-                    ...methods.map((method) => ({ value: method.id, label: method.name })),
-                  ]}
-                  onValueChange={setFormPaymentMethodId}
-                  showSelectedLabel={false}
-                />
+                {methods.length > methodPills.length ? (
+                  <SearchPicker
+                    value={formPaymentMethodId}
+                    placeholder="Más…"
+                    options={[...methods.map((method) => ({ value: method.id, label: method.name }))]}
+                    onValueChange={setFormPaymentMethodId}
+                    showSelectedLabel={false}
+                  />
+                ) : null}
               </div>
+              {formPaymentMethodId && selectedMethodName ? (
+                <p className="text-xs text-muted-foreground">Seleccionado: {selectedMethodName}</p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -617,6 +704,9 @@ export function TransactionsPanel({
                 contentClassName="w-[min(28rem,calc(100vw-2rem))]"
                 side="top"
               />
+              {formAccountId && selectedAccountName ? (
+                <p className="text-xs text-muted-foreground">Cuenta: {selectedAccountName}</p>
+              ) : null}
             </div>
           </section>
 
@@ -625,17 +715,27 @@ export function TransactionsPanel({
               <SubmitButton type="submit" className="w-full sm:w-auto" pendingText="Guardando...">
                 {selected ? "Guardar cambios" : "Guardar movimiento"}
               </SubmitButton>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full sm:w-auto"
-                onClick={() => {
-                  setDrawerOpen(false);
-                  setSelectedId(null);
-                }}
-              >
-                Cancelar
-              </Button>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                {selected ? (
+                  <ConfirmForm action={deleteAction} confirm="¿Borrar este movimiento? Esta acción no se puede deshacer.">
+                    <input type="hidden" name="id" value={selected.id} />
+                    <SubmitButton variant="destructive" className="w-full sm:w-auto" pendingText="Borrando...">
+                      Borrar movimiento
+                    </SubmitButton>
+                  </ConfirmForm>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    setSelectedId(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
             </div>
           </div>
         </form>

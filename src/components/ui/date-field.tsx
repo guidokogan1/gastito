@@ -33,6 +33,8 @@ type DateFieldProps = {
   max?: string;
   "aria-invalid"?: boolean;
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
 };
 
 const WEEK_STARTS_ON = 1 as const;
@@ -57,10 +59,20 @@ export function DateField({
   min,
   max,
   defaultValue = "",
+  value,
+  onValueChange,
   "aria-invalid": ariaInvalid,
 }: DateFieldProps) {
-  const [value, setValue] = React.useState(defaultValue);
-  const selectedDate = React.useMemo(() => parseDate(value), [value]);
+  const [internalValue, setInternalValue] = React.useState(defaultValue);
+  const resolvedValue = value ?? internalValue;
+  const setResolvedValue = onValueChange ?? setInternalValue;
+
+  React.useEffect(() => {
+    if (value !== undefined) return;
+    setInternalValue(defaultValue);
+  }, [defaultValue, value]);
+
+  const selectedDate = React.useMemo(() => parseDate(resolvedValue), [resolvedValue]);
   const minDate = React.useMemo(() => parseDate(min ?? ""), [min]);
   const maxDate = React.useMemo(() => parseDate(max ?? ""), [max]);
   const [open, setOpen] = React.useState(false);
@@ -100,13 +112,13 @@ export function DateField({
 
   const selectDay = (day: Date) => {
     if (isDayDisabled(day) || disabled) return;
-    setValue(toIsoDate(day));
+    setResolvedValue(toIsoDate(day));
     setOpen(false);
   };
 
   return (
     <>
-      {name ? <input type="hidden" name={name} value={value} required={required} /> : null}
+      {name ? <input type="hidden" name={name} value={resolvedValue} required={required} /> : null}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
@@ -200,7 +212,7 @@ export function DateField({
                 size="sm"
                 className="h-8 px-2"
                 onClick={() => {
-                  setValue("");
+                  setResolvedValue("");
                   setOpen(false);
                 }}
               >
@@ -216,4 +228,3 @@ export function DateField({
     </>
   );
 }
-

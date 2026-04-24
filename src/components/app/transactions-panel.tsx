@@ -69,8 +69,8 @@ export function TransactionsPanel({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
-  const [categoryFilterId, setCategoryFilterId] = useState<string>("all");
-  const [methodFilterId, setMethodFilterId] = useState<string>("all");
+  const [categoryFilterId, setCategoryFilterId] = useState<"all" | "none" | string>("all");
+  const [methodFilterId, setMethodFilterId] = useState<"all" | "none" | string>("all");
   const [formType, setFormType] = useState<"expense" | "income">("expense");
   const [formCategoryId, setFormCategoryId] = useState<string>("");
   const [formPaymentMethodId, setFormPaymentMethodId] = useState<string>("");
@@ -85,8 +85,22 @@ export function TransactionsPanel({
     const trimmedQuery = query.trim().toLowerCase();
     return transactions.filter((row) => {
       if (typeFilter !== "all" && row.type !== typeFilter) return false;
-      if (categoryFilterId !== "all" && (row.categoryId ?? "") !== categoryFilterId) return false;
-      if (methodFilterId !== "all" && (row.paymentMethodId ?? "") !== methodFilterId) return false;
+      if (categoryFilterId !== "all") {
+        const current = row.categoryId ?? "";
+        if (categoryFilterId === "none") {
+          if (current !== "") return false;
+        } else if (current !== categoryFilterId) {
+          return false;
+        }
+      }
+      if (methodFilterId !== "all") {
+        const current = row.paymentMethodId ?? "";
+        if (methodFilterId === "none") {
+          if (current !== "") return false;
+        } else if (current !== methodFilterId) {
+          return false;
+        }
+      }
       if (!trimmedQuery) return true;
 
       const haystack = [
@@ -250,7 +264,7 @@ export function TransactionsPanel({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todas</SelectItem>
-                        <SelectItem value="">Sin categoría</SelectItem>
+                        <SelectItem value="none">Sin categoría</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
@@ -268,7 +282,7 @@ export function TransactionsPanel({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="">Sin medio</SelectItem>
+                        <SelectItem value="none">Sin medio</SelectItem>
                         {methods.map((method) => (
                           <SelectItem key={method.id} value={method.id}>
                             {method.name}

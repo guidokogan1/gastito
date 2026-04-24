@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function formatMonthKey(date: Date) {
   const year = date.getFullYear();
@@ -50,11 +50,9 @@ export function MonthSelector({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <NativeSelect
-        id={id}
+      <Select
         value={value}
-        onChange={(event) => {
-          const next = event.target.value;
+        onValueChange={(next) => {
           const params = new URLSearchParams(searchParams.toString());
           params.delete("message");
           params.delete("error");
@@ -62,13 +60,17 @@ export function MonthSelector({
           router.push(`${pathname}?${params.toString()}`);
         }}
       >
-        {options.map((key) => (
-          <option key={key} value={key}>
-            {formatMonthLabel(key)}
-          </option>
-        ))}
-      </NativeSelect>
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((key) => (
+            <SelectItem key={key} value={key}>
+              {formatMonthLabel(key)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
-

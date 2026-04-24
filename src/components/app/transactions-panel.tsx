@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRightLeft, Plus, SearchX } from "lucide-react";
 
 import { formatArs, formatDate, moneyInputValue, toNumber } from "@/lib/format";
@@ -8,11 +8,12 @@ import { ConfirmForm } from "@/components/app/confirm-form";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Slideout } from "@/components/app/slideout";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardPage } from "@/components/ui/card-page";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -70,6 +71,10 @@ export function TransactionsPanel({
   const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
   const [categoryFilterId, setCategoryFilterId] = useState<string>("all");
   const [methodFilterId, setMethodFilterId] = useState<string>("all");
+  const [formType, setFormType] = useState<"expense" | "income">("expense");
+  const [formCategoryId, setFormCategoryId] = useState<string>("");
+  const [formPaymentMethodId, setFormPaymentMethodId] = useState<string>("");
+  const [formAccountId, setFormAccountId] = useState<string>("");
 
   const selected = useMemo(
     () => (selectedId ? transactions.find((t) => t.id === selectedId) ?? null : null),
@@ -103,6 +108,17 @@ export function TransactionsPanel({
   const panelSubtitle = selected
     ? "Ajustá fecha, monto, tipo y categorías. Guardá para aplicar cambios."
     : "Cargá un ingreso o gasto. Todo queda dentro de tu hogar.";
+
+  const quickCategories = useMemo(() => categories.slice(0, 8), [categories]);
+  const quickMethods = useMemo(() => methods.slice(0, 6), [methods]);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    setFormType((selected?.type ?? "expense") as "expense" | "income");
+    setFormCategoryId(selected?.categoryId ?? "");
+    setFormPaymentMethodId(selected?.paymentMethodId ?? "");
+    setFormAccountId(selected?.accountId ?? "");
+  }, [drawerOpen, selected?.accountId, selected?.categoryId, selected?.paymentMethodId, selected?.type]);
 
   const metrics = useMemo(() => {
     const expenses = filteredTransactions
@@ -195,47 +211,71 @@ export function TransactionsPanel({
                 <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="tx-type">Tipo</Label>
-                    <NativeSelect
-                      id="tx-type"
-                      value={typeFilter}
-                      onChange={(event) => setTypeFilter(event.target.value as typeof typeFilter)}
-                    >
-                      <option value="all">Todos</option>
-                      <option value="expense">Gastos</option>
-                      <option value="income">Ingresos</option>
-                    </NativeSelect>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={typeFilter === "all" ? "default" : "outline"}
+                        className={cn("h-9 rounded-full", typeFilter !== "all" && "bg-background")}
+                        onClick={() => setTypeFilter("all")}
+                      >
+                        Todos
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={typeFilter === "expense" ? "default" : "outline"}
+                        className={cn("h-9 rounded-full", typeFilter !== "expense" && "bg-background")}
+                        onClick={() => setTypeFilter("expense")}
+                      >
+                        Gastos
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={typeFilter === "income" ? "default" : "outline"}
+                        className={cn("h-9 rounded-full", typeFilter !== "income" && "bg-background")}
+                        onClick={() => setTypeFilter("income")}
+                      >
+                        Ingresos
+                      </Button>
+                    </div>
                   </div>
+
                   <div className="space-y-1.5">
                     <Label htmlFor="tx-category">Categoría</Label>
-                    <NativeSelect
-                      id="tx-category"
-                      value={categoryFilterId}
-                      onChange={(event) => setCategoryFilterId(event.target.value)}
-                    >
-                      <option value="all">Todas</option>
-                      <option value="">Sin categoría</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                    <Select value={categoryFilterId} onValueChange={setCategoryFilterId}>
+                      <SelectTrigger id="tx-category" className="w-full" aria-label="Categoría">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="">Sin categoría</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+
                   <div className="space-y-1.5">
                     <Label htmlFor="tx-method">Medio</Label>
-                    <NativeSelect
-                      id="tx-method"
-                      value={methodFilterId}
-                      onChange={(event) => setMethodFilterId(event.target.value)}
-                    >
-                      <option value="all">Todos</option>
-                      <option value="">Sin medio</option>
-                      {methods.map((method) => (
-                        <option key={method.id} value={method.id}>
-                          {method.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                    <Select value={methodFilterId} onValueChange={setMethodFilterId}>
+                      <SelectTrigger id="tx-method" className="w-full" aria-label="Medio de pago">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="">Sin medio</SelectItem>
+                        {methods.map((method) => (
+                          <SelectItem key={method.id} value={method.id}>
+                            {method.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -343,82 +383,172 @@ export function TransactionsPanel({
           <p className="text-sm text-muted-foreground">{panelSubtitle}</p>
         </div>
 
-        <form key={formKey} action={saveAction} className="mt-4 space-y-3">
+        <form key={formKey} action={saveAction} className="mt-4 space-y-5">
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
+          <input type="hidden" name="type" value={formType} />
+          <input type="hidden" name="categoryId" value={formCategoryId} />
+          <input type="hidden" name="paymentMethodId" value={formPaymentMethodId} />
+          <input type="hidden" name="accountId" value={formAccountId} />
 
-          <div className="space-y-1.5">
-            <Label htmlFor="date">Fecha</Label>
-            <Input
-              id="date"
-              name="date"
-              type="date"
-              required
-              autoFocus
-              defaultValue={(selected?.date ?? new Date()).toISOString().slice(0, 10)}
-            />
-          </div>
+          <section className="rounded-2xl border border-border/70 bg-card/30 p-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant={formType === "expense" ? "default" : "outline"}
+                size="sm"
+                className={cn("h-9 rounded-full", formType !== "expense" && "bg-background")}
+                onClick={() => setFormType("expense")}
+              >
+                Gasto
+              </Button>
+              <Button
+                type="button"
+                variant={formType === "income" ? "default" : "outline"}
+                size="sm"
+                className={cn("h-9 rounded-full", formType !== "income" && "bg-background")}
+                onClick={() => setFormType("income")}
+              >
+                Ingreso
+              </Button>
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="amount">Monto</Label>
-            <Input
-              id="amount"
-              name="amount"
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              required
-              defaultValue={selected ? moneyInputValue(selected.amount) : ""}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">Fecha</Label>
+              <DateField
+                id="date"
+                name="date"
+                required
+                defaultValue={(selected?.date ?? new Date()).toISOString().slice(0, 10)}
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="type">Tipo</Label>
-            <NativeSelect id="type" name="type" defaultValue={selected?.type ?? "expense"}>
-              <option value="expense">Gasto</option>
-              <option value="income">Ingreso</option>
-            </NativeSelect>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Monto</Label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                required
+                defaultValue={selected ? moneyInputValue(selected.amount) : ""}
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="accountId">Cuenta</Label>
-            <NativeSelect id="accountId" name="accountId" defaultValue={selected?.accountId ?? ""}>
-              <option value="">Sin cuenta</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="detail">Detalle</Label>
+              <Input id="detail" name="detail" placeholder="Ej. Compra semanal" defaultValue={selected?.detail ?? ""} />
+            </div>
+          </section>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="categoryId">Categoría</Label>
-            <NativeSelect id="categoryId" name="categoryId" defaultValue={selected?.categoryId ?? ""}>
-              <option value="">Sin categoría</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
+          <section className="rounded-2xl border border-border/70 bg-card/30 p-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Categoría</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={formCategoryId === "" ? "default" : "outline"}
+                  size="sm"
+                  className={cn("rounded-full", formCategoryId !== "" && "bg-background")}
+                  onClick={() => setFormCategoryId("")}
+                >
+                  Sin categoría
+                </Button>
+                {quickCategories.map((category) => (
+                  <Button
+                    key={category.id}
+                    type="button"
+                    variant={formCategoryId === category.id ? "default" : "outline"}
+                    size="sm"
+                    className={cn("rounded-full", formCategoryId !== category.id && "bg-background")}
+                    onClick={() => setFormCategoryId(category.id)}
+                  >
+                    {category.name}
+                  </Button>
+                ))}
+                <Select
+                  value={formCategoryId === "" ? "none" : formCategoryId}
+                  onValueChange={(value) => {
+                    setFormCategoryId(value === "none" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="h-9 rounded-full bg-background">
+                    <SelectValue placeholder="Más..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin categoría</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="paymentMethodId">Medio de pago</Label>
-            <NativeSelect id="paymentMethodId" name="paymentMethodId" defaultValue={selected?.paymentMethodId ?? ""}>
-              <option value="">Sin medio</option>
-              {methods.map((method) => (
-                <option key={method.id} value={method.id}>
-                  {method.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
+            <div className="space-y-2">
+              <Label>Medio de pago</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={formPaymentMethodId === "" ? "default" : "outline"}
+                  size="sm"
+                  className={cn("rounded-full", formPaymentMethodId !== "" && "bg-background")}
+                  onClick={() => setFormPaymentMethodId("")}
+                >
+                  Sin medio
+                </Button>
+                {quickMethods.map((method) => (
+                  <Button
+                    key={method.id}
+                    type="button"
+                    variant={formPaymentMethodId === method.id ? "default" : "outline"}
+                    size="sm"
+                    className={cn("rounded-full", formPaymentMethodId !== method.id && "bg-background")}
+                    onClick={() => setFormPaymentMethodId(method.id)}
+                  >
+                    {method.name}
+                  </Button>
+                ))}
+                <Select
+                  value={formPaymentMethodId === "" ? "none" : formPaymentMethodId}
+                  onValueChange={(value) => {
+                    setFormPaymentMethodId(value === "none" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="h-9 rounded-full bg-background">
+                    <SelectValue placeholder="Más..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin medio</SelectItem>
+                    {methods.map((method) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="detail">Detalle</Label>
-            <Input id="detail" name="detail" placeholder="Ej. Compra semanal" defaultValue={selected?.detail ?? ""} />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="accountId">Cuenta (opcional)</Label>
+              <Select value={formAccountId === "" ? "none" : formAccountId} onValueChange={(value) => setFormAccountId(value === "none" ? "" : value)}>
+                <SelectTrigger id="accountId" className="w-full">
+                  <SelectValue placeholder="Sin cuenta" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin cuenta</SelectItem>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </section>
 
           <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <SubmitButton type="submit" className="w-full sm:w-auto" pendingText="Guardando...">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRightLeft, Plus, SearchX } from "lucide-react";
+import { ArrowRightLeft, ChevronRight, Plus, SearchX } from "lucide-react";
 
 import { formatArs, formatDate, moneyInputValue, toNumber } from "@/lib/format";
 import { ConfirmForm } from "@/components/app/confirm-form";
@@ -366,7 +366,7 @@ export function TransactionsPanel({
                         { value: "none", label: "Sin categoría" },
                         ...categories.map((category) => ({ value: category.id, label: category.name })),
                       ]}
-                      className="w-full justify-between rounded-2xl text-sm"
+                      className="h-11 w-full justify-between rounded-xl text-sm"
                       contentClassName="w-[min(28rem,calc(100vw-2rem))]"
                     />
                   </div>
@@ -383,7 +383,7 @@ export function TransactionsPanel({
                         { value: "none", label: "Sin medio" },
                         ...methods.map((method) => ({ value: method.id, label: method.name })),
                       ]}
-                      className="w-full justify-between rounded-2xl text-sm"
+                      className="h-11 w-full justify-between rounded-xl text-sm"
                       contentClassName="w-[min(28rem,calc(100vw-2rem))]"
                     />
                   </div>
@@ -421,9 +421,9 @@ export function TransactionsPanel({
                       <TableRow>
                         <TableHead>Fecha</TableHead>
                         <TableHead>Detalle</TableHead>
-                        <TableHead>Monto</TableHead>
+                        <TableHead className="text-right">Monto</TableHead>
                         <TableHead>Tipo</TableHead>
-                        <TableHead>Acciones</TableHead>
+                        <TableHead className="w-10" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -433,6 +433,15 @@ export function TransactionsPanel({
                           <TableRow
                             key={row.id}
                             className={cn(active ? "bg-muted/40" : "", "cursor-pointer")}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Editar ${toDetail(row)}`}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              setSelectedId(row.id);
+                              setDrawerOpen(true);
+                            }}
                             onClick={() => {
                               setSelectedId(row.id);
                               setDrawerOpen(true);
@@ -449,44 +458,26 @@ export function TransactionsPanel({
                             </TableCell>
                             <TableCell
                               className={cn(
-                                "whitespace-nowrap tabular-nums",
+                                "whitespace-nowrap tabular-nums text-right",
                                 row.type === "income" ? "text-emerald-700 dark:text-emerald-300" : "",
                               )}
                             >
                               {formatArs(row.amount)}
                             </TableCell>
                             <TableCell className="whitespace-nowrap">
-                              {row.type === "income" ? "Ingreso" : "Gasto"}
+                              <span
+                                className={cn(
+                                  "inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium",
+                                  row.type === "income"
+                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                                    : "border-border/60 bg-background text-foreground",
+                                )}
+                              >
+                                {row.type === "income" ? "Ingreso" : "Gasto"}
+                              </span>
                             </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <div className="flex flex-wrap gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    setSelectedId(row.id);
-                                    setDrawerOpen(true);
-                                  }}
-                                >
-                                  Editar
-                                </Button>
-                                <ConfirmForm
-                                  action={deleteAction}
-                                  confirm="¿Borrar este movimiento? Esta acción no se puede deshacer."
-                                >
-                                  <input type="hidden" name="id" value={row.id} />
-                                  <SubmitButton
-                                    variant="destructive"
-                                    size="sm"
-                                    pendingText="Borrando..."
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    Borrar
-                                  </SubmitButton>
-                                </ConfirmForm>
-                              </div>
+                            <TableCell className="whitespace-nowrap text-right text-muted-foreground">
+                              <ChevronRight className="ml-auto size-4 opacity-70" aria-hidden />
                             </TableCell>
                           </TableRow>
                         );
@@ -715,29 +706,36 @@ export function TransactionsPanel({
               <SubmitButton type="submit" className="w-full sm:w-auto" pendingText="Guardando...">
                 {selected ? "Guardar cambios" : "Guardar movimiento"}
               </SubmitButton>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                {selected ? (
-                  <ConfirmForm action={deleteAction} confirm="¿Borrar este movimiento? Esta acción no se puede deshacer.">
-                    <input type="hidden" name="id" value={selected.id} />
-                    <SubmitButton variant="destructive" className="w-full sm:w-auto" pendingText="Borrando...">
-                      Borrar movimiento
-                    </SubmitButton>
-                  </ConfirmForm>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    setSelectedId(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  setSelectedId(null);
+                }}
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
+
+          {selected ? (
+            <section className="mt-6 rounded-2xl border border-destructive/25 bg-destructive/5 p-4">
+              <p className="text-sm font-medium text-destructive">Zona peligrosa</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Borrar elimina el movimiento de forma permanente.
+              </p>
+              <div className="mt-3">
+                <ConfirmForm action={deleteAction} confirm="¿Borrar este movimiento? Esta acción no se puede deshacer.">
+                  <input type="hidden" name="id" value={selected.id} />
+                  <SubmitButton variant="destructive" pendingText="Borrando...">
+                    Borrar movimiento
+                  </SubmitButton>
+                </ConfirmForm>
+              </div>
+            </section>
+          ) : null}
         </form>
       </Slideout>
     </div>

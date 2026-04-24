@@ -14,7 +14,6 @@ import { CardPage } from "@/components/ui/card-page";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchPicker } from "@/components/ui/search-picker";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -247,15 +246,26 @@ export function TransactionsPanel({
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl border border-border/70 bg-card/30 px-4 py-3">
                   <p className="stat-label">Gastos del mes</p>
-                  <p className="mt-1 text-[1.35rem] font-semibold tabular-nums">{formatArs(metrics.expenses)}</p>
+                  <p className="mt-1 text-[1.35rem] font-semibold tabular-nums text-foreground">
+                    {formatArs(metrics.expenses)}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-card/30 px-4 py-3">
                   <p className="stat-label">Ingresos del mes</p>
-                  <p className="mt-1 text-[1.35rem] font-semibold tabular-nums">{formatArs(metrics.incomes)}</p>
+                  <p className="mt-1 text-[1.35rem] font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
+                    {formatArs(metrics.incomes)}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-card/30 px-4 py-3">
                   <p className="stat-label">Balance</p>
-                  <p className="mt-1 text-[1.35rem] font-semibold tabular-nums">{formatArs(metrics.balance)}</p>
+                  <p
+                    className={cn(
+                      "mt-1 text-[1.35rem] font-semibold tabular-nums",
+                      metrics.balance < 0 ? "text-destructive" : "text-emerald-700 dark:text-emerald-300",
+                    )}
+                  >
+                    {formatArs(metrics.balance)}
+                  </p>
                 </div>
               </div>
 
@@ -305,38 +315,36 @@ export function TransactionsPanel({
 
                   <div className="space-y-1.5">
                     <Label htmlFor="tx-category">Categoría</Label>
-                    <Select value={categoryFilterId} onValueChange={setCategoryFilterId}>
-                      <SelectTrigger id="tx-category" className="w-full" aria-label="Categoría">
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        <SelectItem value="none">Sin categoría</SelectItem>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchPicker
+                      value={categoryFilterId}
+                      onValueChange={(value) => setCategoryFilterId(value as typeof categoryFilterId)}
+                      placeholder="Todas"
+                      inputPlaceholder="Buscar categoría…"
+                      options={[
+                        { value: "all", label: "Todas" },
+                        { value: "none", label: "Sin categoría" },
+                        ...categories.map((category) => ({ value: category.id, label: category.name })),
+                      ]}
+                      className="w-full justify-between rounded-2xl text-sm"
+                      contentClassName="w-[min(28rem,calc(100vw-2rem))]"
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <Label htmlFor="tx-method">Medio</Label>
-                    <Select value={methodFilterId} onValueChange={setMethodFilterId}>
-                      <SelectTrigger id="tx-method" className="w-full" aria-label="Medio de pago">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="none">Sin medio</SelectItem>
-                        {methods.map((method) => (
-                          <SelectItem key={method.id} value={method.id}>
-                            {method.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchPicker
+                      value={methodFilterId}
+                      onValueChange={(value) => setMethodFilterId(value as typeof methodFilterId)}
+                      placeholder="Todos"
+                      inputPlaceholder="Buscar medio…"
+                      options={[
+                        { value: "all", label: "Todos" },
+                        { value: "none", label: "Sin medio" },
+                        ...methods.map((method) => ({ value: method.id, label: method.name })),
+                      ]}
+                      className="w-full justify-between rounded-2xl text-sm"
+                      contentClassName="w-[min(28rem,calc(100vw-2rem))]"
+                    />
                   </div>
                 </div>
               </div>
@@ -433,8 +441,8 @@ export function TransactionsPanel({
 
       <Slideout
         open={drawerOpen}
-        title={selected ? "Edición" : "Nuevo"}
-        description={panelTitle}
+        title={panelTitle}
+        description={selected ? "Actualizá y guardá" : `Cargar ${monthLabel}`}
         onClose={() => {
           setDrawerOpen(false);
           setSelectedId(null);

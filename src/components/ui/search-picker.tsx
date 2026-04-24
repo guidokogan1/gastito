@@ -90,7 +90,7 @@ export function SearchPicker({
           />
         </div>
 
-        <div className="max-h-72 overflow-auto rounded-xl border border-border/60 bg-background/70 p-1">
+        <div className="max-h-72 overflow-auto rounded-xl p-1">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
               <SearchX className="h-5 w-5 text-muted-foreground" />

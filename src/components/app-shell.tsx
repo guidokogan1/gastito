@@ -1,17 +1,26 @@
-import Link from "next/link";
+import {
+  ArrowRightLeft,
+  CreditCard,
+  HandCoins,
+  Landmark,
+  LayoutDashboard,
+  Repeat2,
+  Tags,
+} from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { NavLink } from "@/components/app/nav-link";
+import { SubmitButton } from "@/components/app/submit-button";
 
 const links = [
-  { href: "/", label: "Resumen" },
-  { href: "/movimientos", label: "Movimientos" },
-  { href: "/categorias", label: "Categorías" },
-  { href: "/medios-de-pago", label: "Medios de pago" },
-  { href: "/cuentas", label: "Cuentas" },
-  { href: "/deudas", label: "Deudas" },
-  { href: "/gastos-fijos", label: "Gastos fijos" },
+  { href: "/", label: "Resumen", icon: LayoutDashboard },
+  { href: "/movimientos", label: "Movimientos", icon: ArrowRightLeft },
+  { href: "/categorias", label: "Categorías", icon: Tags },
+  { href: "/medios-de-pago", label: "Medios de pago", icon: CreditCard },
+  { href: "/cuentas", label: "Cuentas", icon: Landmark },
+  { href: "/deudas", label: "Deudas", icon: HandCoins },
+  { href: "/gastos-fijos", label: "Gastos fijos", icon: Repeat2 },
 ];
 
 export function AppShell({
@@ -35,29 +44,52 @@ export function AppShell({
             <p className="text-sm text-muted-foreground">{userEmail}</p>
           </header>
 
-          <nav className="grid gap-1">
+          <details className="rounded-2xl border border-border/70 bg-background/40 p-1 lg:hidden">
+            <summary className="pressable cursor-pointer list-none rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
+              Menú
+            </summary>
+            <nav className="mt-1 grid gap-1 pb-1">
+              {links.map((link) => (
+                <NavLink
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "pressable flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                  )}
+                  activeClassName="bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                >
+                  <link.icon className="size-4 text-muted-foreground" aria-hidden />
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+          </details>
+
+          <nav className="hidden gap-1 lg:grid">
             {links.map((link) => (
-              <Link
+              <NavLink
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "pressable rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                  "pressable flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 )}
+                activeClassName="bg-sidebar-accent/80 text-sidebar-accent-foreground"
               >
+                <link.icon className="size-4 text-muted-foreground" aria-hidden />
                 {link.label}
-              </Link>
+              </NavLink>
             ))}
           </nav>
 
           <form action={logoutAction} className="pt-1">
-            <Button type="submit" variant="secondary" className="w-full">
+            <SubmitButton type="submit" variant="secondary" className="w-full" pendingText="Saliendo...">
               Cerrar sesión
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </aside>
 
-      <main className="mx-auto w-full max-w-6xl p-5 sm:p-6 lg:max-w-none lg:p-8">
+      <main id="content" className="mx-auto w-full max-w-6xl p-5 sm:p-6 lg:max-w-none lg:p-8">
         <div className="page-enter space-y-8">{children}</div>
       </main>
     </div>

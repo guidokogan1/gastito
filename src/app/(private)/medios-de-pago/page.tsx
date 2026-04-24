@@ -1,9 +1,11 @@
 import { deletePaymentMethodAction, savePaymentMethodAction } from "@/app/actions/resources";
+import { CreditCard } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
+import { ConfirmForm } from "@/components/app/confirm-form";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { CrudLayout } from "@/components/app/crud-layout";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/app/submit-button";
 import { CheckboxLine } from "@/components/ui/checkbox-line";
 import { Input } from "@/components/ui/input";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +26,7 @@ import { prisma } from "@/lib/db";
 export default async function PaymentMethodsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
@@ -42,16 +44,17 @@ export default async function PaymentMethodsPage({
       />
 
       <FlashMessage message={params.error} tone="error" />
+      <FlashMessage message={params.message} tone="success" />
 
       <CrudLayout>
         <CardPage>
           <CardHeader className="pb-2">
-            <p className="stat-label">Catalogo</p>
+            <p className="stat-label">Catálogo</p>
             <CardTitle className="section-title">Medios del hogar</CardTitle>
           </CardHeader>
           <CardContent>
             {methods.length === 0 ? (
-              <EmptyState title="Todavia no hay medios" description="Crea el primero a la derecha." compact />
+              <EmptyState icon={CreditCard} title="Todavía no hay medios" description="Creá el primero a la derecha." compact />
             ) : (
               <TableContainer>
                 <Table>
@@ -59,8 +62,7 @@ export default async function PaymentMethodsPage({
                     <TableRow>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Estado</TableHead>
-                      <TableHead>Editar</TableHead>
-                      <TableHead>Borrar</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -68,30 +70,33 @@ export default async function PaymentMethodsPage({
                       <TableRow key={method.id}>
                         <TableCell className="font-medium">{method.name}</TableCell>
                         <TableCell className="text-muted-foreground">{method.isActive ? "Activo" : "Inactivo"}</TableCell>
-                        <TableCell>
-                          <form action={savePaymentMethodAction} className="inline-form">
-                            <input type="hidden" name="id" value={method.id} />
-                            <Input
-                              name="name"
-                              defaultValue={method.name}
-                              aria-label={`Nombre ${method.name}`}
-                              className="h-10 w-[260px]"
-                            />
-                            <CheckboxLine name="isActive" defaultChecked={method.isActive} className="text-xs">
-                              Activo
-                            </CheckboxLine>
-                            <Button type="submit" variant="secondary" size="sm">
-                              Guardar
-                            </Button>
-                          </form>
-                        </TableCell>
-                        <TableCell>
-                          <form action={deletePaymentMethodAction}>
-                            <input type="hidden" name="id" value={method.id} />
-                            <Button type="submit" variant="destructive" size="sm">
-                              Borrar
-                            </Button>
-                          </form>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-end">
+                            <form action={savePaymentMethodAction} className="inline-form justify-end">
+                              <input type="hidden" name="id" value={method.id} />
+                              <Input
+                                name="name"
+                                defaultValue={method.name}
+                                aria-label={`Nombre ${method.name}`}
+                                className="h-10 w-full min-w-[200px] sm:w-[260px]"
+                              />
+                              <CheckboxLine name="isActive" defaultChecked={method.isActive} className="text-xs">
+                                Activo
+                              </CheckboxLine>
+                              <SubmitButton type="submit" variant="secondary" size="sm" pendingText="Guardando...">
+                                Guardar
+                              </SubmitButton>
+                            </form>
+                            <ConfirmForm
+                              action={deletePaymentMethodAction}
+                              confirm={`¿Borrar el medio “${method.name}”? Esta acción no se puede deshacer.`}
+                            >
+                              <input type="hidden" name="id" value={method.id} />
+                              <SubmitButton type="submit" variant="destructive" size="sm" pendingText="Borrando...">
+                                Borrar
+                              </SubmitButton>
+                            </ConfirmForm>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -111,14 +116,14 @@ export default async function PaymentMethodsPage({
             <form action={savePaymentMethodAction} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nombre</Label>
-                <Input id="name" name="name" placeholder="Ej. Tarjeta Visa" required />
+                <Input id="name" name="name" placeholder="Ej. Tarjeta Visa" required autoFocus />
               </div>
               <CheckboxLine name="isActive" defaultChecked>
                 Dejar activo
               </CheckboxLine>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Creando...">
                 Crear medio
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </CardPage>

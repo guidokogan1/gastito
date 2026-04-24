@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { requestPasswordResetAction } from "@/app/actions/auth";
 import { FlashMessage } from "@/components/flash-message";
+import { SubmitButton } from "@/components/app/submit-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -25,7 +26,7 @@ export default async function ForgotPasswordPage({
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <FlashMessage message={params.error} tone="error" />
-              <FlashMessage message={params.message} />
+              <FlashMessage message={params.message} tone="success" />
             </div>
 
             <form action={requestPasswordResetAction} className="space-y-3">
@@ -33,11 +34,11 @@ export default async function ForgotPasswordPage({
                 <label htmlFor="email" className="text-sm font-medium">
                   Email
                 </label>
-                <Input id="email" name="email" type="email" autoComplete="email" required />
+                <Input id="email" name="email" type="email" autoComplete="email" required autoFocus />
               </div>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Enviando...">
                 Enviar link
-              </Button>
+              </SubmitButton>
             </form>
 
             <Button asChild variant="secondary" className="w-full">

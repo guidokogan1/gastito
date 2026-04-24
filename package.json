@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "HOME=/tmp/gastito-home XDG_CACHE_HOME=/tmp/gastito-cache prisma generate --schema prisma/schema.prisma && NEXT_DISABLE_TURBOPACK=1 next build",
+    "build": "HOME=/tmp/gastito-home XDG_CACHE_HOME=/tmp/gastito-cache prisma generate --schema prisma/schema.prisma && next build --webpack",
     "start": "next start",
     "typecheck": "HOME=/tmp/gastito-home XDG_CACHE_HOME=/tmp/gastito-cache prisma generate --schema prisma/schema.prisma && tsc --noEmit",
     "test": "vitest run",

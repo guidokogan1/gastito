@@ -1,9 +1,11 @@
 import { deleteRecurringBillAction, saveRecurringBillAction } from "@/app/actions/resources";
+import { Repeat2 } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
+import { ConfirmForm } from "@/components/app/confirm-form";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { CrudLayout } from "@/components/app/crud-layout";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/app/submit-button";
 import { CheckboxLine } from "@/components/ui/checkbox-line";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -18,7 +20,7 @@ import { formatArs, moneyInputValue } from "@/lib/format";
 export default async function BillsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
@@ -48,10 +50,11 @@ export default async function BillsPage({
     <div className="space-y-8">
       <PageHeader
         title="Gastos fijos"
-        description="Compromisos que vuelven todos los meses, sin importaciones ni perfiles tecnicos."
+        description="Compromisos que vuelven todos los meses, sin importaciones ni perfiles técnicos."
       />
 
       <FlashMessage message={params.error} tone="error" />
+      <FlashMessage message={params.message} tone="success" />
 
       <CrudLayout>
         <CardPage>
@@ -61,43 +64,59 @@ export default async function BillsPage({
           </CardHeader>
           <CardContent>
             {bills.length === 0 ? (
-              <EmptyState title="Todavia no hay gastos fijos" description="Crea el primero a la derecha." compact />
+              <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero a la derecha." compact />
             ) : (
               <div className="space-y-3">
-                {bills.map((bill) => (
-                  <div key={bill.id} className="rounded-2xl border border-border/70 bg-card/30 p-4">
+                {bills.map((bill) => {
+                  const prefix = `bill-${bill.id}`;
+                  return (
+                    <div key={bill.id} className="rounded-2xl border border-border/70 bg-card/30 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <p className="text-[1.05rem] font-semibold">{bill.name}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Vence el dia {bill.dueDay} · {formatArs(bill.amount)} · {bill.paymentMethod?.name || "Sin medio"}
+                          Vence el día {bill.dueDay} · {formatArs(bill.amount)} · {bill.paymentMethod?.name || "Sin medio"}
                         </p>
                       </div>
-                      <form action={deleteRecurringBillAction}>
+                      <ConfirmForm
+                        action={deleteRecurringBillAction}
+                        confirm={`¿Borrar el gasto fijo “${bill.name}”? Esta acción no se puede deshacer.`}
+                      >
                         <input type="hidden" name="id" value={bill.id} />
-                        <Button type="submit" variant="destructive" size="sm">
+                        <SubmitButton type="submit" variant="destructive" size="sm" pendingText="Borrando...">
                           Borrar
-                        </Button>
-                      </form>
+                        </SubmitButton>
+                      </ConfirmForm>
                     </div>
 
                     <form action={saveRecurringBillAction} className="mt-4 grid gap-3 sm:grid-cols-2">
                       <input type="hidden" name="id" value={bill.id} />
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Nombre</Label>
-                        <Input name="name" defaultValue={bill.name} />
+                        <Label htmlFor={`${prefix}-name`}>Nombre</Label>
+                        <Input id={`${prefix}-name`} name="name" defaultValue={bill.name} />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Monto</Label>
-                        <Input name="amount" type="number" step="0.01" defaultValue={moneyInputValue(bill.amount)} />
+                        <Label htmlFor={`${prefix}-amount`}>Monto</Label>
+                        <Input
+                          id={`${prefix}-amount`}
+                          name="amount"
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          defaultValue={moneyInputValue(bill.amount)}
+                        />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Dia de vencimiento</Label>
-                        <Input name="dueDay" type="number" min="1" max="31" defaultValue={bill.dueDay} />
+                        <Label htmlFor={`${prefix}-dueDay`}>Día de vencimiento</Label>
+                        <Input id={`${prefix}-dueDay`} name="dueDay" type="number" min="1" max="31" defaultValue={bill.dueDay} />
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Medio de pago</Label>
-                        <NativeSelect name="paymentMethodId" defaultValue={bill.paymentMethodId ?? ""}>
+                        <Label htmlFor={`${prefix}-paymentMethodId`}>Medio de pago</Label>
+                        <NativeSelect
+                          id={`${prefix}-paymentMethodId`}
+                          name="paymentMethodId"
+                          defaultValue={bill.paymentMethodId ?? ""}
+                        >
                           <option value="">Sin medio</option>
                           {paymentMethods.map((method) => (
                             <option key={method.id} value={method.id}>
@@ -107,23 +126,21 @@ export default async function BillsPage({
                         </NativeSelect>
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Notas</Label>
-                        <Textarea
-                          name="notes"
-                          defaultValue={bill.notes ?? ""}
-                        />
+                        <Label htmlFor={`${prefix}-notes`}>Notas</Label>
+                        <Textarea id={`${prefix}-notes`} name="notes" defaultValue={bill.notes ?? ""} />
                       </div>
                       <CheckboxLine name="isActive" defaultChecked={bill.isActive} className="sm:col-span-2">
                         Activo
                       </CheckboxLine>
                       <div className="sm:col-span-2">
-                        <Button type="submit" variant="secondary">
+                        <SubmitButton type="submit" variant="secondary" pendingText="Guardando...">
                           Guardar cambios
-                        </Button>
+                        </SubmitButton>
                       </div>
                     </form>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -138,14 +155,14 @@ export default async function BillsPage({
             <form action={saveRecurringBillAction} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nombre</Label>
-                <Input id="name" name="name" placeholder="Ej. Internet" required />
+                <Input id="name" name="name" placeholder="Ej. Internet" required autoFocus />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="amount">Monto</Label>
-                <Input id="amount" name="amount" type="number" step="0.01" required />
+                <Input id="amount" name="amount" type="number" step="0.01" inputMode="decimal" required />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="dueDay">Dia de vencimiento</Label>
+                <Label htmlFor="dueDay">Día de vencimiento</Label>
                 <Input id="dueDay" name="dueDay" type="number" min="1" max="31" required />
               </div>
               <div className="space-y-1.5">
@@ -169,9 +186,9 @@ export default async function BillsPage({
               <CheckboxLine name="isActive" defaultChecked>
                 Dejar activo
               </CheckboxLine>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Guardando...">
                 Guardar gasto fijo
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </CardPage>

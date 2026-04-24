@@ -1,8 +1,8 @@
 import { updatePasswordAction } from "@/app/actions/auth";
 import { FlashMessage } from "@/components/flash-message";
+import { SubmitButton } from "@/components/app/submit-button";
 import { requireUser } from "@/lib/auth";
 import { getPublicAppEnv } from "@/lib/env";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
@@ -37,11 +37,11 @@ export default async function ResetPasswordPage({
                 <label htmlFor="password" className="text-sm font-medium">
                   Nueva contraseña
                 </label>
-                <Input id="password" name="password" type="password" autoComplete="new-password" required />
+                <Input id="password" name="password" type="password" autoComplete="new-password" required autoFocus />
               </div>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Actualizando...">
                 Actualizar contraseña
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </Card>

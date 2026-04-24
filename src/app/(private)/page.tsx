@@ -1,7 +1,11 @@
+import Link from "next/link";
+import { ArrowRightLeft, Tags } from "lucide-react";
+
 import { FlashMessage } from "@/components/flash-message";
 import { StatCard } from "@/components/stat-card";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
+import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardPage } from "@/components/ui/card-page";
 import {
@@ -31,9 +35,14 @@ export default async function DashboardPage({
       <PageHeader
         title="Resumen"
         description="Todo el producto público arranca en ARS y con carga manual."
+        actions={
+          <Button asChild>
+            <Link href="/movimientos">Cargar movimiento</Link>
+          </Button>
+        }
       />
 
-      <FlashMessage message={params.message} />
+      <FlashMessage message={params.message} tone="success" />
 
       <section className="dashboard-metrics stats-grid">
         <StatCard
@@ -60,15 +69,20 @@ export default async function DashboardPage({
         <CardPage>
           <CardHeader className="pb-2">
             <p className="stat-label">Movimientos recientes</p>
-            <CardTitle className="section-title">Ultima actividad</CardTitle>
+            <CardTitle className="section-title">Última actividad</CardTitle>
           </CardHeader>
           <CardContent>
             {snapshot.recentTransactions.length === 0 ? (
               <EmptyState
-                title="Todavia no hay movimientos"
-                description="Empeza cargando los primeros desde la seccion Movimientos."
+                icon={ArrowRightLeft}
+                title="Todavía no hay movimientos"
+                description="Empezá cargando los primeros desde la sección Movimientos."
                 compact
-              />
+              >
+                <Button asChild variant="secondary">
+                  <Link href="/movimientos">Ir a Movimientos</Link>
+                </Button>
+              </EmptyState>
             ) : (
               <TableContainer>
                 <Table>
@@ -100,16 +114,21 @@ export default async function DashboardPage({
 
         <CardPage>
           <CardHeader className="pb-2">
-            <p className="stat-label">Categorias del mes</p>
-            <CardTitle className="section-title">En que se fue la plata</CardTitle>
+            <p className="stat-label">Categorías del mes</p>
+            <CardTitle className="section-title">En qué se fue la plata</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {snapshot.topCategories.length === 0 ? (
               <EmptyState
-                title="Todavia no hay gastos categorizados"
-                description="Apenas cargues gastos, aca vas a ver tus categorias mas pesadas del mes."
+                icon={Tags}
+                title="Todavía no hay gastos categorizados"
+                description="Apenas cargues gastos, acá vas a ver tus categorías más pesadas del mes."
                 compact
-              />
+              >
+                <Button asChild variant="secondary">
+                  <Link href="/movimientos">Cargar un gasto</Link>
+                </Button>
+              </EmptyState>
             ) : (
               <div className="grid gap-2">
                 {snapshot.topCategories.map((item) => (

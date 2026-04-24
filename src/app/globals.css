@@ -218,6 +218,26 @@
     }
   }
 
+  @keyframes fade-in-soft {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideout-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
   .stat-card-wow {
     animation: fade-in-up 0.4s ease-out backwards;
   }
@@ -292,26 +312,14 @@
   @media (prefers-reduced-motion: reduce) {
     .page-enter,
     .stat-card-wow,
-    .narrative-bullet {
+    .narrative-bullet,
+    .slideout-panel,
+    .slideout-overlay {
       animation: none !important;
     }
     .pressable {
       transition: none;
     }
-  }
-
-  /* Legacy class shims (migrate screens gradually). */
-  .muted {
-    @apply text-muted-foreground;
-  }
-  .eyebrow {
-    @apply stat-label text-primary;
-  }
-  .title {
-    @apply page-title;
-  }
-  .subtitle {
-    @apply page-description;
   }
 
   .page-header {
@@ -326,76 +334,7 @@
   .crud-grid {
     @apply grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)];
   }
-
-  .auth-wrap,
-  .onboarding-wrap {
-    @apply min-h-screen grid place-items-center px-5 py-10 sm:px-6;
-  }
-  .auth-card,
-  .onboarding-card,
-  .card {
-    @apply card-page w-full overflow-hidden;
-  }
-  .auth-card,
-  .onboarding-card {
-    @apply max-w-md;
-  }
-
-  .stack,
-  .form-grid {
-    @apply grid gap-3;
-  }
-  .field {
-    @apply grid gap-1.5;
-  }
-  .field label {
-    @apply text-sm font-medium;
-  }
-  .field input,
-  .field select,
-  .field textarea {
-    @apply border-input h-11 w-full rounded-xl border bg-background/85 px-3 py-2 text-sm;
-  }
-
-  .button {
-    @apply pressable inline-flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground;
-  }
-  .button-secondary {
-    @apply bg-secondary/80 text-secondary-foreground hover:bg-secondary;
-  }
-  .button-danger {
-    @apply bg-destructive/10 text-destructive hover:bg-destructive/15;
-  }
-  .button-ghost {
-    @apply border border-border/80 bg-background/80 text-muted-foreground hover:bg-accent;
-  }
-
-  .table-wrap {
-    @apply table-container;
-  }
-  .table-wrap table {
-    @apply table-root;
-  }
-  .table-wrap thead {
-    @apply table-head;
-  }
-  .table-wrap th {
-    @apply table-head-cell;
-  }
-  .table-wrap td {
-    @apply table-cell;
-  }
-  .table-wrap tr {
-    @apply table-row-hover border-b border-border/50 last:border-b-0;
-  }
-
-  .empty {
-    @apply rounded-2xl border border-dashed border-border/80 bg-muted/25 p-4 text-sm text-muted-foreground;
-  }
   .inline-form {
     @apply flex flex-wrap items-center gap-2;
-  }
-  .checkbox-line {
-    @apply inline-flex items-center gap-2 text-sm text-muted-foreground;
   }
 }

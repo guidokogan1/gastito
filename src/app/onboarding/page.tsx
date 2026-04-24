@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 
 import { completeOnboardingAction } from "@/app/actions/resources";
 import { FlashMessage } from "@/components/flash-message";
+import { SubmitButton } from "@/components/app/submit-button";
 import { requireUser } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
@@ -46,7 +46,14 @@ export default async function OnboardingPage({
                 <label htmlFor="householdName" className="text-sm font-medium">
                   Nombre del hogar
                 </label>
-                <Input id="householdName" name="householdName" type="text" placeholder="Ej. Familia Pérez" required />
+                <Input
+                  id="householdName"
+                  name="householdName"
+                  type="text"
+                  placeholder="Ej. Familia Pérez"
+                  required
+                  autoFocus
+                />
               </div>
               <div className="rounded-2xl border border-border/70 bg-card/30 p-4">
                 <p className="stat-label">Lo que se crea automáticamente</p>
@@ -54,9 +61,9 @@ export default async function OnboardingPage({
                   Moneda base ARS, categorías sugeridas, medios de pago habituales y cuentas iniciales para arrancar.
                 </p>
               </div>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Creando hogar...">
                 Crear hogar y empezar
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </Card>

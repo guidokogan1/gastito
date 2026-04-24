@@ -1,9 +1,11 @@
 import { deleteDebtAction, saveDebtAction } from "@/app/actions/resources";
+import { HandCoins } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
+import { ConfirmForm } from "@/components/app/confirm-form";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { CrudLayout } from "@/components/app/crud-layout";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/app/submit-button";
 import { CheckboxLine } from "@/components/ui/checkbox-line";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -23,7 +25,7 @@ const DEBT_DIRECTIONS = [
 export default async function DebtsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
@@ -50,6 +52,7 @@ export default async function DebtsPage({
       />
 
       <FlashMessage message={params.error} tone="error" />
+      <FlashMessage message={params.message} tone="success" />
 
       <CrudLayout>
         <CardPage>
@@ -59,11 +62,18 @@ export default async function DebtsPage({
           </CardHeader>
           <CardContent>
             {debts.length === 0 ? (
-              <EmptyState title="Todavia no hay deudas" description="Crea la primera con el formulario de la derecha." compact />
+              <EmptyState
+                icon={HandCoins}
+                title="Todavía no hay deudas"
+                description="Creá la primera con el formulario de la derecha."
+                compact
+              />
             ) : (
               <div className="space-y-3">
-                {debts.map((debt) => (
-                  <div key={debt.id} className="rounded-2xl border border-border/70 bg-card/30 p-4">
+                {debts.map((debt) => {
+                  const prefix = `debt-${debt.id}`;
+                  return (
+                    <div key={debt.id} className="rounded-2xl border border-border/70 bg-card/30 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <p className="text-[1.05rem] font-semibold">{debt.entityName}</p>
@@ -71,23 +81,26 @@ export default async function DebtsPage({
                           {debt.direction === "we_owe" ? "Debemos" : "Nos deben"} · saldo {formatArs(debt.remainingBalance)}
                         </p>
                       </div>
-                      <form action={deleteDebtAction}>
+                      <ConfirmForm
+                        action={deleteDebtAction}
+                        confirm={`¿Borrar la deuda “${debt.entityName}”? Esta acción no se puede deshacer.`}
+                      >
                         <input type="hidden" name="id" value={debt.id} />
-                        <Button type="submit" variant="destructive" size="sm">
+                        <SubmitButton type="submit" variant="destructive" size="sm" pendingText="Borrando...">
                           Borrar
-                        </Button>
-                      </form>
+                        </SubmitButton>
+                      </ConfirmForm>
                     </div>
 
                     <form action={saveDebtAction} className="mt-4 grid gap-3 sm:grid-cols-2">
                       <input type="hidden" name="id" value={debt.id} />
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Persona o entidad</Label>
-                        <Input name="entityName" defaultValue={debt.entityName} />
+                        <Label htmlFor={`${prefix}-entityName`}>Persona o entidad</Label>
+                        <Input id={`${prefix}-entityName`} name="entityName" defaultValue={debt.entityName} />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Tipo</Label>
-                        <NativeSelect name="direction" defaultValue={debt.direction}>
+                        <Label htmlFor={`${prefix}-direction`}>Tipo</Label>
+                        <NativeSelect id={`${prefix}-direction`} name="direction" defaultValue={debt.direction}>
                           {DEBT_DIRECTIONS.map((d) => (
                             <option key={d.value} value={d.value}>
                               {d.label}
@@ -96,31 +109,43 @@ export default async function DebtsPage({
                         </NativeSelect>
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Monto original</Label>
-                        <Input name="originalAmount" type="number" step="0.01" defaultValue={moneyInputValue(debt.originalAmount)} />
+                        <Label htmlFor={`${prefix}-originalAmount`}>Monto original</Label>
+                        <Input
+                          id={`${prefix}-originalAmount`}
+                          name="originalAmount"
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          defaultValue={moneyInputValue(debt.originalAmount)}
+                        />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Saldo pendiente</Label>
-                        <Input name="remainingBalance" type="number" step="0.01" defaultValue={moneyInputValue(debt.remainingBalance)} />
+                        <Label htmlFor={`${prefix}-remainingBalance`}>Saldo pendiente</Label>
+                        <Input
+                          id={`${prefix}-remainingBalance`}
+                          name="remainingBalance"
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          defaultValue={moneyInputValue(debt.remainingBalance)}
+                        />
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Notas</Label>
-                        <Textarea
-                          name="notes"
-                          defaultValue={debt.notes ?? ""}
-                        />
+                        <Label htmlFor={`${prefix}-notes`}>Notas</Label>
+                        <Textarea id={`${prefix}-notes`} name="notes" defaultValue={debt.notes ?? ""} />
                       </div>
                       <CheckboxLine name="isActive" defaultChecked={debt.isActive} className="sm:col-span-2">
                         Activa
                       </CheckboxLine>
                       <div className="sm:col-span-2">
-                        <Button type="submit" variant="secondary">
+                        <SubmitButton type="submit" variant="secondary" pendingText="Guardando...">
                           Guardar cambios
-                        </Button>
+                        </SubmitButton>
                       </div>
                     </form>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -135,7 +160,7 @@ export default async function DebtsPage({
             <form action={saveDebtAction} className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="entityName">Persona o entidad</Label>
-                <Input id="entityName" name="entityName" required />
+                <Input id="entityName" name="entityName" required autoFocus />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="direction">Tipo</Label>
@@ -149,11 +174,11 @@ export default async function DebtsPage({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="originalAmount">Monto original</Label>
-                <Input id="originalAmount" name="originalAmount" type="number" step="0.01" required />
+                <Input id="originalAmount" name="originalAmount" type="number" step="0.01" inputMode="decimal" required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="remainingBalance">Saldo pendiente</Label>
-                <Input id="remainingBalance" name="remainingBalance" type="number" step="0.01" required />
+                <Input id="remainingBalance" name="remainingBalance" type="number" step="0.01" inputMode="decimal" required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="notes">Notas</Label>
@@ -165,9 +190,9 @@ export default async function DebtsPage({
               <CheckboxLine name="isActive" defaultChecked>
                 Dejar activa
               </CheckboxLine>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Guardando...">
                 Guardar deuda
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </CardPage>

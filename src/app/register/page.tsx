@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { registerAction } from "@/app/actions/auth";
 import { FlashMessage } from "@/components/flash-message";
+import { SubmitButton } from "@/components/app/submit-button";
 import { redirectIfAuthenticated } from "@/lib/auth";
 import { getPublicAppEnv } from "@/lib/env";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export default async function RegisterPage({
                 <label htmlFor="email" className="text-sm font-medium">
                   Email
                 </label>
-                <Input id="email" name="email" type="email" autoComplete="email" required />
+                <Input id="email" name="email" type="email" autoComplete="email" required autoFocus />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="password" className="text-sm font-medium">
@@ -46,9 +47,9 @@ export default async function RegisterPage({
                 </label>
                 <Input id="password" name="password" type="password" autoComplete="new-password" required />
               </div>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Creando...">
                 Crear cuenta
-              </Button>
+              </SubmitButton>
             </form>
 
             <Button asChild variant="secondary" className="w-full">

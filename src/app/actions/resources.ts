@@ -32,6 +32,10 @@ function toNullableId(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function withMessage(path: string, value: string) {
+  return `${path}?message=${encodeURIComponent(value)}`;
+}
+
 export async function completeOnboardingAction(formData: FormData) {
   const current = await requireUser();
   if (current.household) redirect("/");
@@ -126,6 +130,12 @@ export async function saveCategoryAction(formData: FormData) {
 
   revalidatePath("/categorias");
   revalidatePath("/");
+  redirect(
+    withMessage(
+      "/categorias",
+      parsed.data.id ? "Categoría actualizada." : "Categoría creada.",
+    ),
+  );
 }
 
 export async function deleteCategoryAction(formData: FormData) {
@@ -139,6 +149,7 @@ export async function deleteCategoryAction(formData: FormData) {
   await prisma.category.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "category.delete", targetType: "category", targetId: id });
   revalidatePath("/categorias");
+  redirect(withMessage("/categorias", "Categoría borrada."));
 }
 
 export async function savePaymentMethodAction(formData: FormData) {
@@ -184,6 +195,12 @@ export async function savePaymentMethodAction(formData: FormData) {
 
   revalidatePath("/medios-de-pago");
   revalidatePath("/");
+  redirect(
+    withMessage(
+      "/medios-de-pago",
+      parsed.data.id ? "Medio de pago actualizado." : "Medio de pago creado.",
+    ),
+  );
 }
 
 export async function deletePaymentMethodAction(formData: FormData) {
@@ -200,6 +217,7 @@ export async function deletePaymentMethodAction(formData: FormData) {
   await prisma.paymentMethod.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "payment_method.delete", targetType: "paymentMethod", targetId: id });
   revalidatePath("/medios-de-pago");
+  redirect(withMessage("/medios-de-pago", "Medio de pago borrado."));
 }
 
 export async function saveAccountAction(formData: FormData) {
@@ -248,6 +266,12 @@ export async function saveAccountAction(formData: FormData) {
 
   revalidatePath("/cuentas");
   revalidatePath("/movimientos");
+  redirect(
+    withMessage(
+      "/cuentas",
+      parsed.data.id ? "Cuenta actualizada." : "Cuenta creada.",
+    ),
+  );
 }
 
 export async function deleteAccountAction(formData: FormData) {
@@ -261,6 +285,7 @@ export async function deleteAccountAction(formData: FormData) {
   await prisma.account.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "account.delete", targetType: "account", targetId: id });
   revalidatePath("/cuentas");
+  redirect(withMessage("/cuentas", "Cuenta borrada."));
 }
 
 export async function saveTransactionAction(formData: FormData) {
@@ -327,6 +352,12 @@ export async function saveTransactionAction(formData: FormData) {
 
   revalidatePath("/movimientos");
   revalidatePath("/");
+  redirect(
+    withMessage(
+      "/movimientos",
+      parsed.data.id ? "Movimiento actualizado." : "Movimiento creado.",
+    ),
+  );
 }
 
 export async function deleteTransactionAction(formData: FormData) {
@@ -337,6 +368,7 @@ export async function deleteTransactionAction(formData: FormData) {
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "transaction.delete", targetType: "transaction", targetId: id });
   revalidatePath("/movimientos");
   revalidatePath("/");
+  redirect(withMessage("/movimientos", "Movimiento borrado."));
 }
 
 export async function saveDebtAction(formData: FormData) {
@@ -393,6 +425,7 @@ export async function saveDebtAction(formData: FormData) {
   });
 
   revalidatePath("/deudas");
+  redirect(withMessage("/deudas", parsed.data.id ? "Deuda actualizada." : "Deuda creada."));
 }
 
 export async function deleteDebtAction(formData: FormData) {
@@ -402,6 +435,7 @@ export async function deleteDebtAction(formData: FormData) {
   await prisma.debt.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "debt.delete", targetType: "debt", targetId: id });
   revalidatePath("/deudas");
+  redirect(withMessage("/deudas", "Deuda borrada."));
 }
 
 export async function saveRecurringBillAction(formData: FormData) {
@@ -460,6 +494,12 @@ export async function saveRecurringBillAction(formData: FormData) {
   });
 
   revalidatePath("/gastos-fijos");
+  redirect(
+    withMessage(
+      "/gastos-fijos",
+      parsed.data.id ? "Gasto fijo actualizado." : "Gasto fijo creado.",
+    ),
+  );
 }
 
 export async function deleteRecurringBillAction(formData: FormData) {
@@ -469,4 +509,5 @@ export async function deleteRecurringBillAction(formData: FormData) {
   await prisma.recurringBill.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), isActive: false } });
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "recurring_bill.delete", targetType: "recurringBill", targetId: id });
   revalidatePath("/gastos-fijos");
+  redirect(withMessage("/gastos-fijos", "Gasto fijo borrado."));
 }

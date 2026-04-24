@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { loginAction } from "@/app/actions/auth";
 import { FlashMessage } from "@/components/flash-message";
+import { SubmitButton } from "@/components/app/submit-button";
 import { redirectIfAuthenticated } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ export default async function LoginPage({
                 <label htmlFor="email" className="text-sm font-medium">
                   Email
                 </label>
-                <Input id="email" name="email" type="email" autoComplete="email" required />
+                <Input id="email" name="email" type="email" autoComplete="email" required autoFocus />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="password" className="text-sm font-medium">
@@ -47,9 +48,9 @@ export default async function LoginPage({
                 </label>
                 <Input id="password" name="password" type="password" autoComplete="current-password" required />
               </div>
-              <Button type="submit" className="w-full">
+              <SubmitButton type="submit" className="w-full" pendingText="Ingresando...">
                 Iniciar sesión
-              </Button>
+              </SubmitButton>
             </form>
 
             <div className="flex flex-col gap-2 pt-1">

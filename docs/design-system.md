@@ -16,6 +16,8 @@ Este design system está basado literalmente en la estética y el lenguaje visua
 ## Componentes Base
 
 - Botones: `src/components/ui/button.tsx` (`variant` + `size`).
+- Submit/Pending: `src/components/app/submit-button.tsx` (usa `useFormStatus`).
+- Confirmaciones: `src/components/app/confirm-form.tsx` (confirm previo a acciones destructivas).
 - Inputs: `src/components/ui/input.tsx`.
 - Cards: `src/components/ui/card.tsx`.
 - Tablas: `src/components/ui/table.tsx` (usar `TableContainer` + `Table` + `TableRow` + `TableCell`).
@@ -32,6 +34,7 @@ Este design system está basado literalmente en la estética y el lenguaje visua
 - Espaciado consistente: `gap-4` (interno), `gap-6` (secciones), padding de página con `.space-grid-8` o `p-8`.
 - Loading/empty: siempre renderizar un estado explícito (no dejar un “hueco”).
 - Accesibilidad: `focus-visible` (ya viene en `Button`/`Input`).
+- Feedback: para acciones server (`save*` / `delete*`), redirigir con `?message=` o `?error=` y mostrar con `FlashMessage`.
 
 ### Don't
 

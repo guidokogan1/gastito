@@ -23,6 +23,7 @@ export function SearchPicker({
   contentClassName,
   emptyLabel = "Sin resultados",
   inputPlaceholder = "Buscar…",
+  showSelectedLabel = true,
 }: {
   value: string;
   options: SearchPickerOption[];
@@ -32,11 +33,15 @@ export function SearchPicker({
   contentClassName?: string;
   emptyLabel?: string;
   inputPlaceholder?: string;
+  showSelectedLabel?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
 
-  const selected = React.useMemo(() => options.find((o) => o.value === value) ?? null, [options, value]);
+  const selected = React.useMemo(() => {
+    if (!showSelectedLabel) return null;
+    return options.find((o) => o.value === value) ?? null;
+  }, [options, showSelectedLabel, value]);
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -121,4 +126,3 @@ export function SearchPicker({
     </Popover>
   );
 }
-

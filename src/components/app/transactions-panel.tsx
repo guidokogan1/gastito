@@ -531,10 +531,10 @@ export function TransactionsPanel({
                   value={formCategoryId}
                   placeholder="Más…"
                   options={[
-                    { value: "", label: "Sin categoría" },
                     ...categories.map((category) => ({ value: category.id, label: category.name })),
                   ]}
                   onValueChange={setFormCategoryId}
+                  showSelectedLabel={false}
                 />
               </div>
             </div>
@@ -567,29 +567,27 @@ export function TransactionsPanel({
                   value={formPaymentMethodId}
                   placeholder="Más…"
                   options={[
-                    { value: "", label: "Sin medio" },
                     ...methods.map((method) => ({ value: method.id, label: method.name })),
                   ]}
                   onValueChange={setFormPaymentMethodId}
+                  showSelectedLabel={false}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="accountId">Cuenta (opcional)</Label>
-              <Select value={formAccountId === "" ? "none" : formAccountId} onValueChange={(value) => setFormAccountId(value === "none" ? "" : value)}>
-                <SelectTrigger id="accountId" className="w-full">
-                  <SelectValue placeholder="Sin cuenta" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin cuenta</SelectItem>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchPicker
+                value={formAccountId}
+                placeholder="Sin cuenta"
+                options={[
+                  { value: "", label: "Sin cuenta" },
+                  ...accounts.map((account) => ({ value: account.id, label: account.name })),
+                ]}
+                onValueChange={setFormAccountId}
+                className="w-full justify-between rounded-2xl"
+                contentClassName="w-[min(28rem,calc(100vw-2rem))]"
+              />
             </div>
           </section>
 

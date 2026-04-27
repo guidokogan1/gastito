@@ -239,7 +239,9 @@ export function TransactionsPanel({
     const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
     if (!match) return monthKey;
     const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
-    return new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(date);
+    const raw = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(date);
+    const withoutDe = raw.replace(/\s+de\s+/i, " ");
+    return withoutDe.charAt(0).toUpperCase() + withoutDe.slice(1);
   }, [monthKey]);
 
   return (

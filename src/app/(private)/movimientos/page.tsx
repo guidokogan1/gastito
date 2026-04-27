@@ -35,6 +35,28 @@ export default async function TransactionsPage({
   const range = monthRange(monthKey) ?? monthRange(currentMonthKey());
   if (!range) throw new Error("No se pudo calcular el rango del mes.");
 
+  const monthBuckets = await prisma.$queryRaw<{ month: string; count: number }[]>`
+    SELECT
+      to_char(date_trunc('month', "date"), 'YYYY-MM') AS month,
+      count(*)::int AS count
+    FROM "Transaction"
+    WHERE "householdId" = ${household.id}
+      AND "deletedAt" IS NULL
+    GROUP BY 1
+    ORDER BY 1 DESC
+  `;
+
+  const currentKey = currentMonthKey();
+  const availableMonths = (() => {
+    const items = monthBuckets.map((row) => ({ key: row.month, count: row.count }));
+    const byKey = new Map(items.map((it) => [it.key, it]));
+
+    if (!byKey.has(currentKey)) byKey.set(currentKey, { key: currentKey, count: 0 });
+    if (!byKey.has(monthKey)) byKey.set(monthKey, { key: monthKey, count: 0 });
+
+    return [...byKey.values()].sort((a, b) => b.key.localeCompare(a.key));
+  })();
+
   const [transactions, accounts, categories, methods] = await Promise.all([
     prisma.transaction.findMany({
       where: { householdId: household.id, deletedAt: null, date: { gte: range.start, lt: range.end } },
@@ -64,7 +86,7 @@ export default async function TransactionsPage({
       <PageHeader
         title="Movimientos"
         description="El corazón del producto: manual, simple y 100% orientado a ARS."
-        actions={<MonthSelector value={monthKey} />}
+        actions={<MonthSelector value={monthKey} availableMonths={availableMonths} label="Período" />}
       />
 
       <FlashMessage message={params.error} tone="error" />

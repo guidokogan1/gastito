@@ -30,7 +30,7 @@ export function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "bg-popover/96 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-2xl border border-border/70 p-2 shadow-lg backdrop-blur-md outline-none",
+          "bg-popover/94 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[side=bottom]:slide-in-from-top-0.5 data-[side=left]:slide-in-from-right-0.5 data-[side=right]:slide-in-from-left-0.5 data-[side=top]:slide-in-from-bottom-0.5 z-50 w-72 rounded-[1.1rem] border border-border p-2 shadow-[var(--shadow-sheet)] backdrop-blur-xl outline-none",
           className,
         )}
         {...props}
@@ -38,4 +38,3 @@ export function PopoverContent({
     </PopoverPrimitive.Portal>
   );
 }
-

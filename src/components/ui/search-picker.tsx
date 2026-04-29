@@ -86,7 +86,7 @@ export function SearchPicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className={cn("w-[min(22rem,calc(100vw-2rem))] p-2", contentClassName)}
+        className={cn("w-[min(21rem,calc(100vw-2rem))] rounded-[1.35rem] p-2", contentClassName)}
         align={align ?? "start"}
         side={side}
         sideOffset={sideOffset}
@@ -97,7 +97,7 @@ export function SearchPicker({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={inputPlaceholder}
-            className="h-9"
+            className="h-10 rounded-full border-border/45 bg-[var(--surface-inset)] focus-visible:border-[var(--finance-green)]/40 focus-visible:ring-0"
             onKeyDown={(event) => {
               if (event.key !== "Enter") return;
               const first = filtered[0];
@@ -128,9 +128,9 @@ export function SearchPicker({
                       setOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors",
-                      "hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                      active && "bg-muted/60",
+                      "flex min-h-11 w-full items-center justify-between gap-3 rounded-full px-4 py-2 text-left text-sm font-medium transition-colors",
+                      "hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/20",
+                      active && "bg-muted/70",
                     )}
                   >
                     <span className="truncate">{option.label}</span>

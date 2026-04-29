@@ -15,7 +15,7 @@ export function EmptyState({ icon: Icon, title, description, compact, className,
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-muted/25 text-center",
+        "flex flex-col items-center justify-center text-center",
         compact ? "px-4 py-6" : "px-6 py-10 sm:py-12",
         className,
       )}
@@ -23,7 +23,7 @@ export function EmptyState({ icon: Icon, title, description, compact, className,
       {Icon ? (
         <div
           className={cn(
-            "flex items-center justify-center rounded-full border border-border/70 bg-background/80",
+            "flex items-center justify-center rounded-full border border-border bg-background/70",
             compact ? "mb-2 size-9" : "mb-3 size-12",
           )}
         >
@@ -38,4 +38,3 @@ export function EmptyState({ icon: Icon, title, description, compact, className,
     </div>
   );
 }
-

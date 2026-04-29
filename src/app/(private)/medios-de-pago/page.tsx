@@ -2,24 +2,16 @@ import { deletePaymentMethodAction, savePaymentMethodAction } from "@/app/action
 import { CreditCard } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
-import { PageHeader } from "@/components/app/page-header";
+import { GroupedSection } from "@/components/app/grouped-section";
+import { KineticPage } from "@/components/app/kinetic";
+import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { EmptyState } from "@/components/app/empty-state";
-import { CrudLayout } from "@/components/app/crud-layout";
 import { SubmitButton } from "@/components/app/submit-button";
 import { CheckboxLine } from "@/components/ui/checkbox-line";
 import { Input } from "@/components/ui/input";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CardPage } from "@/components/ui/card-page";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
+import { StatusPill } from "@/components/app/pill-chip";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -37,97 +29,86 @@ export default async function PaymentMethodsPage({
   });
 
   return (
-    <div className="space-y-8">
-      <PageHeader
+    <KineticPage>
+      <ScreenScaffold
         title="Medios de pago"
-        description="Cada familia puede tener sus propios medios sin compartirlos con otras."
-      />
-
-      <FlashMessage message={params.error} tone="error" />
-      <FlashMessage message={params.message} tone="success" />
-
-      <CrudLayout>
-        <CardPage>
-          <CardHeader className="pb-2">
-            <p className="stat-label">Catálogo</p>
-            <CardTitle className="section-title">Medios del hogar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {methods.length === 0 ? (
-              <EmptyState icon={CreditCard} title="Todavía no hay medios" description="Creá el primero a la derecha." compact />
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {methods.map((method) => (
-                      <TableRow key={method.id}>
-                        <TableCell className="font-medium">{method.name}</TableCell>
-                        <TableCell className="text-muted-foreground">{method.isActive ? "Activo" : "Inactivo"}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-end">
-                            <form action={savePaymentMethodAction} className="inline-form justify-end">
-                              <input type="hidden" name="id" value={method.id} />
-                              <Input
-                                name="name"
-                                defaultValue={method.name}
-                                aria-label={`Nombre ${method.name}`}
-                                className="h-10 w-full min-w-[200px] sm:w-[260px]"
-                              />
-                              <CheckboxLine name="isActive" defaultChecked={method.isActive} className="text-xs">
-                                Activo
-                              </CheckboxLine>
-                              <SubmitButton type="submit" variant="secondary" size="sm" pendingText="Guardando...">
-                                Guardar
-                              </SubmitButton>
-                            </form>
-                            <ConfirmForm
-                              action={deletePaymentMethodAction}
-                              confirm={`¿Borrar el medio “${method.name}”? Esta acción no se puede deshacer.`}
-                            >
-                              <input type="hidden" name="id" value={method.id} />
-                              <SubmitButton type="submit" variant="destructive" size="sm" pendingText="Borrando...">
-                                Borrar
-                              </SubmitButton>
-                            </ConfirmForm>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </CardPage>
-
-        <CardPage>
-          <CardHeader className="pb-2">
-            <p className="stat-label">Nuevo</p>
-            <CardTitle className="section-title">Nuevo medio</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <form action={savePaymentMethodAction} className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Nombre</Label>
-                <Input id="name" name="name" placeholder="Ej. Tarjeta Visa" required autoFocus />
+        description="Tarjetas, billeteras y medios que usa tu hogar."
+        actions={
+          <ResourceSheet title="Nuevo medio" description="Agregá una tarjeta, billetera o cuenta de pago." trigger={<ResourceCreateButton />}>
+            <form action={savePaymentMethodAction} className="space-y-4">
+              <section className="grouped-form-section space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name">Nombre</Label>
+                  <Input id="name" name="name" placeholder="Ej. Tarjeta Visa" required autoFocus />
+                </div>
+                <CheckboxLine name="isActive" defaultChecked>Dejar activo</CheckboxLine>
+              </section>
+              <div className="sheet-action-bar">
+                <SubmitButton type="submit" className="w-full" pendingText="Creando...">Crear medio</SubmitButton>
               </div>
-              <CheckboxLine name="isActive" defaultChecked>
-                Dejar activo
-              </CheckboxLine>
-              <SubmitButton type="submit" className="w-full" pendingText="Creando...">
-                Crear medio
-              </SubmitButton>
             </form>
-          </CardContent>
-        </CardPage>
-      </CrudLayout>
-    </div>
+          </ResourceSheet>
+        }
+      >
+        <FlashMessage message={params.error} tone="error" />
+        <FlashMessage message={params.message} tone="success" />
+        <GroupedSection eyebrow="Catálogo" title="Medios del hogar">
+            {methods.length === 0 ? (
+              <EmptyState
+                icon={CreditCard}
+                title="Todavía no hay medios"
+                description="Agregá tu primer medio de pago para registrar movimientos más rápido."
+                compact
+                className="m-4"
+              />
+            ) : (
+              <div>
+                {methods.map((method) => (
+                  <ResourceSheet
+                    key={method.id}
+                    title={method.name}
+                    description="Editar medio de pago"
+                    trigger={
+                      <ResourceRowShell
+                        icon={<CreditCard className="size-4" aria-hidden />}
+                        title={method.name}
+                        meta={method.isActive ? "Disponible para movimientos" : "Oculto en nuevos movimientos"}
+                        trailing={<StatusPill tone={method.isActive ? "success" : "neutral"}>{method.isActive ? "Activo" : "Inactivo"}</StatusPill>}
+                      />
+                    }
+                  >
+                    <form action={savePaymentMethodAction} className="space-y-4">
+                      <section className="grouped-form-section space-y-3">
+                        <input type="hidden" name="id" value={method.id} />
+                        <div className="space-y-1.5">
+                          <Label htmlFor={`method-${method.id}`}>Nombre</Label>
+                          <Input id={`method-${method.id}`} name="name" defaultValue={method.name} />
+                        </div>
+                        <CheckboxLine name="isActive" defaultChecked={method.isActive}>
+                          Activo
+                        </CheckboxLine>
+                      </section>
+                      <div className="sheet-action-bar">
+                        <SubmitButton type="submit" className="w-full" pendingText="Guardando...">
+                          Guardar cambios
+                        </SubmitButton>
+                      </div>
+                    </form>
+                    <section className="mt-5 rounded-[1.25rem] border border-destructive/20 bg-destructive/5 p-4">
+                      <p className="text-sm font-semibold text-destructive">Zona peligrosa</p>
+                      <ConfirmForm action={deletePaymentMethodAction} confirm={`¿Borrar el medio “${method.name}”? Esta acción no se puede deshacer.`}>
+                        <input type="hidden" name="id" value={method.id} />
+                        <SubmitButton type="submit" variant="destructive" className="mt-3 w-full" pendingText="Borrando...">
+                          Borrar
+                        </SubmitButton>
+                      </ConfirmForm>
+                    </section>
+                  </ResourceSheet>
+                ))}
+              </div>
+            )}
+        </GroupedSection>
+      </ScreenScaffold>
+    </KineticPage>
   );
 }

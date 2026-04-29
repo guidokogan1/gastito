@@ -1,5 +1,7 @@
 import "server-only";
 
+import { headers } from "next/headers";
+
 import { getPublicAppEnv } from "@/lib/env";
 import { getNeonAuth } from "@/lib/neon-auth/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -41,11 +43,32 @@ function mapNeonSession(data: unknown): AuthUser | undefined {
   return { id: user.id, email: user.email };
 }
 
+async function getNeonProviderUserReadOnly(): Promise<AuthUser | null> {
+  const { neonAuthUrl } = getPublicAppEnv();
+  if (!neonAuthUrl) return null;
+
+  const headerStore = await headers();
+  const cookie = headerStore.get("cookie");
+  if (!cookie) return null;
+
+  const response = await fetch(`${neonAuthUrl}/get-session`, {
+    method: "GET",
+    headers: {
+      cookie,
+      origin: headerStore.get("origin") ?? headerStore.get("referer")?.split("/").slice(0, 3).join("/") ?? "",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) return null;
+
+  const data = await response.json().catch(() => null);
+  return mapNeonSession(data) ?? null;
+}
+
 export async function getProviderUser(): Promise<AuthUser | null> {
   if (shouldUseNeonAuth()) {
-    const auth = getNeonAuth();
-    const { data } = await auth.getSession();
-    return mapNeonSession(data) ?? null;
+    return getNeonProviderUserReadOnly();
   }
 
   const supabase = await createSupabaseServerClient();

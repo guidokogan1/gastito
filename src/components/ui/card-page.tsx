@@ -7,8 +7,7 @@ export function CardPage({ className, ...props }: React.ComponentProps<typeof Ca
   return (
     <Card
       className={cn(
-        "card-page overflow-hidden transition-shadow duration-200",
-        "hover:shadow-[0_18px_56px_-44px_rgba(0,0,0,0.35)] dark:hover:shadow-[0_18px_56px_-44px_rgba(0,0,0,0.7)]",
+        "card-page overflow-hidden",
         className,
       )}
       {...props}

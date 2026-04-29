@@ -2,11 +2,12 @@ import Link from "next/link";
 
 import { loginAction } from "@/app/actions/auth";
 import { FlashMessage } from "@/components/flash-message";
+import { AuthScreen } from "@/components/app/auth-screen";
 import { SubmitButton } from "@/components/app/submit-button";
 import { redirectIfAuthenticated } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -19,17 +20,12 @@ export default async function LoginPage({
   const params = await searchParams;
 
   return (
-    <div className="min-h-screen px-5 py-10 sm:px-6">
-      <div className="mx-auto w-full max-w-md">
-        <Card className="card-page overflow-hidden">
-          <CardHeader className="space-y-2">
-            <p className="stat-label text-primary">Hogar Finanzas</p>
-            <h1 className="page-title">Entrá a tu hogar</h1>
-            <p className="page-description">
-              Una versión simple y compartible para manejar gastos, ingresos y organización familiar.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
+    <AuthScreen
+      eyebrow="Gastito"
+      title="Entrá a tu hogar"
+      description="Una forma calma y compartible de mirar gastos, ingresos y organización familiar."
+    >
+          <CardContent className="space-y-4 p-4 sm:p-5">
             <div className="space-y-3">
               <FlashMessage message={params.error} tone="error" />
               <FlashMessage message={params.message} />
@@ -62,8 +58,6 @@ export default async function LoginPage({
               </Button>
             </div>
           </CardContent>
-        </Card>
-      </div>
-    </div>
+    </AuthScreen>
   );
 }

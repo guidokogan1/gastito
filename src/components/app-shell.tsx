@@ -10,18 +10,27 @@ import {
 
 import { logoutAction } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
+import { BottomNav } from "@/components/app/bottom-nav";
 import { NavLink } from "@/components/app/nav-link";
 import { SubmitButton } from "@/components/app/submit-button";
 
 const links = [
-  { href: "/", label: "Resumen", icon: LayoutDashboard },
-  { href: "/movimientos", label: "Movimientos", icon: ArrowRightLeft },
-  { href: "/categorias", label: "Categorías", icon: Tags },
-  { href: "/medios-de-pago", label: "Medios de pago", icon: CreditCard },
-  { href: "/cuentas", label: "Cuentas", icon: Landmark },
-  { href: "/deudas", label: "Deudas", icon: HandCoins },
-  { href: "/gastos-fijos", label: "Gastos fijos", icon: Repeat2 },
-];
+  { href: "/", label: "Resumen", icon: LayoutDashboard, iconKey: "dashboard" },
+  { href: "/movimientos", label: "Movimientos", icon: ArrowRightLeft, iconKey: "transactions" },
+  { href: "/categorias", label: "Categorías", icon: Tags, iconKey: "categories" },
+  { href: "/medios-de-pago", label: "Medios de pago", icon: CreditCard, iconKey: "paymentMethods" },
+  { href: "/cuentas", label: "Cuentas", icon: Landmark, iconKey: "accounts" },
+  { href: "/deudas", label: "Deudas", icon: HandCoins, iconKey: "debts" },
+  { href: "/gastos-fijos", label: "Gastos fijos", icon: Repeat2, iconKey: "recurringBills" },
+] as const;
+
+const bottomNavLinks = [
+  { href: "/", label: "Resumen", iconKey: "dashboard" },
+  { href: "/movimientos", label: "Movimientos", iconKey: "transactions" },
+  { href: "/categorias", label: "Categorías", iconKey: "categories" },
+  { href: "/medios-de-pago", label: "Medios de pago", iconKey: "paymentMethods" },
+  { href: "/cuentas", label: "Cuentas", iconKey: "accounts" },
+] as const;
 
 export function AppShell({
   householdName,
@@ -32,56 +41,45 @@ export function AppShell({
   userEmail: string;
   children: React.ReactNode;
 }) {
+  const initials = householdName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="border-b border-border/70 bg-sidebar/40 backdrop-blur-sm lg:border-b-0 lg:border-r">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-5 sm:p-6 lg:max-w-none lg:p-8">
-          <header className="space-y-1">
-            <p className="stat-label text-sidebar-primary">Hogar Finanzas</p>
-            <h1 className="text-[1.15rem] font-semibold tracking-tight text-sidebar-foreground">
-              {householdName}
-            </h1>
-            <p className="text-sm text-muted-foreground">{userEmail}</p>
+    <div className="app-shell">
+      <aside className="app-sidebar">
+        <div className="app-sidebar-inner">
+          <header className="app-brand-card">
+            <div className="flex items-center gap-3">
+              <div className="app-avatar">{initials || "G"}</div>
+              <div className="min-w-0">
+                <p className="stat-label text-sidebar-primary">Gastito</p>
+                <h1 className="truncate text-[1.05rem] font-semibold tracking-[-0.03em] text-sidebar-foreground">
+                  {householdName}
+                </h1>
+              </div>
+            </div>
+            <p className="mt-3 truncate text-sm font-medium text-muted-foreground">{userEmail}</p>
           </header>
 
-          <details className="rounded-2xl border border-border/70 bg-background/40 p-1 lg:hidden">
-            <summary className="pressable cursor-pointer list-none rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
-              Menú
-            </summary>
-            <nav className="mt-1 grid gap-1 pb-1">
-              {links.map((link) => (
-                <NavLink
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "pressable flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                  )}
-                  activeClassName="bg-sidebar-accent/80 text-sidebar-accent-foreground"
-                >
-                  <link.icon className="size-4 text-muted-foreground" aria-hidden />
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          </details>
-
-          <nav className="hidden gap-1 lg:grid">
+          <nav className="grid gap-1">
             {links.map((link) => (
               <NavLink
                 key={link.href}
                 href={link.href}
-                className={cn(
-                  "pressable flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                )}
-                activeClassName="bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                className={cn("side-nav-link")}
+                activeClassName="side-nav-link-active"
               >
-                <link.icon className="size-4 text-muted-foreground" aria-hidden />
+                <link.icon className="size-4" aria-hidden />
                 {link.label}
               </NavLink>
             ))}
           </nav>
 
-          <form action={logoutAction} className="pt-1">
+          <form action={logoutAction} className="mt-auto">
             <SubmitButton type="submit" variant="secondary" className="w-full" pendingText="Saliendo...">
               Cerrar sesión
             </SubmitButton>
@@ -89,9 +87,17 @@ export function AppShell({
         </div>
       </aside>
 
-      <main id="content" className="mx-auto w-full max-w-6xl p-5 sm:p-6 lg:max-w-none lg:p-8">
-        <div className="page-enter space-y-8">{children}</div>
+      <main id="content" className="app-main">
+        <header className="mobile-topbar">
+          <div className="min-w-0">
+            <p className="stat-label">Gastito</p>
+            <p className="truncate text-base font-semibold tracking-[-0.03em]">{householdName}</p>
+          </div>
+          <div className="app-avatar size-10">{initials || "G"}</div>
+        </header>
+        <div className="page-enter">{children}</div>
       </main>
+      <BottomNav links={bottomNavLinks} />
     </div>
   );
 }

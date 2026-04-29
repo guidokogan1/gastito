@@ -1,9 +1,31 @@
 import type { NextConfig } from "next";
 
+function optionalOrigin(value: string | undefined) {
+  if (!value) return null;
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
 const nextConfig: NextConfig = {
   devIndicators: false,
   serverExternalPackages: ["@prisma/client"],
   async headers() {
+    const connectSources = [
+      "'self'",
+      "https://*.supabase.co",
+      "wss://*.supabase.co",
+      "https://*.neon.tech",
+      "https://*.neonauth.us-east-1.aws.neon.tech",
+      "https://*.neonauth.us-west-2.aws.neon.tech",
+      "https://*.neonauth.eu-central-1.aws.neon.tech",
+      "https://*.neonauth.ap-southeast-1.aws.neon.tech",
+      optionalOrigin(process.env.NEON_AUTH_URL),
+    ].filter(Boolean);
+
     const csp = [
       "default-src 'self'",
       "base-uri 'self'",
@@ -13,7 +35,7 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob:",
       "style-src 'self' 'unsafe-inline'",
       "script-src 'self' 'unsafe-inline'",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.neon.tech https://*.neonauth.*.neon.tech",
+      `connect-src ${connectSources.join(" ")}`,
     ].join("; ");
     const securityHeaders = [
       { key: "X-Content-Type-Options", value: "nosniff" },

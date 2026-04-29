@@ -1,6 +1,6 @@
 import { deleteTransactionAction, saveTransactionAction } from "@/app/actions/resources";
-import { FlashMessage } from "@/components/flash-message";
-import { PageHeader } from "@/components/app/page-header";
+import { QueryToast } from "@/components/app/query-toast";
+import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { MonthSelector } from "@/components/app/month-selector";
 import { TransactionsPanel } from "@/components/app/transactions-panel";
 import { requireHousehold } from "@/lib/auth";
@@ -82,18 +82,12 @@ export default async function TransactionsPage({
   ]);
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Movimientos"
-        description="El corazón del producto: manual, simple y 100% orientado a ARS."
-        actions={<MonthSelector value={monthKey} availableMonths={availableMonths} label="Período" />}
-      />
-
-      <FlashMessage message={params.error} tone="error" />
-      <FlashMessage message={params.message} tone="success" />
+    <ScreenScaffold title="Movimientos">
+      <QueryToast message={params.message} error={params.error} />
 
       <TransactionsPanel
         monthKey={monthKey}
+        monthControl={<MonthSelector value={monthKey} availableMonths={availableMonths} variant="pill" />}
         transactions={transactions.map((t) => ({
           id: t.id,
           date: t.date,
@@ -113,6 +107,6 @@ export default async function TransactionsPage({
         saveAction={saveTransactionAction}
         deleteAction={deleteTransactionAction}
       />
-    </div>
+    </ScreenScaffold>
   );
 }

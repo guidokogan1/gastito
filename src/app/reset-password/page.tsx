@@ -1,10 +1,11 @@
 import { updatePasswordAction } from "@/app/actions/auth";
 import { FlashMessage } from "@/components/flash-message";
+import { AuthScreen } from "@/components/app/auth-screen";
 import { SubmitButton } from "@/components/app/submit-button";
 import { requireUser } from "@/lib/auth";
 import { getPublicAppEnv } from "@/lib/env";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -20,15 +21,12 @@ export default async function ResetPasswordPage({
   const params = await searchParams;
 
   return (
-    <div className="min-h-screen px-5 py-10 sm:px-6">
-      <div className="mx-auto w-full max-w-md">
-        <Card className="card-page overflow-hidden">
-          <CardHeader className="space-y-2">
-            <p className="stat-label text-primary">Contraseña nueva</p>
-            <h1 className="page-title">Elegí una contraseña nueva</h1>
-            <p className="page-description">Usá al menos 8 caracteres para que tu acceso quede bien protegido.</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
+    <AuthScreen
+      eyebrow="Contraseña nueva"
+      title="Elegí una contraseña nueva"
+      description="Usá al menos 8 caracteres para que tu acceso quede bien protegido."
+    >
+          <CardContent className="space-y-4 p-4 sm:p-5">
             <FlashMessage message={params.error} tone="error" />
 
             <form action={updatePasswordAction} className="space-y-3">
@@ -44,8 +42,6 @@ export default async function ResetPasswordPage({
               </SubmitButton>
             </form>
           </CardContent>
-        </Card>
-      </div>
-    </div>
+    </AuthScreen>
   );
 }

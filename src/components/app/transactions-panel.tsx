@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  BadgePercent,
+  Banknote,
   Car,
   Check,
   ChevronRight,
@@ -26,10 +28,12 @@ import {
   Trash2,
   Utensils,
   Wifi,
+  RotateCcw,
   type LucideIcon,
 } from "lucide-react";
 
 import { formatArs, moneyInputValue, toNumber } from "@/lib/format";
+import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
 import { FinanceList, FinanceRow } from "@/components/app/finance-list";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { KineticCard, KineticPage } from "@/components/app/kinetic";
@@ -69,8 +73,24 @@ function optionName(options: SelectOption[], id: string) {
   return options.find((o) => o.id === id)?.name ?? null;
 }
 
+function normalizeOptionLabel(name?: string | null) {
+  return (name ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+}
+
+const INCOME_CATEGORY_NAMES = new Set(DEFAULT_INCOME_CATEGORIES.map(normalizeOptionLabel));
+const INCOME_CATEGORY_ORDER = new Map(
+  DEFAULT_INCOME_CATEGORIES.map((name, index) => [normalizeOptionLabel(name), index]),
+);
+
+function isIncomeCategoryName(name?: string | null) {
+  return INCOME_CATEGORY_NAMES.has(normalizeOptionLabel(name));
+}
+
 function getCategoryIcon(name?: string | null, type: "expense" | "income" = "expense"): LucideIcon {
-  const normalized = (name ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  const normalized = normalizeOptionLabel(name);
+  if (normalized.includes("sueldo")) return Banknote;
+  if (normalized.includes("devolucion")) return RotateCcw;
+  if (normalized.includes("descuento")) return BadgePercent;
   if (type === "income") return ArrowDownLeft;
   if (normalized.includes("comida") || normalized.includes("super")) return Utensils;
   if (normalized.includes("educ")) return GraduationCap;
@@ -319,6 +339,29 @@ export function TransactionsPanel({
     [accounts, formAccountId],
   );
 
+  const expenseCategories = useMemo(
+    () => categories.filter((category) => !isIncomeCategoryName(category.name)),
+    [categories],
+  );
+  const incomeCategories = useMemo(
+    () =>
+      categories
+        .filter((category) => isIncomeCategoryName(category.name))
+        .sort(
+          (a, b) =>
+            (INCOME_CATEGORY_ORDER.get(normalizeOptionLabel(a.name)) ?? 99) -
+            (INCOME_CATEGORY_ORDER.get(normalizeOptionLabel(b.name)) ?? 99),
+        ),
+    [categories],
+  );
+  const formCategoryOptions = formType === "income" ? incomeCategories : expenseCategories;
+  const filterCategoryOptions =
+    typeFilter === "income" ? incomeCategories : typeFilter === "expense" ? expenseCategories : categories;
+  const categoryLabel = formType === "income" ? "Categoría de ingreso" : "Categoría";
+  const paymentMethodLabel = formType === "income" ? "Cómo entró" : "Medio de pago";
+  const paymentMethodEmptyLabel = formType === "income" ? "Sin canal" : "Sin medio";
+  const accountLabel = formType === "income" ? "A dónde llegó" : "Cuenta";
+
   useEffect(() => {
     if (!drawerOpen) return;
     setFormType((selected?.type ?? "expense") as "expense" | "income");
@@ -334,6 +377,18 @@ export function TransactionsPanel({
     selected?.paymentMethodId,
     selected?.type,
   ]);
+
+  useEffect(() => {
+    if (!formCategoryId) return;
+    if (formCategoryOptions.some((category) => category.id === formCategoryId)) return;
+    setFormCategoryId("");
+  }, [formCategoryId, formCategoryOptions]);
+
+  useEffect(() => {
+    if (categoryFilterId === "all" || categoryFilterId === "none") return;
+    if (filterCategoryOptions.some((category) => category.id === categoryFilterId)) return;
+    setCategoryFilterId("all");
+  }, [categoryFilterId, filterCategoryOptions]);
 
   const metrics = useMemo(() => {
     const expenses = filteredTransactions
@@ -479,11 +534,6 @@ export function TransactionsPanel({
                       <button type="button" className="pressable" onClick={() => setTypeFilter("income")}>
                         <PillChip active={typeFilter === "income"}>Ingresos</PillChip>
                       </button>
-                      <button type="button" className="pressable" onClick={() => setFiltersOpen(true)}>
-                        <PillChip icon={Filter} active={activeFilterCount > 0} count={activeFilterCount}>
-                          Filtros
-                        </PillChip>
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -590,7 +640,7 @@ export function TransactionsPanel({
               options={[
                 { value: "all", label: "Todas" },
                 { value: "none", label: "Sin categoría" },
-                ...categories.map((category) => ({ value: category.id, label: category.name })),
+                ...filterCategoryOptions.map((category) => ({ value: category.id, label: category.name })),
               ]}
             />
 
@@ -751,7 +801,12 @@ export function TransactionsPanel({
 
             <div className="space-y-2">
               <Label htmlFor="detail">Detalle</Label>
-              <Input id="detail" name="detail" placeholder="Ej. Compra semanal" defaultValue={selected?.detail ?? ""} />
+              <Input
+                id="detail"
+                name="detail"
+                placeholder={formType === "income" ? "Ej. Sueldo abril" : "Ej. Compra semanal"}
+                defaultValue={selected?.detail ?? ""}
+              />
             </div>
           </section>
 
@@ -763,19 +818,19 @@ export function TransactionsPanel({
             <div className="divide-y divide-border/60">
               <SettingPickerRow
                 icon={getCategoryIcon(selectedCategoryName, formType)}
-                label="Categoría"
+                label={categoryLabel}
                 value={selectedCategoryName ?? "Sin categoría"}
                 onClick={() => setPickerOpen("category")}
               />
               <SettingPickerRow
                 icon={CreditCard}
-                label="Medio de pago"
-                value={selectedMethodName ?? "Sin medio"}
+                label={paymentMethodLabel}
+                value={selectedMethodName ?? paymentMethodEmptyLabel}
                 onClick={() => setPickerOpen("method")}
               />
               <SettingPickerRow
                 icon={Landmark}
-                label="Cuenta"
+                label={accountLabel}
                 value={selectedAccountName ?? "Sin cuenta"}
                 onClick={() => setPickerOpen("account")}
               />
@@ -836,10 +891,10 @@ export function TransactionsPanel({
         open={pickerOpen !== null}
         title={
           pickerOpen === "category"
-            ? "Categoría"
+            ? categoryLabel
             : pickerOpen === "method"
-              ? "Medio de pago"
-              : "Cuenta"
+              ? paymentMethodLabel
+              : accountLabel
         }
         description="Elegí una opción para el movimiento."
         onClose={() => setPickerOpen(null)}
@@ -849,7 +904,7 @@ export function TransactionsPanel({
             value={formCategoryId}
             options={[
               { value: "", label: "Sin categoría" },
-              ...categories.map((category) => ({ value: category.id, label: category.name })),
+              ...formCategoryOptions.map((category) => ({ value: category.id, label: category.name })),
             ]}
             onValueChange={(value) => {
               setFormCategoryId(value);

@@ -13,6 +13,12 @@ export const DEFAULT_CATEGORIES = [
   "Otros",
 ];
 
+export const DEFAULT_INCOME_CATEGORIES = [
+  "Sueldo",
+  "Devolución",
+  "Descuento",
+];
+
 export const DEFAULT_PAYMENT_METHODS = [
   "Efectivo",
   "Debito",

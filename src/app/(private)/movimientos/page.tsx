@@ -4,6 +4,7 @@ import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { MonthSelector } from "@/components/app/month-selector";
 import { TransactionsPanel } from "@/components/app/transactions-panel";
 import { requireHousehold } from "@/lib/auth";
+import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
 import { prisma } from "@/lib/db";
 
 function monthRange(monthKey: string) {
@@ -34,6 +35,16 @@ export default async function TransactionsPage({
   const monthKey = monthRange(params.month ?? "") ? String(params.month) : currentMonthKey();
   const range = monthRange(monthKey) ?? monthRange(currentMonthKey());
   if (!range) throw new Error("No se pudo calcular el rango del mes.");
+
+  await Promise.all(
+    DEFAULT_INCOME_CATEGORIES.map((name) =>
+      prisma.category.upsert({
+        where: { householdId_name: { householdId: household.id, name } },
+        update: { isActive: true, deletedAt: null },
+        create: { householdId: household.id, name },
+      }),
+    ),
+  );
 
   const monthBuckets = await prisma.$queryRaw<{ month: string; count: number }[]>`
     SELECT

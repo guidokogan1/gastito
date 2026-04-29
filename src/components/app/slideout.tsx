@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -27,8 +28,10 @@ export function Slideout({
   titleSize?: "compact" | "large" | "small";
 }) {
   const [isDesktop, setIsDesktop] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const query = window.matchMedia("(min-width: 1024px)");
     setIsDesktop(query.matches);
     const onChange = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
@@ -47,7 +50,9 @@ export function Slideout({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <>
@@ -96,6 +101,7 @@ export function Slideout({
           </motion.aside>
         </>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

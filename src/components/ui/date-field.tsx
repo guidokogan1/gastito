@@ -237,7 +237,6 @@ export function DateField({
         open={open}
         title="Elegí la fecha"
         description={draftDate ? format(draftDate, "d 'de' MMMM, yyyy", { locale: es }) : "Sin fecha seleccionada"}
-        className="min-h-[72dvh] lg:min-h-0"
         onClose={() => setOpen(false)}
       >
         {calendar}

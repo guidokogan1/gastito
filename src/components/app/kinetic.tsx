@@ -38,15 +38,17 @@ export function KineticCard({
   transition,
   ...props
 }: React.ComponentProps<typeof motion.div> & MotionProps) {
+  const tapProps = whileTap === undefined ? {} : { whileTap };
+
   return (
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 4 },
         show: { opacity: 1, y: 0, transition: spring },
       }}
-      whileTap={whileTap ?? { scale: 0.985 }}
       transition={transition ?? spring}
       className={cn("motion-reduce:transform-none", className)}
+      {...tapProps}
       {...props}
     />
   );

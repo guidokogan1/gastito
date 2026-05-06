@@ -1,5 +1,5 @@
 import { deleteDebtAction, saveDebtAction } from "@/app/actions/resources";
-import { HandCoins } from "lucide-react";
+import { HandCoins, Trash2 } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { KineticPage } from "@/components/app/kinetic";
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
 import { PillChip, StatusPill } from "@/components/app/pill-chip";
-import { DangerZone } from "@/components/app/danger-zone";
+import { Button } from "@/components/ui/button";
 import { MoneyField } from "@/components/app/money-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -115,9 +115,8 @@ export default async function DebtsPage({
     <KineticPage>
       <ScreenScaffold
         title="Deudas"
-        description="Saldos simples para saber qué debemos y qué nos deben."
         actions={
-          <ResourceSheet title="Nueva deuda" description="Registrá un saldo pendiente." trigger={<ResourceCreateButton />}>
+          <ResourceSheet title="Nueva deuda" trigger={<ResourceCreateButton />}>
             {debtForm({ prefix: "new-debt" })}
           </ResourceSheet>
         }
@@ -136,7 +135,14 @@ export default async function DebtsPage({
                   <ResourceSheet
                     key={debt.id}
                     title={debt.entityName}
-                    description="Editar deuda"
+                    headerAction={
+                      <ConfirmForm action={deleteDebtAction} confirm={`¿Borrar la deuda “${debt.entityName}”? Esta acción no se puede deshacer.`}>
+                        <input type="hidden" name="id" value={debt.id} />
+                        <Button type="submit" variant="ghost" size="icon" className="text-destructive hover:text-destructive" aria-label="Borrar deuda">
+                          <Trash2 className="size-4" aria-hidden />
+                        </Button>
+                      </ConfirmForm>
+                    }
                     trigger={
                       <ResourceRowShell
                         icon={<HandCoins className="size-4" aria-hidden />}
@@ -156,14 +162,6 @@ export default async function DebtsPage({
                       notes: debt.notes,
                       isActive: debt.isActive,
                     })}
-                    <DangerZone description="También podés marcarla como cerrada desactivándola si querés conservar el registro.">
-                      <ConfirmForm action={deleteDebtAction} confirm={`¿Borrar la deuda “${debt.entityName}”? Esta acción no se puede deshacer.`}>
-                        <input type="hidden" name="id" value={debt.id} />
-                        <SubmitButton type="submit" variant="destructive" className="w-full" pendingText="Borrando...">
-                          Borrar deuda
-                        </SubmitButton>
-                      </ConfirmForm>
-                    </DangerZone>
                   </ResourceSheet>
                 );
               })}

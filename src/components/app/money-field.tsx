@@ -15,6 +15,7 @@ export function MoneyField({
   required = true,
   className,
   inputClassName,
+  showPreview = true,
 }: {
   id: string;
   name: string;
@@ -23,6 +24,7 @@ export function MoneyField({
   required?: boolean;
   className?: string;
   inputClassName?: string;
+  showPreview?: boolean;
 }) {
   const [value, setValue] = useState(defaultValue);
   const preview = useMemo(() => {
@@ -52,9 +54,9 @@ export function MoneyField({
           inputClassName,
         )}
       />
-      <p className="min-h-5 text-center text-sm font-medium text-muted-foreground">
-        {preview ?? "Ingresá el importe en ARS"}
-      </p>
+      {showPreview ? (
+        <p className="min-h-5 text-center text-sm font-medium text-muted-foreground">{preview ?? "Ingresá el importe en ARS"}</p>
+      ) : null}
     </div>
   );
 }

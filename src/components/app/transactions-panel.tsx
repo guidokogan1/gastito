@@ -281,6 +281,7 @@ export function TransactionsPanel({
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week">("all");
   const [sortBy, setSortBy] = useState<"date-desc" | "amount-desc" | "amount-asc">("date-desc");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [formType, setFormType] = useState<"expense" | "income">("expense");
   const [formDate, setFormDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [formCategoryId, setFormCategoryId] = useState<string>("");
@@ -381,9 +382,6 @@ export function TransactionsPanel({
 
   const formKey = selected?.id ?? "new";
   const panelTitle = selected ? "Editar movimiento" : "Nuevo movimiento";
-  const panelSubtitle = selected
-    ? "Ajustá fecha, monto, tipo y categorías. Guardá para aplicar cambios."
-    : "Cargá un ingreso o gasto. Todo queda dentro de tu hogar.";
 
   const selectedCategoryName = useMemo(
     () => (formCategoryId ? optionName(categories, formCategoryId) : null),
@@ -480,15 +478,6 @@ export function TransactionsPanel({
     (methodFilterId !== "all" ? 1 : 0) +
     (dateFilter !== "all" ? 1 : 0);
 
-  const monthLabel = useMemo(() => {
-    const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
-    if (!match) return monthKey;
-    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
-    const raw = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(date);
-    const withoutDe = raw.replace(/\s+de\s+/i, " ");
-    return withoutDe.charAt(0).toUpperCase() + withoutDe.slice(1);
-  }, [monthKey]);
-
   return (
     <KineticPage className="space-y-5">
       <KineticCard>
@@ -526,7 +515,7 @@ export function TransactionsPanel({
             </div>
           </div>
           <div>
-            {transactions.length === 0 ? (
+                {transactions.length === 0 ? (
               <EmptyState
                 icon={ArrowUpRight}
                 title="Todavía no cargaste movimientos"
@@ -546,7 +535,7 @@ export function TransactionsPanel({
               </EmptyState>
             ) : (
               <div className="space-y-4">
-                <div className="finance-summary-strip">
+                <div className="finance-summary-strip rounded-[1.25rem] bg-[var(--surface-pill)] px-4 py-3">
                   <div className="finance-summary-cell">
                     <p className="stat-label">Gastos</p>
                     <p className="money-row mt-1 text-foreground">{formatArs(metrics.expenses)}</p>
@@ -571,16 +560,24 @@ export function TransactionsPanel({
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <div className="relative flex-1">
-                    <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                    <Input
-                      id="tx-search"
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Buscar movimiento"
-                      className="h-13 rounded-[1.25rem] pl-11 text-[1.05rem]"
-                    />
-                  </div>
+                  {searchOpen ? (
+                    <div className="relative flex-1">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                      <Input
+                        id="tx-search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Buscar movimiento"
+                        className="h-13 rounded-[1.25rem] pl-11 text-[1.05rem]"
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <Button type="button" variant="secondary" className="w-full justify-start rounded-[1.25rem]" onClick={() => setSearchOpen(true)}>
+                      <Search className="size-5 text-muted-foreground" aria-hidden />
+                      Buscar movimiento
+                    </Button>
+                  )}
                   <div className="space-y-3">
                     <div className="mobile-scroll-row">
                       <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
@@ -789,7 +786,7 @@ export function TransactionsPanel({
       <Slideout
         open={drawerOpen}
         title={panelTitle}
-        description={selected ? undefined : `Cargar ${monthLabel}`}
+        description={undefined}
         titleSize="small"
         headerAction={
           selected ? (
@@ -810,12 +807,6 @@ export function TransactionsPanel({
           setSelectedId(null);
         }}
       >
-        {!selected ? (
-          <div className="border-b border-border pb-4">
-            <p className="text-sm text-muted-foreground">{panelSubtitle}</p>
-          </div>
-        ) : null}
-
         <form key={formKey} action={saveAction} className="mt-4 space-y-5">
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
           <input type="hidden" name="type" value={formType} />
@@ -825,32 +816,27 @@ export function TransactionsPanel({
           <input type="hidden" name="accountId" value={formAccountId} />
 
           <section className="grouped-form-section space-y-5">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm font-medium">Datos</p>
-              <p className="text-xs text-muted-foreground">{selected ? "Editando" : "Nuevo"}</p>
-            </div>
             <div className="space-y-2 text-center">
               <MoneyField
                 id="amount"
                 name="amount"
                 defaultValue={selected ? moneyInputValue(selected.amount) : ""}
+                showPreview={false}
               />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-2 rounded-full bg-[var(--surface-pill)] p-1">
               <Button
                 type="button"
-                variant={formType === "expense" ? "default" : "outline"}
-                size="sm"
-                className={cn("h-9 rounded-full", formType !== "expense" && "bg-background")}
+                variant={formType === "expense" ? "default" : "ghost"}
+                className="h-11 rounded-full"
                 onClick={() => setFormType("expense")}
               >
                 Gasto
               </Button>
               <Button
                 type="button"
-                variant={formType === "income" ? "default" : "outline"}
-                size="sm"
-                className={cn("h-9 rounded-full", formType !== "income" && "bg-background")}
+                variant={formType === "income" ? "default" : "ghost"}
+                className="h-11 rounded-full"
                 onClick={() => setFormType("income")}
               >
                 Ingreso
@@ -859,6 +845,12 @@ export function TransactionsPanel({
 
             <div className="space-y-2">
               <Label htmlFor="date">Fecha</Label>
+              <DateField
+                id="date"
+                required
+                value={formDate}
+                onValueChange={setFormDate}
+              />
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
@@ -889,13 +881,21 @@ export function TransactionsPanel({
                 >
                   Ayer
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-9 rounded-full"
+                  onClick={() => {
+                    const today = new Date();
+                    const twoDaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2);
+                    const value = twoDaysAgo.toISOString().slice(0, 10);
+                    setFormDate(value);
+                  }}
+                >
+                  Hace 2 días
+                </Button>
               </div>
-              <DateField
-                id="date"
-                required
-                value={formDate}
-                onValueChange={setFormDate}
-              />
             </div>
 
             <div className="space-y-2">

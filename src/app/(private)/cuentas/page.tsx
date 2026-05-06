@@ -1,5 +1,5 @@
 import { deleteAccountAction, saveAccountAction } from "@/app/actions/resources";
-import { Landmark } from "lucide-react";
+import { Landmark, Trash2 } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
@@ -7,13 +7,11 @@ import { KineticPage } from "@/components/app/kinetic";
 import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
-import { CheckboxLine } from "@/components/ui/checkbox-line";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
-import { StatusPill } from "@/components/app/pill-chip";
-import { DangerZone } from "@/components/app/danger-zone";
+import { Button } from "@/components/ui/button";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -43,12 +41,12 @@ export default async function AccountsPage({
   return (
     <KineticPage>
       <ScreenScaffold
-        title="Cuentas"
-        description="Separá efectivo, banco y billeteras sin ruido administrativo."
+        title="Bancos"
         actions={
-          <ResourceSheet title="Nueva cuenta" description="Agregá una cuenta para ordenar movimientos." trigger={<ResourceCreateButton />}>
+          <ResourceSheet title="Nueva cuenta" trigger={<ResourceCreateButton />}>
             <form action={saveAccountAction} className="space-y-4">
               <section className="grouped-form-section space-y-3">
+                <input type="hidden" name="isActive" value="on" />
                 <div className="space-y-1.5">
                   <Label htmlFor="name">Nombre</Label>
                   <Input id="name" name="name" placeholder="Ej. Cuenta sueldo" required autoFocus />
@@ -59,7 +57,6 @@ export default async function AccountsPage({
                     {ACCOUNT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </NativeSelect>
                 </div>
-                <CheckboxLine name="isActive" defaultChecked>Dejar activa</CheckboxLine>
               </section>
               <div className="sheet-action-bar">
                 <SubmitButton type="submit" className="w-full" pendingText="Creando...">Crear cuenta</SubmitButton>
@@ -70,7 +67,7 @@ export default async function AccountsPage({
       >
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <GroupedSection eyebrow="Catálogo" title="Cuentas del hogar">
+        <GroupedSection title="Bancos">
             {accounts.length === 0 ? (
               <EmptyState
                 icon={Landmark}
@@ -85,19 +82,26 @@ export default async function AccountsPage({
                   <ResourceSheet
                     key={account.id}
                     title={account.name}
-                    description="Editar cuenta"
+                    headerAction={
+                      <ConfirmForm action={deleteAccountAction} confirm={`¿Borrar la cuenta “${account.name}”? Esta acción no se puede deshacer.`}>
+                        <input type="hidden" name="id" value={account.id} />
+                        <Button type="submit" variant="ghost" size="icon" className="text-destructive hover:text-destructive" aria-label="Borrar cuenta">
+                          <Trash2 className="size-4" aria-hidden />
+                        </Button>
+                      </ConfirmForm>
+                    }
                     trigger={
                       <ResourceRowShell
                         icon={<Landmark className="size-4" aria-hidden />}
                         title={account.name}
                         meta={ACCOUNT_TYPE_LABEL[account.type] ?? account.type}
-                        trailing={<StatusPill tone={account.isActive ? "success" : "neutral"}>{account.isActive ? "Activa" : "Inactiva"}</StatusPill>}
                       />
                     }
                   >
                     <form action={saveAccountAction} className="space-y-4">
                       <section className="grouped-form-section space-y-3">
                         <input type="hidden" name="id" value={account.id} />
+                        <input type="hidden" name="isActive" value="on" />
                         <div className="space-y-1.5">
                           <Label htmlFor={`account-${account.id}`}>Nombre</Label>
                           <Input id={`account-${account.id}`} name="name" defaultValue={account.name} />
@@ -117,22 +121,11 @@ export default async function AccountsPage({
                           ))}
                         </NativeSelect>
                         </div>
-                        <CheckboxLine name="isActive" defaultChecked={account.isActive}>
-                          Activa
-                        </CheckboxLine>
                       </section>
                       <div className="sheet-action-bar">
                         <SubmitButton type="submit" className="w-full" pendingText="Guardando...">Guardar cambios</SubmitButton>
                       </div>
                     </form>
-                    <DangerZone description="Si la cuenta ya registra movimientos, conviene dejarla inactiva para no perder contexto histórico.">
-                      <ConfirmForm action={deleteAccountAction} confirm={`¿Borrar la cuenta “${account.name}”? Esta acción no se puede deshacer.`}>
-                        <input type="hidden" name="id" value={account.id} />
-                        <SubmitButton type="submit" variant="destructive" className="w-full" pendingText="Borrando...">
-                          Borrar
-                        </SubmitButton>
-                      </ConfirmForm>
-                    </DangerZone>
                   </ResourceSheet>
                 ))}
               </div>

@@ -76,7 +76,7 @@ export function BottomNav({ links }: { links: readonly BottomNavLink[] }) {
 
 function BottomNavItem({ link }: { link: BottomNavLink }) {
   const Icon = icons[link.iconKey];
-  const shortLabel = link.iconKey === "paymentMethods" ? "Medios" : link.label;
+  const shortLabel = link.iconKey === "recurringBills" ? "Fijos" : link.label;
 
   return (
     <NavLink href={link.href} className={cn("bottom-nav-item")} activeClassName="bottom-nav-item-active">

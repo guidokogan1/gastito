@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/app/bottom-nav";
 import { NavLink } from "@/components/app/nav-link";
 import { SubmitButton } from "@/components/app/submit-button";
-import { FloatingPrimaryAction } from "@/components/app/floating-primary-action";
 
 const links = [
   { href: "/", label: "Resumen", icon: LayoutDashboard, iconKey: "dashboard" },
@@ -28,11 +27,11 @@ const links = [
 const bottomNavLinks = [
   { href: "/", label: "Resumen", iconKey: "dashboard" },
   { href: "/movimientos", label: "Movimientos", iconKey: "transactions" },
+  { href: "/gastos-fijos", label: "Gastos fijos", iconKey: "recurringBills" },
+  { href: "/deudas", label: "Deudas", iconKey: "debts" },
   { href: "/categorias", label: "Categorías", iconKey: "categories" },
   { href: "/medios-de-pago", label: "Medios de pago", iconKey: "paymentMethods" },
-  { href: "/cuentas", label: "Cuentas", iconKey: "accounts" },
-  { href: "/deudas", label: "Deudas", iconKey: "debts" },
-  { href: "/gastos-fijos", label: "Gastos fijos", iconKey: "recurringBills" },
+  { href: "/cuentas", label: "Bancos", iconKey: "accounts" },
 ] as const;
 
 export function AppShell({
@@ -100,7 +99,6 @@ export function AppShell({
         </header>
         <div className="page-enter">{children}</div>
       </main>
-      <FloatingPrimaryAction />
       <BottomNav links={bottomNavLinks} />
     </div>
   );

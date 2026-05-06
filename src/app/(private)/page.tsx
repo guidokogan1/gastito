@@ -5,15 +5,21 @@ import { GroupedSection } from "@/components/app/grouped-section";
 import { FlashMessage } from "@/components/flash-message";
 import { KineticPage } from "@/components/app/kinetic";
 import { FinanceList, FinanceRow } from "@/components/app/finance-list";
-import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { EmptyState } from "@/components/app/empty-state";
 import { FinancialAmount } from "@/components/app/financial-amount";
 import { Button } from "@/components/ui/button";
-import { MonthSelector } from "@/components/app/month-selector";
 import { DashboardSignalList, type DashboardSignal } from "@/components/app/dashboard-signal-list";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
 import { formatArs, formatDate } from "@/lib/format";
+
+function formatMonthLabel(key: string) {
+  const [yearRaw, monthRaw] = key.split("-");
+  const date = new Date(Number(yearRaw), Number(monthRaw) - 1, 1);
+  const raw = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(date);
+  const withoutDe = raw.replace(/\s+de\s+/i, " ");
+  return withoutDe.charAt(0).toUpperCase() + withoutDe.slice(1);
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -77,22 +83,27 @@ export default async function DashboardPage({
   }
 
   const visibleSignals = signals.slice(0, 3);
+  const monthLabel = formatMonthLabel(snapshot.monthKey);
 
   return (
-    <KineticPage className="space-y-5">
-      <ScreenScaffold
-        title="Resumen"
-        actions={
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <MonthSelector value={snapshot.monthKey} availableMonths={snapshot.availableMonths} variant="pill" />
-            <Button asChild size="icon" aria-label="Cargar movimiento">
+    <KineticPage className="space-y-6">
+      <header className="space-y-5 pt-1">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[0.96rem] font-semibold text-muted-foreground">Hola,</p>
+            <h1 className="screen-title mt-1 truncate">{household.name}</h1>
+          </div>
+          <Button asChild size="icon" aria-label="Cargar movimiento" className="mt-1">
               <Link href={`/movimientos?month=${snapshot.monthKey}&compose=1`}>
                 <Plus className="size-5" aria-hidden />
               </Link>
             </Button>
-          </div>
-        }
-      >
+        </div>
+        <p className="inline-flex min-h-9 items-center rounded-full bg-[var(--surface-pill)] px-3 text-sm font-semibold text-muted-foreground">
+          Viendo {monthLabel}
+        </p>
+      </header>
+
         <FlashMessage message={params.message} tone="success" />
         {snapshot.degraded ? (
           <FlashMessage
@@ -103,9 +114,8 @@ export default async function DashboardPage({
 
         <section className="space-y-4 border-b border-border/70 pb-5">
           <div className="space-y-4">
-            <p className="text-[0.96rem] font-semibold text-muted-foreground">Hola, {household.name}.</p>
             <div>
-              <p className="text-[1rem] font-semibold text-foreground">Gastos del mes</p>
+              <p className="text-[1rem] font-semibold text-foreground">Este mes gastaste</p>
               <p className="money-hero mt-1">{formatArs(snapshot.expenses)}</p>
             </div>
             <div className="rounded-[1.15rem] bg-[var(--surface-pill)] px-4 py-3">
@@ -132,7 +142,7 @@ export default async function DashboardPage({
               </p>
             </div>
             <div className="finance-summary-cell">
-              <p className="stat-label">Proyección</p>
+            <p className="stat-label">Proyección</p>
               <p className="money-row mt-1">
                 {formatArs(snapshot.projectedExpenses)}
               </p>
@@ -190,7 +200,6 @@ export default async function DashboardPage({
             </section>
           </>
         )}
-      </ScreenScaffold>
     </KineticPage>
   );
 }

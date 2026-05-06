@@ -1,5 +1,5 @@
 import { deleteRecurringBillAction, saveRecurringBillAction } from "@/app/actions/resources";
-import { Repeat2 } from "lucide-react";
+import { Repeat2, Trash2 } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { KineticPage } from "@/components/app/kinetic";
@@ -16,7 +16,7 @@ import { MoneyField } from "@/components/app/money-field";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
 import { StatusPill } from "@/components/app/pill-chip";
-import { DangerZone } from "@/components/app/danger-zone";
+import { Button } from "@/components/ui/button";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, moneyInputValue } from "@/lib/format";
@@ -124,9 +124,8 @@ export default async function BillsPage({
     <KineticPage>
       <ScreenScaffold
         title="Gastos fijos"
-        description="Compromisos mensuales claros, con vencimiento y medio de pago."
         actions={
-          <ResourceSheet title="Nuevo gasto fijo" description="Cargá un compromiso recurrente." trigger={<ResourceCreateButton />}>
+          <ResourceSheet title="Nuevo gasto fijo" trigger={<ResourceCreateButton />}>
             {billForm({ prefix: "new-bill", dueDay: 1, isActive: true })}
           </ResourceSheet>
         }
@@ -145,7 +144,14 @@ export default async function BillsPage({
                   <ResourceSheet
                     key={bill.id}
                     title={bill.name}
-                    description="Editar gasto fijo"
+                    headerAction={
+                      <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”? Esta acción no se puede deshacer.`}>
+                        <input type="hidden" name="id" value={bill.id} />
+                        <Button type="submit" variant="ghost" size="icon" className="text-destructive hover:text-destructive" aria-label="Borrar gasto fijo">
+                          <Trash2 className="size-4" aria-hidden />
+                        </Button>
+                      </ConfirmForm>
+                    }
                     trigger={
                       <ResourceRowShell
                         icon={<Repeat2 className="size-4" aria-hidden />}
@@ -165,14 +171,6 @@ export default async function BillsPage({
                       notes: bill.notes,
                       isActive: bill.isActive,
                     })}
-                    <DangerZone description="Para suspenderlo sin perderlo, desmarcá Activo y guardá cambios.">
-                      <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”? Esta acción no se puede deshacer.`}>
-                        <input type="hidden" name="id" value={bill.id} />
-                        <SubmitButton type="submit" variant="destructive" className="w-full" pendingText="Borrando...">
-                          Borrar gasto fijo
-                        </SubmitButton>
-                      </ConfirmForm>
-                    </DangerZone>
                   </ResourceSheet>
                 );
               })}

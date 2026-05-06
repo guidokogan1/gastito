@@ -12,12 +12,14 @@ export function ResourceSheet({
   trigger,
   triggerClassName,
   children,
+  headerAction,
 }: {
   title: string;
   description?: string;
   trigger: React.ReactNode;
   triggerClassName?: string;
   children: React.ReactNode;
+  headerAction?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -30,7 +32,7 @@ export function ResourceSheet({
       >
         {trigger}
       </button>
-      <Slideout open={open} title={title} description={description} onClose={() => setOpen(false)}>
+      <Slideout open={open} title={title} description={description} headerAction={headerAction} onClose={() => setOpen(false)}>
         {children}
       </Slideout>
     </>
@@ -39,9 +41,9 @@ export function ResourceSheet({
 
 export function ResourceCreateButton({ children }: { children?: React.ReactNode }) {
   return (
-    <span className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground">
+    <span className="inline-flex size-11 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
       <Plus className="size-4" aria-hidden />
-      {children ?? "Nuevo"}
+      {children ? <span className="ml-2">{children}</span> : null}
     </span>
   );
 }

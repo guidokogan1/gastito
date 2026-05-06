@@ -1,6 +1,5 @@
 import { deleteTransactionAction, saveTransactionAction } from "@/app/actions/resources";
 import { QueryToast } from "@/components/app/query-toast";
-import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { MonthSelector } from "@/components/app/month-selector";
 import { TransactionsPanel } from "@/components/app/transactions-panel";
 import { requireHousehold } from "@/lib/auth";
@@ -82,7 +81,7 @@ export default async function TransactionsPage({
   ]);
 
   return (
-    <ScreenScaffold title="Movimientos">
+    <>
       <QueryToast message={params.message} error={params.error} />
 
       <TransactionsPanel
@@ -108,6 +107,6 @@ export default async function TransactionsPage({
         deleteAction={deleteTransactionAction}
         initialComposeOpen={params.compose === "1"}
       />
-    </ScreenScaffold>
+    </>
   );
 }

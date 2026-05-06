@@ -41,7 +41,7 @@ export default async function DashboardPage({
     signals.push({
       icon: Sparkles,
       title: "Proyección de cierre",
-      meta: expenseTrend,
+      meta: trendSummary,
       value: formatArs(snapshot.projectedExpenses),
       tone: snapshot.expenseDelta <= 0 ? "positive" : "warning",
     });
@@ -126,13 +126,15 @@ export default async function DashboardPage({
               </p>
             </div>
             <div className="finance-summary-cell">
-              <p className="stat-label">Gastos</p>
-              <p className="money-row mt-1">{formatArs(snapshot.expenses)}</p>
-            </div>
-            <div className="finance-summary-cell">
               <p className="stat-label">Balance</p>
               <p className="money-row mt-1">
                 <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
+              </p>
+            </div>
+            <div className="finance-summary-cell">
+              <p className="stat-label">Proyección</p>
+              <p className="money-row mt-1">
+                {formatArs(snapshot.projectedExpenses)}
               </p>
             </div>
           </div>

@@ -7,7 +7,7 @@ import type { Prisma } from "@prisma/client";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { safeErrorMessage } from "@/lib/error-mapping";
-import { getPublicAppEnv } from "@/lib/env";
+import { getPublicAppEnv, getSiteHostMismatch } from "@/lib/env";
 import { getRequestContext, hashValue } from "@/lib/request-context";
 
 export { safeErrorMessage };
@@ -49,7 +49,7 @@ export async function assertAllowedOrigin() {
     throw new Error("Origen de solicitud no permitido.");
   }
 
-  if (host && new URL(siteUrl).host !== host && !isLocalDevelopmentOrigin) {
+  if (getSiteHostMismatch(siteUrl, host) && !isLocalDevelopmentOrigin) {
     throw new Error("Host de solicitud no permitido.");
   }
 }

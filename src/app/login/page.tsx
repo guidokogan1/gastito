@@ -8,6 +8,7 @@ import { redirectIfAuthenticated } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardContent } from "@/components/ui/card";
+import { PasswordField } from "@/components/app/password-field";
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +39,7 @@ export default async function LoginPage({
                 </label>
                 <Input id="email" name="email" type="email" autoComplete="email" required autoFocus />
               </div>
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Contraseña
-                </label>
-                <Input id="password" name="password" type="password" autoComplete="current-password" required />
-              </div>
+              <PasswordField autoComplete="current-password" showRules={false} />
               <SubmitButton type="submit" className="w-full" pendingText="Ingresando...">
                 Iniciar sesión
               </SubmitButton>

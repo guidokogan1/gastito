@@ -9,6 +9,7 @@ import { getPublicAppEnv } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardContent } from "@/components/ui/card";
+import { PasswordField } from "@/components/app/password-field";
 
 export const dynamic = "force-dynamic";
 
@@ -41,12 +42,7 @@ export default async function RegisterPage({
                 </label>
                 <Input id="email" name="email" type="email" autoComplete="email" required autoFocus />
               </div>
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Contraseña
-                </label>
-                <Input id="password" name="password" type="password" autoComplete="new-password" required />
-              </div>
+              <PasswordField autoComplete="new-password" />
               <SubmitButton type="submit" className="w-full" pendingText="Creando...">
                 Crear cuenta
               </SubmitButton>

@@ -13,6 +13,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
 import { StatusPill } from "@/components/app/pill-chip";
+import { DangerZone } from "@/components/app/danger-zone";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -124,15 +125,14 @@ export default async function AccountsPage({
                         <SubmitButton type="submit" className="w-full" pendingText="Guardando...">Guardar cambios</SubmitButton>
                       </div>
                     </form>
-                    <section className="mt-5 rounded-[1.25rem] border border-destructive/20 bg-destructive/5 p-4">
-                      <p className="text-sm font-semibold text-destructive">Zona peligrosa</p>
+                    <DangerZone description="Si la cuenta ya registra movimientos, conviene dejarla inactiva para no perder contexto histórico.">
                       <ConfirmForm action={deleteAccountAction} confirm={`¿Borrar la cuenta “${account.name}”? Esta acción no se puede deshacer.`}>
                         <input type="hidden" name="id" value={account.id} />
-                        <SubmitButton type="submit" variant="destructive" className="mt-3 w-full" pendingText="Borrando...">
+                        <SubmitButton type="submit" variant="destructive" className="w-full" pendingText="Borrando...">
                           Borrar
                         </SubmitButton>
                       </ConfirmForm>
-                    </section>
+                    </DangerZone>
                   </ResourceSheet>
                 ))}
               </div>

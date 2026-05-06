@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -29,6 +29,10 @@ export function Slideout({
 }) {
   const [isDesktop, setIsDesktop] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const panelRef = useRef<HTMLElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
     setMounted(true);
@@ -41,13 +45,57 @@ export function Slideout({
 
   useEffect(() => {
     if (!open) return;
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+      if (event.key !== "Tab") return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        [
+          "a[href]",
+          "button:not([disabled])",
+          "textarea:not([disabled])",
+          "input:not([disabled])",
+          "select:not([disabled])",
+          "[tabindex]:not([tabindex='-1'])",
+        ].join(","),
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.setTimeout(() => {
+      const panel = panelRef.current;
+      const firstFocusable = panel?.querySelector<HTMLElement>(
+        "input:not([disabled]), button:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])",
+      );
+      firstFocusable?.focus();
+    }, 0);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocusedRef.current?.focus();
+    };
   }, [open, onClose]);
 
   if (!mounted) return null;
@@ -67,9 +115,11 @@ export function Slideout({
             onClick={onClose}
           />
           <motion.aside
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
-            aria-label={title}
+            aria-labelledby={titleId}
+            aria-describedby={description ? descriptionId : undefined}
             className={cn("sheet-panel flex flex-col overflow-hidden", className)}
             initial={{ opacity: 0, y: isDesktop ? 0 : "10%", x: isDesktop ? 18 : 0 }}
             animate={{ opacity: 1, y: 0, x: 0 }}
@@ -80,6 +130,7 @@ export function Slideout({
             <div className="sheet-header">
               <div className="min-w-0 space-y-1">
                 <p
+                  id={titleId}
                   className={cn(
                     titleSize === "large" && "detail-title",
                     titleSize === "compact" && "text-[1.25rem] font-semibold tracking-[-0.035em]",
@@ -88,7 +139,7 @@ export function Slideout({
                 >
                   {title}
                 </p>
-                {description ? <p className="text-sm font-medium text-muted-foreground">{description}</p> : null}
+                {description ? <p id={descriptionId} className="text-sm font-medium text-muted-foreground">{description}</p> : null}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {headerAction}

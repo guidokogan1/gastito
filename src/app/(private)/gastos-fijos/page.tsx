@@ -12,9 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DayOfMonthField } from "@/components/app/day-of-month-field";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
+import { MoneyField } from "@/components/app/money-field";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
 import { StatusPill } from "@/components/app/pill-chip";
+import { DangerZone } from "@/components/app/danger-zone";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, moneyInputValue } from "@/lib/format";
@@ -88,7 +90,7 @@ export default async function BillsPage({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor={`${prefix}-amount`}>Monto mensual</Label>
-            <Input id={`${prefix}-amount`} name="amount" type="number" step="0.01" inputMode="decimal" defaultValue={amount} required />
+            <MoneyField id={`${prefix}-amount`} name="amount" label="Monto mensual" defaultValue={amount} inputClassName="h-12 rounded-[var(--radius-control)] border border-input bg-[var(--surface-control)] px-4 text-left text-[1rem] tracking-normal focus-visible:ring-[1px]" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`${prefix}-dueDay`}>Día de vencimiento</Label>
@@ -163,15 +165,14 @@ export default async function BillsPage({
                       notes: bill.notes,
                       isActive: bill.isActive,
                     })}
-                    <section className="mt-5 rounded-[1.25rem] border border-destructive/20 bg-destructive/5 p-4">
-                      <p className="text-sm font-semibold text-destructive">Zona peligrosa</p>
+                    <DangerZone description="Para suspenderlo sin perderlo, desmarcá Activo y guardá cambios.">
                       <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”? Esta acción no se puede deshacer.`}>
                         <input type="hidden" name="id" value={bill.id} />
-                        <SubmitButton type="submit" variant="destructive" className="mt-3 w-full" pendingText="Borrando...">
+                        <SubmitButton type="submit" variant="destructive" className="w-full" pendingText="Borrando...">
                           Borrar gasto fijo
                         </SubmitButton>
                       </ConfirmForm>
-                    </section>
+                    </DangerZone>
                   </ResourceSheet>
                 );
               })}

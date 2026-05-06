@@ -29,6 +29,7 @@ import {
   Utensils,
   Wifi,
   RotateCcw,
+  SortAsc,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PillChip } from "@/components/app/pill-chip";
 import { EmptyState } from "@/components/app/empty-state";
+import { FinancialAmount } from "@/components/app/financial-amount";
+import { MoneyField } from "@/components/app/money-field";
 import { cn } from "@/lib/utils";
 
 type SelectOption = { id: string; name: string };
@@ -254,6 +257,7 @@ export function TransactionsPanel({
   methods,
   saveAction,
   deleteAction,
+  initialComposeOpen = false,
 }: {
   monthKey: string;
   monthControl: ReactNode;
@@ -263,6 +267,7 @@ export function TransactionsPanel({
   methods: SelectOption[];
   saveAction: (formData: FormData) => Promise<void>;
   deleteAction: (formData: FormData) => Promise<void>;
+  initialComposeOpen?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -273,11 +278,52 @@ export function TransactionsPanel({
   const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
   const [categoryFilterId, setCategoryFilterId] = useState<"all" | "none" | string>("all");
   const [methodFilterId, setMethodFilterId] = useState<"all" | "none" | string>("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week">("all");
+  const [sortBy, setSortBy] = useState<"date-desc" | "amount-desc" | "amount-asc">("date-desc");
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
   const [formType, setFormType] = useState<"expense" | "income">("expense");
   const [formDate, setFormDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [formCategoryId, setFormCategoryId] = useState<string>("");
   const [formPaymentMethodId, setFormPaymentMethodId] = useState<string>("");
   const [formAccountId, setFormAccountId] = useState<string>("");
+
+  useEffect(() => {
+    if (!initialComposeOpen) return;
+    setSelectedId(null);
+    setDrawerOpen(true);
+  }, [initialComposeOpen]);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("gastito.transactionFilters");
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved) as {
+        query?: string;
+        typeFilter?: "all" | "expense" | "income";
+        categoryFilterId?: "all" | "none" | string;
+        methodFilterId?: "all" | "none" | string;
+        dateFilter?: "all" | "today" | "week";
+        sortBy?: "date-desc" | "amount-desc" | "amount-asc";
+      };
+      setQuery(parsed.query ?? "");
+      setTypeFilter(parsed.typeFilter ?? "all");
+      setCategoryFilterId(parsed.categoryFilterId ?? "all");
+      setMethodFilterId(parsed.methodFilterId ?? "all");
+      setDateFilter(parsed.dateFilter ?? "all");
+      setSortBy(parsed.sortBy ?? "date-desc");
+    } catch {
+      window.localStorage.removeItem("gastito.transactionFilters");
+    }
+    setFiltersHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+    window.localStorage.setItem(
+      "gastito.transactionFilters",
+      JSON.stringify({ query, typeFilter, categoryFilterId, methodFilterId, dateFilter, sortBy }),
+    );
+  }, [categoryFilterId, dateFilter, filtersHydrated, methodFilterId, query, sortBy, typeFilter]);
 
   const selected = useMemo(
     () => (selectedId ? transactions.find((t) => t.id === selectedId) ?? null : null),
@@ -286,8 +332,15 @@ export function TransactionsPanel({
 
   const filteredTransactions = useMemo(() => {
     const trimmedQuery = query.trim().toLowerCase();
-    return transactions.filter((row) => {
+    const amountQuery = Number(trimmedQuery.replace(/\./g, "").replace(",", "."));
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - 6);
+    const filtered = transactions.filter((row) => {
       if (typeFilter !== "all" && row.type !== typeFilter) return false;
+      if (dateFilter === "today" && row.date < todayStart) return false;
+      if (dateFilter === "week" && row.date < weekStart) return false;
       if (categoryFilterId !== "all") {
         const current = row.categoryId ?? "";
         if (categoryFilterId === "none") {
@@ -305,6 +358,7 @@ export function TransactionsPanel({
         }
       }
       if (!trimmedQuery) return true;
+      if (Number.isFinite(amountQuery) && Math.round(toNumber(row.amount)) === Math.round(amountQuery)) return true;
 
       const haystack = [
         toDetail(row),
@@ -318,7 +372,12 @@ export function TransactionsPanel({
 
       return haystack.includes(trimmedQuery);
     });
-  }, [categoryFilterId, methodFilterId, query, transactions, typeFilter]);
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "amount-desc") return toNumber(b.amount) - toNumber(a.amount);
+      if (sortBy === "amount-asc") return toNumber(a.amount) - toNumber(b.amount);
+      return b.date.getTime() - a.date.getTime();
+    });
+  }, [categoryFilterId, dateFilter, methodFilterId, query, sortBy, transactions, typeFilter]);
 
   const formKey = selected?.id ?? "new";
   const panelTitle = selected ? "Editar movimiento" : "Nuevo movimiento";
@@ -418,7 +477,8 @@ export function TransactionsPanel({
   const activeFilterCount =
     (typeFilter !== "all" ? 1 : 0) +
     (categoryFilterId !== "all" ? 1 : 0) +
-    (methodFilterId !== "all" ? 1 : 0);
+    (methodFilterId !== "all" ? 1 : 0) +
+    (dateFilter !== "all" ? 1 : 0);
 
   const monthLabel = useMemo(() => {
     const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
@@ -489,13 +549,11 @@ export function TransactionsPanel({
                 <div className="finance-summary-strip">
                   <div className="finance-summary-cell">
                     <p className="stat-label">Gastos</p>
-                    <p className="money-row mt-1 text-foreground">
-                      {formatArs(metrics.expenses)}
-                    </p>
+                    <p className="money-row mt-1 text-foreground">{formatArs(metrics.expenses)}</p>
                   </div>
                   <div className="finance-summary-cell">
                     <p className="stat-label">Ingresos</p>
-                    <p className="money-row mt-1 text-emerald-700 dark:text-emerald-300">
+                    <p className="money-row mt-1 text-[var(--income)] dark:text-[var(--income-soft)]">
                       {formatArs(metrics.incomes)}
                     </p>
                   </div>
@@ -504,7 +562,7 @@ export function TransactionsPanel({
                     <p
                       className={cn(
                         "money-row mt-1",
-                        metrics.balance < 0 ? "text-foreground" : "text-emerald-700 dark:text-emerald-300",
+                        metrics.balance < 0 ? "text-foreground" : "text-[var(--income)] dark:text-[var(--income-soft)]",
                       )}
                     >
                       {formatArs(metrics.balance)}
@@ -534,6 +592,15 @@ export function TransactionsPanel({
                       <button type="button" className="pressable" onClick={() => setTypeFilter("income")}>
                         <PillChip active={typeFilter === "income"}>Ingresos</PillChip>
                       </button>
+                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
+                        <PillChip active={dateFilter === "today"}>Hoy</PillChip>
+                      </button>
+                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "week" ? "all" : "week")}>
+                        <PillChip active={dateFilter === "week"}>7 días</PillChip>
+                      </button>
+                      <button type="button" className="pressable" onClick={() => setCategoryFilterId(categoryFilterId === "none" ? "all" : "none")}>
+                        <PillChip active={categoryFilterId === "none"}>Sin categoría</PillChip>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -553,6 +620,7 @@ export function TransactionsPanel({
                         setTypeFilter("all");
                         setCategoryFilterId("all");
                         setMethodFilterId("all");
+                        setDateFilter("all");
                       }}
                     >
                       Limpiar filtros
@@ -582,10 +650,10 @@ export function TransactionsPanel({
                               <FinanceRow
                                 icon={getCategoryIcon(row.categoryName, row.type)}
                                 title={toDetail(row)}
-                                meta={row.categoryName ?? row.paymentMethodName ?? row.accountName ?? undefined}
+                                meta={[row.categoryName, row.paymentMethodName, row.accountName].filter(Boolean).join(" · ") || undefined}
                                 amount={
                                   <span className="inline-flex items-center gap-2">
-                                    {formatArs(row.amount)}
+                                    <FinancialAmount value={row.amount} direction={row.type === "income" ? "income" : "expense"} showSign />
                                     <ChevronRight className="size-4 opacity-45" aria-hidden />
                                   </span>
                                 }
@@ -632,6 +700,42 @@ export function TransactionsPanel({
             </div>
           </section>
 
+          <section className="grouped-form-section space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-medium">Orden</p>
+              <SortAsc className="size-4 text-muted-foreground" aria-hidden />
+            </div>
+            <div className="mobile-scroll-row">
+              <button type="button" className="pressable" onClick={() => setSortBy("date-desc")}>
+                <PillChip active={sortBy === "date-desc"}>Más recientes</PillChip>
+              </button>
+              <button type="button" className="pressable" onClick={() => setSortBy("amount-desc")}>
+                <PillChip active={sortBy === "amount-desc"}>Mayor monto</PillChip>
+              </button>
+              <button type="button" className="pressable" onClick={() => setSortBy("amount-asc")}>
+                <PillChip active={sortBy === "amount-asc"}>Menor monto</PillChip>
+              </button>
+            </div>
+          </section>
+
+          <section className="grouped-form-section space-y-2">
+            <p className="text-sm font-medium">Totales del filtro</p>
+            <div className="finance-summary-strip">
+              <div className="finance-summary-cell">
+                <p className="stat-label">Gastos</p>
+                <p className="money-row mt-1">{formatArs(metrics.expenses)}</p>
+              </div>
+              <div className="finance-summary-cell">
+                <p className="stat-label">Ingresos</p>
+                <p className="money-row mt-1 text-[var(--income)]">{formatArs(metrics.incomes)}</p>
+              </div>
+              <div className="finance-summary-cell">
+                <p className="stat-label">Balance</p>
+                <p className="money-row mt-1">{formatArs(metrics.balance)}</p>
+              </div>
+            </div>
+          </section>
+
           <section className="grouped-form-section space-y-5">
             <SelectableSection
               title="Categoría"
@@ -671,6 +775,7 @@ export function TransactionsPanel({
                     setTypeFilter("all");
                     setCategoryFilterId("all");
                     setMethodFilterId("all");
+                    setDateFilter("all");
                   }}
                 >
                   Limpiar filtros ({activeFilterCount})
@@ -725,16 +830,10 @@ export function TransactionsPanel({
               <p className="text-xs text-muted-foreground">{selected ? "Editando" : "Nuevo"}</p>
             </div>
             <div className="space-y-2 text-center">
-              <Label htmlFor="amount" className="sr-only">Monto</Label>
-              <Input
+              <MoneyField
                 id="amount"
                 name="amount"
-                type="text"
-                inputMode="decimal"
-                required
-                placeholder="0"
                 defaultValue={selected ? moneyInputValue(selected.amount) : ""}
-                className="h-20 appearance-none border-0 bg-transparent px-0 text-center text-[clamp(3.4rem,18vw,4.55rem)] font-semibold leading-none tracking-[-0.075em] shadow-none focus-visible:bg-transparent focus-visible:ring-0"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">

@@ -4,7 +4,6 @@ import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { MonthSelector } from "@/components/app/month-selector";
 import { TransactionsPanel } from "@/components/app/transactions-panel";
 import { requireHousehold } from "@/lib/auth";
-import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
 import { prisma } from "@/lib/db";
 
 function monthRange(monthKey: string) {
@@ -28,23 +27,13 @@ function currentMonthKey() {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string; month?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; month?: string; compose?: string }>;
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
   const monthKey = monthRange(params.month ?? "") ? String(params.month) : currentMonthKey();
   const range = monthRange(monthKey) ?? monthRange(currentMonthKey());
   if (!range) throw new Error("No se pudo calcular el rango del mes.");
-
-  await Promise.all(
-    DEFAULT_INCOME_CATEGORIES.map((name) =>
-      prisma.category.upsert({
-        where: { householdId_name: { householdId: household.id, name } },
-        update: { isActive: true, deletedAt: null },
-        create: { householdId: household.id, name },
-      }),
-    ),
-  );
 
   const monthBuckets = await prisma.$queryRaw<{ month: string; count: number }[]>`
     SELECT
@@ -117,6 +106,7 @@ export default async function TransactionsPage({
         methods={methods}
         saveAction={saveTransactionAction}
         deleteAction={deleteTransactionAction}
+        initialComposeOpen={params.compose === "1"}
       />
     </ScreenScaffold>
   );

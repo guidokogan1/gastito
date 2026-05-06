@@ -46,3 +46,22 @@ export function getPublicAppEnv() {
 export function assertPublicAppEnv() {
   return getPublicAppEnv();
 }
+
+export function getSiteHostMismatch(siteUrl: string, host: string | null | undefined) {
+  if (!host) return null;
+
+  const expectedHost = new URL(siteUrl).host;
+  if (expectedHost === host) return null;
+
+  const requestHost = host.split(":")[0];
+  const isLocalDevelopmentHost =
+    process.env.NODE_ENV !== "production" &&
+    (requestHost === "localhost" || requestHost === "127.0.0.1");
+
+  if (isLocalDevelopmentHost) return null;
+
+  return {
+    expectedHost,
+    actualHost: host,
+  };
+}

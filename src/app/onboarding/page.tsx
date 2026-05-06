@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/app/submit-button";
 import { requireUser } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { CardContent } from "@/components/ui/card";
+import { Check } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -54,9 +55,16 @@ export default async function OnboardingPage({
               </div>
               <div className="rounded-[1.15rem] border border-border bg-card p-4">
                 <p className="stat-label">Lo que se crea automáticamente</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Moneda base ARS, categorías sugeridas, medios de pago habituales y cuentas iniciales para arrancar.
-                </p>
+                <div className="mt-3 grid gap-2 text-sm font-medium text-muted-foreground">
+                  {["Moneda base ARS", "Categorías sugeridas", "Medios de pago habituales", "Cuentas iniciales"].map((item) => (
+                    <div key={item} className="flex items-center gap-2">
+                      <span className="grid size-5 place-items-center rounded-full bg-[var(--income-soft)] text-[var(--income)]">
+                        <Check className="size-3" aria-hidden />
+                      </span>
+                      {item}
+                    </div>
+                  ))}
+                </div>
               </div>
               <SubmitButton type="submit" className="w-full" pendingText="Creando hogar...">
                 Crear hogar y empezar

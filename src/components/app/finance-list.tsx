@@ -36,7 +36,7 @@ export function FinanceRow({
       <div
         className={cn(
           "app-icon-tile",
-          direction === "income" && "bg-emerald-500/10 text-emerald-700",
+          direction === "income" && "bg-[var(--income-soft)] text-[var(--income)]",
           direction === "expense" && "bg-[var(--surface-pill)] text-foreground",
         )}
       >
@@ -52,7 +52,7 @@ export function FinanceRow({
         <div
           className={cn(
             "money-row shrink-0 text-right",
-            direction === "income" && "text-emerald-700 dark:text-emerald-300",
+            direction === "income" && "text-[var(--income)] dark:text-[var(--income-soft)]",
             direction === "expense" && "text-foreground",
             direction === "neutral" && "text-muted-foreground",
           )}

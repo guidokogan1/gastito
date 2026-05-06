@@ -4,8 +4,8 @@ import { AuthScreen } from "@/components/app/auth-screen";
 import { SubmitButton } from "@/components/app/submit-button";
 import { requireUser } from "@/lib/auth";
 import { getPublicAppEnv } from "@/lib/env";
-import { Input } from "@/components/ui/input";
 import { CardContent } from "@/components/ui/card";
+import { PasswordField } from "@/components/app/password-field";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +31,7 @@ export default async function ResetPasswordPage({
 
             <form action={updatePasswordAction} className="space-y-3">
               {params.token ? <input type="hidden" name="token" value={params.token} /> : null}
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Nueva contraseña
-                </label>
-                <Input id="password" name="password" type="password" autoComplete="new-password" required autoFocus />
-              </div>
+              <PasswordField label="Nueva contraseña" autoComplete="new-password" autoFocus />
               <SubmitButton type="submit" className="w-full" pendingText="Actualizando...">
                 Actualizar contraseña
               </SubmitButton>

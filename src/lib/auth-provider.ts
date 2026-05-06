@@ -28,10 +28,16 @@ function mapUser(user: { id: string; email?: string | null } | null | undefined)
 
 function mapNeonError(error: unknown): AuthResult["error"] {
   if (!error || typeof error !== "object") return undefined;
-  const candidate = error as { code?: string; status?: number; message?: string; statusText?: string };
+  const candidate = error as {
+    code?: string;
+    status?: number | string;
+    statusCode?: number;
+    message?: string;
+    statusText?: string;
+  };
   return {
     code: candidate.code,
-    status: candidate.status,
+    status: typeof candidate.status === "number" ? candidate.status : candidate.statusCode,
     message: candidate.message ?? candidate.statusText,
   };
 }

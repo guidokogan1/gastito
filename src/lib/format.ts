@@ -4,7 +4,7 @@ const money = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 0,
 });
 
-type MoneyLike = number | string | { toString(): string };
+export type MoneyLike = number | string | { toString(): string };
 
 export function toNumber(value: MoneyLike) {
   const parsed = typeof value === "number" ? value : Number(value.toString());

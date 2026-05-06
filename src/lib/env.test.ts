@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { getPublicAppEnv } from "@/lib/env";
+import { getPublicAppEnv, getSiteHostMismatch } from "@/lib/env";
 
 describe("public app env", () => {
   it("throws when a required variable is missing", () => {
@@ -22,6 +22,16 @@ describe("public app env", () => {
     expect(getPublicAppEnv()).toMatchObject({
       authProvider: "neon",
       siteUrl: "http://localhost:3000",
+    });
+  });
+
+  it("detects production site host mismatches", () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    expect(getSiteHostMismatch("https://gastito-two.vercel.app", "gastito-two.vercel.app")).toBeNull();
+    expect(getSiteHostMismatch("https://gastito-two.vercel.app", "localhost:3000")).toEqual({
+      expectedHost: "gastito-two.vercel.app",
+      actualHost: "localhost:3000",
     });
   });
 });

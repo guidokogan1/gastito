@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
 import { PillChip, StatusPill } from "@/components/app/pill-chip";
+import { DangerZone } from "@/components/app/danger-zone";
+import { MoneyField } from "@/components/app/money-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, moneyInputValue } from "@/lib/format";
@@ -88,11 +90,11 @@ export default async function DebtsPage({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor={`${prefix}-originalAmount`}>Monto original</Label>
-            <Input id={`${prefix}-originalAmount`} name="originalAmount" type="number" step="0.01" inputMode="decimal" defaultValue={originalAmount} required />
+            <MoneyField id={`${prefix}-originalAmount`} name="originalAmount" label="Monto original" defaultValue={originalAmount} inputClassName="h-12 rounded-[var(--radius-control)] border border-input bg-[var(--surface-control)] px-4 text-left text-[1rem] tracking-normal focus-visible:ring-[1px]" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`${prefix}-remainingBalance`}>Saldo pendiente</Label>
-            <Input id={`${prefix}-remainingBalance`} name="remainingBalance" type="number" step="0.01" inputMode="decimal" defaultValue={remainingBalance} required />
+            <MoneyField id={`${prefix}-remainingBalance`} name="remainingBalance" label="Saldo pendiente" defaultValue={remainingBalance} inputClassName="h-12 rounded-[var(--radius-control)] border border-input bg-[var(--surface-control)] px-4 text-left text-[1rem] tracking-normal focus-visible:ring-[1px]" />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -154,15 +156,14 @@ export default async function DebtsPage({
                       notes: debt.notes,
                       isActive: debt.isActive,
                     })}
-                    <section className="mt-5 rounded-[1.25rem] border border-destructive/20 bg-destructive/5 p-4">
-                      <p className="text-sm font-semibold text-destructive">Zona peligrosa</p>
+                    <DangerZone description="También podés marcarla como cerrada desactivándola si querés conservar el registro.">
                       <ConfirmForm action={deleteDebtAction} confirm={`¿Borrar la deuda “${debt.entityName}”? Esta acción no se puede deshacer.`}>
                         <input type="hidden" name="id" value={debt.id} />
-                        <SubmitButton type="submit" variant="destructive" className="mt-3 w-full" pendingText="Borrando...">
+                        <SubmitButton type="submit" variant="destructive" className="w-full" pendingText="Borrando...">
                           Borrar deuda
                         </SubmitButton>
                       </ConfirmForm>
-                    </section>
+                    </DangerZone>
                   </ResourceSheet>
                 );
               })}

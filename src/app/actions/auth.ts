@@ -28,8 +28,25 @@ function withMessage(path: string, key: "error" | "message", value: string) {
   return `${path}?${key}=${encodeURIComponent(value)}`;
 }
 
+async function assertAnonymousAuthActionAllowed(action: "login" | "register" | "password_reset", subject: string) {
+  try {
+    await assertAnonymousActionAllowed(action, subject);
+  } catch (error) {
+    logWarn(`auth.${action}.guard_error`, {
+      message: error instanceof Error ? error.message : "unknown_error",
+    });
+    redirect(
+      withMessage(
+        action === "register" ? "/register" : action === "password_reset" ? "/forgot-password" : "/login",
+        "error",
+        "No pudimos validar la solicitud. Revisá la configuración del dominio de la app.",
+      ),
+    );
+  }
+}
+
 export async function registerAction(formData: FormData) {
-  await assertAnonymousActionAllowed("register", getString(formData, "email").toLowerCase());
+  await assertAnonymousAuthActionAllowed("register", getString(formData, "email").toLowerCase());
   const parsed = authSchema.safeParse({
     email: getString(formData, "email"),
     password: getString(formData, "password"),
@@ -43,7 +60,7 @@ export async function registerAction(formData: FormData) {
   const { error } = await signUpWithPassword(email, parsed.data.password);
 
   if (error) {
-    logWarn("auth.register.error", { code: error.code, status: error.status });
+    logWarn("auth.register.error", { code: error.code, status: error.status, message: error.message });
     await recordAuditEvent({ action: "auth.register", result: "failure", errorCode: error.code });
     redirect(withMessage("/register", "error", safeErrorMessage(error, "No se pudo crear la cuenta.")));
   }
@@ -53,7 +70,7 @@ export async function registerAction(formData: FormData) {
 }
 
 export async function loginAction(formData: FormData) {
-  await assertAnonymousActionAllowed("login", getString(formData, "email").toLowerCase());
+  await assertAnonymousAuthActionAllowed("login", getString(formData, "email").toLowerCase());
   const parsed = authSchema.safeParse({
     email: getString(formData, "email"),
     password: getString(formData, "password"),
@@ -66,9 +83,9 @@ export async function loginAction(formData: FormData) {
   const { user, error } = await signInWithPassword(parsed.data.email.toLowerCase(), parsed.data.password);
 
   if (error || !user) {
-    logWarn("auth.login.error", { code: error?.code, status: error?.status });
+    logWarn("auth.login.error", { code: error?.code, status: error?.status, message: error?.message });
     await recordAuditEvent({ action: "auth.login", result: "failure", errorCode: error?.code });
-    redirect(withMessage("/login", "error", "Email o contraseña incorrectos."));
+    redirect(withMessage("/login", "error", "Email o contraseña incorrectos. Si la cuenta ya existe, usá Recuperar contraseña."));
   }
 
   const membership = await prisma.membership.findFirst({
@@ -90,7 +107,7 @@ export async function logoutAction() {
 
 export async function requestPasswordResetAction(formData: FormData) {
   const email = getString(formData, "email").trim().toLowerCase();
-  await assertAnonymousActionAllowed("password_reset", email);
+  await assertAnonymousAuthActionAllowed("password_reset", email);
   if (!email) {
     redirect(withMessage("/forgot-password", "error", "Ingresá un email válido."));
   }
@@ -103,7 +120,7 @@ export async function requestPasswordResetAction(formData: FormData) {
   const { error } = await requestProviderPasswordReset(email, redirectTo);
 
   if (error) {
-    logWarn("auth.reset.error", { code: error.code, status: error.status });
+    logWarn("auth.reset.error", { code: error.code, status: error.status, message: error.message });
     await recordAuditEvent({ action: "auth.password_reset_requested", result: "failure", errorCode: error.code });
     redirect(withMessage("/forgot-password", "error", "No pudimos enviar el email de recuperación."));
   }
@@ -122,7 +139,7 @@ export async function updatePasswordAction(formData: FormData) {
 
   const { error } = await updateProviderPassword(password, token);
   if (error) {
-    logWarn("auth.password_update.error", { code: error.code, status: error.status });
+    logWarn("auth.password_update.error", { code: error.code, status: error.status, message: error.message });
     await recordAuditEvent({ userId: user?.id, action: "auth.password_updated", result: "failure", errorCode: error.code });
     redirect(withMessage("/reset-password", "error", "No pudimos actualizar la contraseña."));
   }

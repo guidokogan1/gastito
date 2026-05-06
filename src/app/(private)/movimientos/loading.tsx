@@ -1,38 +1,38 @@
+import { ListRowsSkeleton } from "@/components/app/app-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardContent, CardHeader } from "@/components/ui/card";
-import { CardPage } from "@/components/ui/card-page";
 
 export default function Loading() {
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-9 w-[220px]" />
-          <Skeleton className="h-4 w-[420px] max-w-full" />
+    <div className="space-y-5">
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-11 w-40 rounded-full" />
+          <div className="flex shrink-0 gap-2">
+            <Skeleton className="size-11 rounded-full" />
+            <Skeleton className="size-11 rounded-full" />
+          </div>
         </div>
-        <Skeleton className="h-11 w-full sm:w-[220px]" />
-      </div>
 
-      <CardPage>
-        <CardHeader className="pb-2">
-          <Skeleton className="h-4 w-[220px]" />
-          <Skeleton className="h-7 w-[360px] max-w-full" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Skeleton className="h-[76px] rounded-2xl" />
-            <Skeleton className="h-[76px] rounded-2xl" />
-            <Skeleton className="h-[76px] rounded-2xl" />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <Skeleton className="h-11 sm:col-span-2" />
-            <Skeleton className="h-11" />
-            <Skeleton className="h-11" />
-          </div>
-          <Skeleton className="h-[320px] rounded-2xl" />
-        </CardContent>
-      </CardPage>
+        <div className="finance-summary-strip rounded-[1.25rem] bg-[var(--surface-pill)] px-4 py-3">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="space-y-2">
+              <Skeleton className="h-3 w-14 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          ))}
+        </div>
+
+        <Skeleton className="h-12 w-full rounded-[1.25rem]" />
+        <div className="mobile-scroll-row">
+          <Skeleton className="h-10 w-20 shrink-0 rounded-full" />
+          <Skeleton className="h-10 w-20 shrink-0 rounded-full" />
+          <Skeleton className="h-10 w-24 shrink-0 rounded-full" />
+          <Skeleton className="h-10 w-16 shrink-0 rounded-full" />
+          <Skeleton className="h-10 w-20 shrink-0 rounded-full" />
+        </div>
+      </section>
+
+      <ListRowsSkeleton rows={6} />
     </div>
   );
 }
-

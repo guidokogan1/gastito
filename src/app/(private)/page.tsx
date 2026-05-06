@@ -27,6 +27,12 @@ export default async function DashboardPage({
     snapshot.previousExpenses > 0
       ? `${snapshot.expenseDelta >= 0 ? "+" : ""}${Math.round((snapshot.expenseDelta / snapshot.previousExpenses) * 100)}% vs. mes anterior`
       : "Sin comparación previa";
+  const trendSummary =
+    snapshot.previousExpenses > 0
+      ? `${Math.abs(Math.round((snapshot.expenseDelta / snapshot.previousExpenses) * 100))}% ${
+          snapshot.expenseDelta <= 0 ? "menos" : "más"
+        } que el mes anterior`
+      : "Sin comparación previa";
   const hasTransactions = snapshot.recentTransactions.length > 0;
   const firstUpcomingBill = snapshot.upcomingBills[0] ?? null;
   const signals: DashboardSignal[] = [];
@@ -96,24 +102,23 @@ export default async function DashboardPage({
         ) : null}
 
         <section className="space-y-4 border-b border-border/70 pb-5">
-          <div>
+          <div className="space-y-4">
             <p className="text-[0.96rem] font-semibold text-muted-foreground">Hola, {household.name}.</p>
-            <p className="mt-4 text-[1rem] font-semibold text-foreground">Gastos del mes</p>
-            <p className="money-hero mt-1">{formatArs(snapshot.expenses)}</p>
-            <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="stat-label">Balance</p>
-                <p className="money-row mt-1">
-                  <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
-                </p>
-              </div>
-              <p className="max-w-[17rem] text-right text-sm font-semibold leading-relaxed text-[var(--finance-green)]">
-                {hasTransactions ? `${expenseTrend}. Actualizado ${formatDate(snapshot.updatedAt)}` : "Cargá tus primeros movimientos para empezar a leer el mes."}
+            <div>
+              <p className="text-[1rem] font-semibold text-foreground">Gastos del mes</p>
+              <p className="money-hero mt-1">{formatArs(snapshot.expenses)}</p>
+            </div>
+            <div className="rounded-[1.15rem] bg-[var(--surface-pill)] px-4 py-3">
+              <p className="text-sm font-semibold leading-relaxed text-[var(--finance-green)]">
+                {hasTransactions ? trendSummary : "Cargá tus primeros movimientos para empezar a leer el mes."}
               </p>
+              {hasTransactions ? (
+                <p className="mt-1 text-xs font-semibold text-muted-foreground">Actualizado {formatDate(snapshot.updatedAt)}</p>
+              ) : null}
             </div>
           </div>
 
-          <div className="finance-summary-strip border-y border-border/70 py-3">
+          <div className="finance-summary-strip border-t border-border/70 pt-3">
             <div className="finance-summary-cell">
               <p className="stat-label">Ingresos</p>
               <p className="money-row mt-1">
@@ -150,13 +155,13 @@ export default async function DashboardPage({
         ) : (
           <>
             <section>
-              <GroupedSection eyebrow="Señales" title="Señales del mes">
+              <GroupedSection title="Señales">
                 <DashboardSignalList signals={visibleSignals} />
               </GroupedSection>
             </section>
 
             <section className="split-grid">
-              <GroupedSection eyebrow="Actividad" title="Últimos movimientos">
+              <GroupedSection title="Últimos movimientos">
                 <FinanceList>
                   {snapshot.recentTransactions.map((row) => (
                     <FinanceRow

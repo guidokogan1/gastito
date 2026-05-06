@@ -17,7 +17,7 @@ export function moneyInputValue(value: MoneyLike) {
 }
 
 export function formatArs(value: MoneyLike) {
-  return money.format(toNumber(value));
+  return money.format(toNumber(value)).replace(/\$\s+/, "$");
 }
 
 export function formatDate(date: Date) {

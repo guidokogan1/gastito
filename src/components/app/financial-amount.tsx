@@ -12,7 +12,16 @@ export function FinancialAmount({
   showSign?: boolean;
   className?: string;
 }) {
-  const prefix = showSign ? (direction === "income" ? "+" : direction === "expense" ? "-" : "") : "";
+  const numericValue = typeof value === "number" ? value : Number(value.toString());
+  const isNegative = Number.isFinite(numericValue) && numericValue < 0;
+  const shouldShowExplicitSign = showSign || isNegative;
+  const displayValue = shouldShowExplicitSign ? Math.abs(Number.isFinite(numericValue) ? numericValue : 0) : value;
+  const prefix =
+    shouldShowExplicitSign && (direction === "income" || (!isNegative && direction !== "expense"))
+      ? "+"
+      : shouldShowExplicitSign
+        ? "-"
+        : "";
 
   return (
     <span
@@ -25,7 +34,7 @@ export function FinancialAmount({
       )}
     >
       {prefix}
-      {formatArs(value)}
+      {formatArs(displayValue)}
     </span>
   );
 }

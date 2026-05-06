@@ -1,5 +1,5 @@
 import { deleteCategoryAction, saveCategoryAction } from "@/app/actions/resources";
-import { Baby, BookOpen, BriefcaseBusiness, Bus, Car, Dumbbell, Film, Gamepad2, Gift, GraduationCap, HeartPulse, Home, PawPrint, ReceiptText, Shirt, ShoppingCart, Sparkles, Tags, Trash2, Utensils, Wifi, type LucideIcon } from "lucide-react";
+import { Baby, BadgeDollarSign, BookOpen, BriefcaseBusiness, Bus, Car, Clapperboard, Dumbbell, Film, Gamepad2, Gift, GraduationCap, HeartPulse, Home, Laptop, Lightbulb, Music2, Palette, PawPrint, Plane, ReceiptText, Shirt, ShoppingCart, Sparkles, Tags, Trash2, Utensils, Wifi, Wrench, type LucideIcon } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
@@ -13,7 +13,25 @@ import { Button } from "@/components/ui/button";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-const FALLBACK_ICONS: LucideIcon[] = [Sparkles, Gift, ShoppingCart, Film, Shirt, Baby, BookOpen, BriefcaseBusiness, Bus];
+const FALLBACK_ICONS: LucideIcon[] = [
+  Sparkles,
+  Gift,
+  ShoppingCart,
+  Film,
+  Shirt,
+  Baby,
+  BookOpen,
+  BriefcaseBusiness,
+  Bus,
+  BadgeDollarSign,
+  Clapperboard,
+  Laptop,
+  Lightbulb,
+  Music2,
+  Palette,
+  Plane,
+  Wrench,
+];
 
 function categoryIcon(name: string, used: Set<LucideIcon>, index: number): LucideIcon {
   const normalized = name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();

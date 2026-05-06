@@ -1,5 +1,5 @@
 import { deletePaymentMethodAction, savePaymentMethodAction } from "@/app/actions/resources";
-import { Banknote, CreditCard, Landmark, Smartphone, Trash2, WalletCards } from "lucide-react";
+import { BadgeDollarSign, Banknote, Building2, CircleDollarSign, CreditCard, Landmark, QrCode, Receipt, Smartphone, Trash2, WalletCards, type LucideIcon } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
@@ -25,7 +25,8 @@ export default async function PaymentMethodsPage({
     select: { id: true, name: true, isActive: true },
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
   });
-  const methodIcons = [CreditCard, WalletCards, Smartphone, Banknote, Landmark];
+  const methodIcons = [CreditCard, WalletCards, Smartphone, Banknote, Landmark, QrCode, BadgeDollarSign, CircleDollarSign, Receipt, Building2];
+  const usedMethodIcons = new Set<LucideIcon>();
 
   const createMethod = (
     <ResourceSheet title="Nuevo medio" trigger={<ResourceCreateButton />}>
@@ -60,7 +61,11 @@ export default async function PaymentMethodsPage({
             ) : (
               <div>
                 {methods.map((method, index) => {
-                  const Icon = methodIcons[index % methodIcons.length];
+                  const proposedIcon = methodIcons[index % methodIcons.length];
+                  const Icon = usedMethodIcons.has(proposedIcon)
+                    ? methodIcons.find((item) => !usedMethodIcons.has(item)) ?? proposedIcon
+                    : proposedIcon;
+                  usedMethodIcons.add(Icon);
                   return (
                   <ResourceSheet
                     key={method.id}

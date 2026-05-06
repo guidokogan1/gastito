@@ -1,5 +1,5 @@
 import { deleteAccountAction, saveAccountAction } from "@/app/actions/resources";
-import { Banknote, Landmark, PiggyBank, Trash2, Wallet } from "lucide-react";
+import { Banknote, Building2, CircleDollarSign, Landmark, PiggyBank, Trash2, Vault, Wallet, Warehouse, type LucideIcon } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
@@ -41,6 +41,8 @@ export default async function AccountsPage({
     bank: Landmark,
     wallet: Wallet,
   } as const;
+  const fallbackAccountIcons = [PiggyBank, Building2, Vault, Warehouse, CircleDollarSign];
+  const usedAccountIcons = new Set<LucideIcon>();
 
   const createAccount = (
     <ResourceSheet title="Nueva cuenta" trigger={<ResourceCreateButton />}>
@@ -80,8 +82,12 @@ export default async function AccountsPage({
               />
             ) : (
               <div>
-                {accounts.map((account) => {
-                  const Icon = ACCOUNT_TYPE_ICON[account.type] ?? PiggyBank;
+                {accounts.map((account, index) => {
+                  const semanticIcon = ACCOUNT_TYPE_ICON[account.type] ?? fallbackAccountIcons[index % fallbackAccountIcons.length];
+                  const Icon = usedAccountIcons.has(semanticIcon)
+                    ? fallbackAccountIcons.find((item) => !usedAccountIcons.has(item)) ?? semanticIcon
+                    : semanticIcon;
+                  usedAccountIcons.add(Icon);
                   return (
                   <ResourceSheet
                     key={account.id}

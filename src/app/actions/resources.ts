@@ -11,12 +11,15 @@ import { recordAuditEvent, requireMutationContext } from "@/lib/security";
 import {
   accountSchema,
   categorySchema,
+  debtPaymentSchema,
   debtSchema,
   onboardingSchema,
   paymentMethodSchema,
+  recurringBillPaymentSchema,
   recurringBillSchema,
   transactionSchema,
 } from "@/lib/validators";
+import { toTitleCase } from "@/lib/text";
 
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "");
@@ -32,6 +35,10 @@ function toNullableId(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function toDate(value: string) {
+  return new Date(`${value}T00:00:00`);
+}
+
 function withMessage(path: string, value: string) {
   return `${path}?message=${encodeURIComponent(value)}`;
 }
@@ -41,7 +48,7 @@ export async function completeOnboardingAction(formData: FormData) {
   if (current.household) redirect("/");
 
   const parsed = onboardingSchema.safeParse({
-    householdName: getString(formData, "householdName"),
+    householdName: toTitleCase(getString(formData, "householdName")),
   });
 
   if (!parsed.success) {
@@ -373,14 +380,19 @@ export async function deleteTransactionAction(formData: FormData) {
 
 export async function saveDebtAction(formData: FormData) {
   const { user, household, requestId } = await requireMutationContext("debt.save");
+  const originalAmount = getString(formData, "originalAmount");
+  const paidAmount = optionalString(getString(formData, "paidAmount"));
+  const remainingBalance = paidAmount
+    ? String(Math.max(0, Number(originalAmount.replace(",", ".")) - Number(paidAmount.replace(",", "."))))
+    : getString(formData, "remainingBalance");
   const parsed = debtSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     entityName: getString(formData, "entityName"),
     direction: getString(formData, "direction"),
-    originalAmount: getString(formData, "originalAmount"),
-    remainingBalance: getString(formData, "remainingBalance"),
+    originalAmount,
+    remainingBalance,
     notes: optionalString(getString(formData, "notes")),
-    isActive: formData.get("isActive") === "on",
+    isActive: true,
   });
 
   if (!parsed.success) {
@@ -428,6 +440,88 @@ export async function saveDebtAction(formData: FormData) {
   redirect(withMessage("/deudas", parsed.data.id ? "Deuda actualizada." : "Deuda creada."));
 }
 
+export async function saveDebtPaymentAction(formData: FormData) {
+  const { user, household, requestId } = await requireMutationContext("debtPayment.save");
+  const parsed = debtPaymentSchema.safeParse({
+    id: optionalString(getString(formData, "id")),
+    debtId: getString(formData, "debtId"),
+    date: getString(formData, "date"),
+    amount: getString(formData, "amount"),
+    notes: optionalString(getString(formData, "notes")),
+  });
+
+  if (!parsed.success) {
+    redirect(`/deudas?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "No se pudo guardar el pago.")}`);
+  }
+
+  await assertOwnedResource("debt", parsed.data.debtId, household.id);
+  const amount = Number(parsed.data.amount);
+
+  await prisma.$transaction(async (tx) => {
+    if (parsed.data.id) {
+      const previous = await tx.debtPayment.findFirst({
+        where: { id: parsed.data.id, householdId: household.id, debtId: parsed.data.debtId, deletedAt: null },
+        select: { amount: true },
+      });
+      if (!previous) throw new Error("No encontramos ese pago.");
+      await tx.debtPayment.updateMany({
+        where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
+        data: { date: toDate(parsed.data.date), amount: parsed.data.amount, notes: parsed.data.notes },
+      });
+      const delta = amount - Number(previous.amount);
+      await tx.debt.updateMany({
+        where: { id: parsed.data.debtId, householdId: household.id, deletedAt: null },
+        data: { remainingBalance: { decrement: delta } },
+      });
+    } else {
+      await tx.debtPayment.create({
+        data: {
+          householdId: household.id,
+          debtId: parsed.data.debtId,
+          date: toDate(parsed.data.date),
+          amount: parsed.data.amount,
+          notes: parsed.data.notes,
+        },
+      });
+      await tx.debt.updateMany({
+        where: { id: parsed.data.debtId, householdId: household.id, deletedAt: null },
+        data: { remainingBalance: { decrement: amount } },
+      });
+    }
+  });
+
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "debt_payment.update" : "debt_payment.create",
+    targetType: "debtPayment",
+    targetId: parsed.data.id,
+  });
+
+  revalidatePath("/deudas");
+  revalidatePath("/");
+  redirect(withMessage("/deudas", parsed.data.id ? "Pago actualizado." : "Pago registrado."));
+}
+
+export async function deleteDebtPaymentAction(formData: FormData) {
+  const { user, household, requestId } = await requireMutationContext("debtPayment.delete");
+  const id = getString(formData, "id");
+  const payment = await prisma.debtPayment.findFirst({
+    where: { id, householdId: household.id, deletedAt: null },
+    select: { id: true, debtId: true, amount: true },
+  });
+  if (!payment) throw new Error("No encontramos ese pago.");
+  await prisma.$transaction([
+    prisma.debtPayment.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date() } }),
+    prisma.debt.updateMany({ where: { id: payment.debtId, householdId: household.id }, data: { remainingBalance: { increment: Number(payment.amount) } } }),
+  ]);
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "debt_payment.delete", targetType: "debtPayment", targetId: id });
+  revalidatePath("/deudas");
+  revalidatePath("/");
+  redirect(withMessage("/deudas", "Pago borrado."));
+}
+
 export async function deleteDebtAction(formData: FormData) {
   const { user, household, requestId } = await requireMutationContext("debt.delete");
   const id = getString(formData, "id");
@@ -443,11 +537,11 @@ export async function saveRecurringBillAction(formData: FormData) {
   const parsed = recurringBillSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     name: getString(formData, "name"),
-    amount: getString(formData, "amount"),
+    amount: optionalString(getString(formData, "amount")) ?? "0",
     dueDay: getString(formData, "dueDay"),
     notes: optionalString(getString(formData, "notes")),
     paymentMethodId: optionalString(getString(formData, "paymentMethodId")),
-    isActive: formData.get("isActive") === "on",
+    isActive: true,
   });
 
   if (!parsed.success) {
@@ -500,6 +594,79 @@ export async function saveRecurringBillAction(formData: FormData) {
       parsed.data.id ? "Gasto fijo actualizado." : "Gasto fijo creado.",
     ),
   );
+}
+
+export async function saveRecurringBillPaymentAction(formData: FormData) {
+  const { user, household, requestId } = await requireMutationContext("recurringBillPayment.save");
+  const parsed = recurringBillPaymentSchema.safeParse({
+    id: optionalString(getString(formData, "id")),
+    recurringBillId: getString(formData, "recurringBillId"),
+    amount: getString(formData, "amount"),
+    issuedAt: optionalString(getString(formData, "issuedAt")),
+    dueDate: getString(formData, "dueDate"),
+    paidAt: optionalString(getString(formData, "paidAt")),
+    paymentMethodId: optionalString(getString(formData, "paymentMethodId")),
+    notes: optionalString(getString(formData, "notes")),
+  });
+
+  if (!parsed.success) {
+    redirect(`/gastos-fijos?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "No se pudo guardar el pago.")}`);
+  }
+
+  await assertOwnedResource("recurringBill", parsed.data.recurringBillId, household.id);
+  await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+
+  if (parsed.data.id) {
+    await assertOwnedResource("recurringBillPayment", parsed.data.id, household.id);
+    await prisma.recurringBillPayment.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
+      data: {
+        amount: parsed.data.amount,
+        issuedAt: parsed.data.issuedAt ? toDate(parsed.data.issuedAt) : null,
+        dueDate: toDate(parsed.data.dueDate),
+        paidAt: parsed.data.paidAt ? toDate(parsed.data.paidAt) : null,
+        paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
+        notes: parsed.data.notes,
+      },
+    });
+  } else {
+    await prisma.recurringBillPayment.create({
+      data: {
+        householdId: household.id,
+        recurringBillId: parsed.data.recurringBillId,
+        amount: parsed.data.amount,
+        issuedAt: parsed.data.issuedAt ? toDate(parsed.data.issuedAt) : null,
+        dueDate: toDate(parsed.data.dueDate),
+        paidAt: parsed.data.paidAt ? toDate(parsed.data.paidAt) : null,
+        paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
+        notes: parsed.data.notes,
+      },
+    });
+  }
+
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "recurring_bill_payment.update" : "recurring_bill_payment.create",
+    targetType: "recurringBillPayment",
+    targetId: parsed.data.id,
+  });
+
+  revalidatePath("/gastos-fijos");
+  revalidatePath("/");
+  redirect(withMessage("/gastos-fijos", parsed.data.id ? "Pago actualizado." : "Pago registrado."));
+}
+
+export async function deleteRecurringBillPaymentAction(formData: FormData) {
+  const { user, household, requestId } = await requireMutationContext("recurringBillPayment.delete");
+  const id = getString(formData, "id");
+  await assertOwnedResource("recurringBillPayment", id, household.id);
+  await prisma.recurringBillPayment.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date() } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "recurring_bill_payment.delete", targetType: "recurringBillPayment", targetId: id });
+  revalidatePath("/gastos-fijos");
+  revalidatePath("/");
+  redirect(withMessage("/gastos-fijos", "Pago borrado."));
 }
 
 export async function deleteRecurringBillAction(formData: FormData) {

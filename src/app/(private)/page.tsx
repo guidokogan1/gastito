@@ -12,14 +12,7 @@ import { DashboardSignalList, type DashboardSignal } from "@/components/app/dash
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
 import { formatArs, formatDate } from "@/lib/format";
-
-function formatMonthLabel(key: string) {
-  const [yearRaw, monthRaw] = key.split("-");
-  const date = new Date(Number(yearRaw), Number(monthRaw) - 1, 1);
-  const raw = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(date);
-  const withoutDe = raw.replace(/\s+de\s+/i, " ");
-  return withoutDe.charAt(0).toUpperCase() + withoutDe.slice(1);
-}
+import { toTitleCase } from "@/lib/text";
 
 export default async function DashboardPage({
   searchParams,
@@ -29,10 +22,6 @@ export default async function DashboardPage({
   const { household } = await requireHousehold();
   const params = await searchParams;
   const snapshot = await getDashboardSnapshot(household.id, params.month);
-  const expenseTrend =
-    snapshot.previousExpenses > 0
-      ? `${snapshot.expenseDelta >= 0 ? "+" : ""}${Math.round((snapshot.expenseDelta / snapshot.previousExpenses) * 100)}% vs. mes anterior`
-      : "Sin comparación previa";
   const trendSummary =
     snapshot.previousExpenses > 0
       ? `${Math.abs(Math.round((snapshot.expenseDelta / snapshot.previousExpenses) * 100))}% ${
@@ -83,7 +72,7 @@ export default async function DashboardPage({
   }
 
   const visibleSignals = signals.slice(0, 3);
-  const monthLabel = formatMonthLabel(snapshot.monthKey);
+  const displayHouseholdName = toTitleCase(household.name);
 
   return (
     <KineticPage className="space-y-6">
@@ -91,7 +80,7 @@ export default async function DashboardPage({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[0.96rem] font-semibold text-muted-foreground">Hola,</p>
-            <h1 className="screen-title mt-1 truncate">{household.name}</h1>
+            <h1 className="screen-title mt-1 truncate">{displayHouseholdName}</h1>
           </div>
           <Button asChild size="icon" aria-label="Cargar movimiento" className="mt-1">
               <Link href={`/movimientos?month=${snapshot.monthKey}&compose=1`}>
@@ -99,9 +88,6 @@ export default async function DashboardPage({
               </Link>
             </Button>
         </div>
-        <p className="inline-flex min-h-9 items-center rounded-full bg-[var(--surface-pill)] px-3 text-sm font-semibold text-muted-foreground">
-          Viendo {monthLabel}
-        </p>
       </header>
 
         <FlashMessage message={params.message} tone="success" />
@@ -115,20 +101,20 @@ export default async function DashboardPage({
         <section className="space-y-4 border-b border-border/70 pb-5">
           <div className="space-y-4">
             <div>
-              <p className="text-[1rem] font-semibold text-foreground">Este mes gastaste</p>
-              <p className="money-hero mt-1">{formatArs(snapshot.expenses)}</p>
-            </div>
-            <div className="rounded-[1.15rem] bg-[var(--surface-pill)] px-4 py-3">
-              <p className="text-sm font-semibold leading-relaxed text-[var(--finance-green)]">
-                {hasTransactions ? trendSummary : "Cargá tus primeros movimientos para empezar a leer el mes."}
+              <p className="text-[1rem] font-semibold text-foreground">Balance del mes</p>
+              <p className="money-hero mt-1">
+                <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
               </p>
-              {hasTransactions ? (
-                <p className="mt-1 text-xs font-semibold text-muted-foreground">Actualizado {formatDate(snapshot.updatedAt)}</p>
-              ) : null}
             </div>
           </div>
 
           <div className="finance-summary-strip border-t border-border/70 pt-3">
+            <div className="finance-summary-cell">
+              <p className="stat-label">Gastos</p>
+              <p className="money-row mt-1">
+                <FinancialAmount value={snapshot.expenses} direction="expense" />
+              </p>
+            </div>
             <div className="finance-summary-cell">
               <p className="stat-label">Ingresos</p>
               <p className="money-row mt-1">
@@ -139,12 +125,6 @@ export default async function DashboardPage({
               <p className="stat-label">Balance</p>
               <p className="money-row mt-1">
                 <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
-              </p>
-            </div>
-            <div className="finance-summary-cell">
-            <p className="stat-label">Proyección</p>
-              <p className="money-row mt-1">
-                {formatArs(snapshot.projectedExpenses)}
               </p>
             </div>
           </div>
@@ -189,7 +169,7 @@ export default async function DashboardPage({
               </GroupedSection>
 
               {snapshot.topCategories.length > 0 ? (
-                <GroupedSection eyebrow="Categorías" title="En qué se fue la plata">
+                <GroupedSection title="En qué se fue la plata">
                   <FinanceList>
                     {snapshot.topCategories.map((item) => (
                       <FinanceRow key={item.name} icon={Tags} title={item.name} amount={formatArs(item.total)} direction="neutral" />

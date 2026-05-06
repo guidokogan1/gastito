@@ -6,12 +6,14 @@ export function GroupedSection({
   eyebrow,
   title,
   description,
+  action,
   children,
   className,
 }: {
   eyebrow?: React.ReactNode;
   title?: React.ReactNode;
   description?: React.ReactNode;
+  action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -19,8 +21,13 @@ export function GroupedSection({
     <section className={cn("grouped-section", className)}>
       {eyebrow || title || description ? (
         <header className="grouped-section-header">
-          {eyebrow ? <p className="stat-label">{eyebrow}</p> : null}
-          {title ? <h2 className="section-title mt-1">{title}</h2> : null}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              {eyebrow ? <p className="stat-label">{eyebrow}</p> : null}
+              {title ? <h2 className="section-title mt-1">{title}</h2> : null}
+            </div>
+            {action ? <div className="shrink-0">{action}</div> : null}
+          </div>
           {description ? <p className="section-description mt-1">{description}</p> : null}
         </header>
       ) : null}

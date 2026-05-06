@@ -2,7 +2,15 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 
-type OwnedModel = "category" | "paymentMethod" | "account" | "transaction" | "debt" | "recurringBill";
+type OwnedModel =
+  | "category"
+  | "paymentMethod"
+  | "account"
+  | "transaction"
+  | "debt"
+  | "debtPayment"
+  | "recurringBill"
+  | "recurringBillPayment";
 
 async function findOwned(model: OwnedModel, id: string, householdId: string) {
   switch (model) {
@@ -16,8 +24,12 @@ async function findOwned(model: OwnedModel, id: string, householdId: string) {
       return prisma.transaction.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
     case "debt":
       return prisma.debt.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
+    case "debtPayment":
+      return prisma.debtPayment.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
     case "recurringBill":
       return prisma.recurringBill.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
+    case "recurringBillPayment":
+      return prisma.recurringBillPayment.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
   }
 }
 

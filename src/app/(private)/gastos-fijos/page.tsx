@@ -1,25 +1,39 @@
-import { deleteRecurringBillAction, saveRecurringBillAction } from "@/app/actions/resources";
-import { Repeat2, Trash2 } from "lucide-react";
-import { FlashMessage } from "@/components/flash-message";
+import {
+  deleteRecurringBillAction,
+  deleteRecurringBillPaymentAction,
+  saveRecurringBillAction,
+  saveRecurringBillPaymentAction,
+} from "@/app/actions/resources";
+import { CalendarCheck2, Clock3, ReceiptText, Repeat2, Trash2 } from "lucide-react";
+
 import { ConfirmForm } from "@/components/app/confirm-form";
-import { KineticPage } from "@/components/app/kinetic";
-import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { EmptyState } from "@/components/app/empty-state";
+import { GroupedSection } from "@/components/app/grouped-section";
+import { KineticPage } from "@/components/app/kinetic";
+import { MoneyField } from "@/components/app/money-field";
+import { PaymentMethodField } from "@/components/app/payment-method-field";
+import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
 import { SubmitButton } from "@/components/app/submit-button";
-import { CheckboxLine } from "@/components/ui/checkbox-line";
+import { FlashMessage } from "@/components/flash-message";
+import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DayOfMonthField } from "@/components/app/day-of-month-field";
-import { PaymentMethodField } from "@/components/app/payment-method-field";
-import { MoneyField } from "@/components/app/money-field";
-import { GroupedSection } from "@/components/app/grouped-section";
-import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
-import { StatusPill } from "@/components/app/pill-chip";
-import { Button } from "@/components/ui/button";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { formatArs, moneyInputValue } from "@/lib/format";
+import { formatArs, formatDate, moneyInputValue } from "@/lib/format";
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dueDateForDay(day: number) {
+  const now = new Date();
+  const safeDay = Math.max(1, Math.min(28, day));
+  return new Date(now.getFullYear(), now.getMonth(), safeDay).toISOString().slice(0, 10);
+}
 
 export default async function BillsPage({
   searchParams,
@@ -34,14 +48,27 @@ export default async function BillsPage({
       select: {
         id: true,
         name: true,
-        amount: true,
         dueDay: true,
         notes: true,
         paymentMethodId: true,
-        isActive: true,
         paymentMethod: { select: { name: true } },
+        payments: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            amount: true,
+            issuedAt: true,
+            dueDate: true,
+            paidAt: true,
+            notes: true,
+            paymentMethodId: true,
+            paymentMethod: { select: { name: true } },
+          },
+          orderBy: { dueDate: "desc" },
+          take: 12,
+        },
       },
-      orderBy: [{ isActive: "desc" }, { dueDay: "asc" }],
+      orderBy: [{ dueDay: "asc" }, { name: "asc" }],
     }),
     prisma.paymentMethod.findMany({
       where: { householdId: household.id, isActive: true, deletedAt: null },
@@ -50,134 +77,181 @@ export default async function BillsPage({
     }),
   ]);
 
-  const quickDays = (() => {
-    const counts = new Map<number, number>();
-    for (const bill of bills) counts.set(bill.dueDay, (counts.get(bill.dueDay) ?? 0) + 1);
-    return [...counts.entries()]
-      .sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]))
-      .map(([day]) => day)
-      .slice(0, 8);
-  })();
-
-  const quickPaymentMethods = paymentMethods.slice(0, 6);
+  const quickDays = [...new Set(bills.map((bill) => bill.dueDay))].slice(0, 8);
 
   const billForm = ({
     id,
     prefix,
     name,
-    amount,
     dueDay,
     paymentMethodId,
     notes,
-    isActive = true,
   }: {
     id?: string;
     prefix: string;
     name?: string;
-    amount?: string;
     dueDay: number;
     paymentMethodId?: string | null;
     notes?: string | null;
-    isActive?: boolean;
   }) => (
     <form action={saveRecurringBillAction} className="space-y-4">
       {id ? <input type="hidden" name="id" value={id} /> : null}
-      <section className="grouped-form-section space-y-3">
+      <input type="hidden" name="amount" value="0" />
+      <section className="grouped-form-section space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor={`${prefix}-name`}>Nombre</Label>
-          <Input id={`${prefix}-name`} name="name" placeholder="Ej. Internet" defaultValue={name} required />
+          <Label htmlFor={`${prefix}-name`}>Servicio</Label>
+          <Input id={`${prefix}-name`} name="name" placeholder="Ej. Internet" defaultValue={name} required autoFocus={!id} />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor={`${prefix}-amount`}>Monto mensual</Label>
-            <MoneyField id={`${prefix}-amount`} name="amount" label="Monto mensual" defaultValue={amount} inputClassName="h-12 rounded-[var(--radius-control)] border border-input bg-[var(--surface-control)] px-4 text-left text-[1rem] tracking-normal focus-visible:ring-[1px]" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={`${prefix}-dueDay`}>Día de vencimiento</Label>
-            <DayOfMonthField id={`${prefix}-dueDay`} name="dueDay" defaultValue={dueDay} quickDays={quickDays.length ? quickDays : undefined} />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor={`${prefix}-dueDay`}>Día habitual de vencimiento</Label>
+          <DayOfMonthField id={`${prefix}-dueDay`} name="dueDay" defaultValue={dueDay} quickDays={quickDays.length ? quickDays : undefined} />
         </div>
-        <div className="space-y-1.5">
-          <Label>Medio de pago</Label>
-          <PaymentMethodField
-            name="paymentMethodId"
-            defaultValue={paymentMethodId ?? ""}
-            methods={paymentMethods}
-            quickMethods={quickPaymentMethods}
-          />
+        <div className="space-y-2">
+          <Label>Medio habitual</Label>
+          <PaymentMethodField name="paymentMethodId" defaultValue={paymentMethodId ?? ""} methods={paymentMethods} quickMethods={paymentMethods} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`${prefix}-notes`}>Notas</Label>
-          <Textarea id={`${prefix}-notes`} name="notes" defaultValue={notes ?? ""} />
+          <Label htmlFor={`${prefix}-notes`}>Descripción</Label>
+          <Textarea id={`${prefix}-notes`} name="notes" defaultValue={notes ?? ""} placeholder="Ej. Fibra del depto, cliente 1234" />
         </div>
-        <CheckboxLine name="isActive" defaultChecked={isActive}>Activo</CheckboxLine>
       </section>
       <div className="sheet-action-bar">
         <SubmitButton type="submit" className="w-full" pendingText="Guardando...">
-          {id ? "Guardar cambios" : "Guardar gasto fijo"}
+          {id ? "Guardar cambios" : "Crear gasto fijo"}
         </SubmitButton>
       </div>
     </form>
   );
 
+  const paymentForm = (bill: (typeof bills)[number]) => (
+    <form action={saveRecurringBillPaymentAction} className="space-y-4">
+      <input type="hidden" name="recurringBillId" value={bill.id} />
+      <section className="grouped-form-section space-y-4">
+        <MoneyField id={`bill-payment-${bill.id}-amount`} name="amount" label="Monto" showPreview={false} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>La factura llegó</Label>
+            <DateField name="issuedAt" defaultValue={todayIso()} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Vence</Label>
+            <DateField name="dueDate" defaultValue={dueDateForDay(bill.dueDay)} required />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Pagado el</Label>
+          <DateField name="paidAt" placeholder="Todavía no está pago" />
+        </div>
+        <div className="space-y-2">
+          <Label>Medio de pago</Label>
+          <PaymentMethodField name="paymentMethodId" defaultValue={bill.paymentMethodId ?? ""} methods={paymentMethods} quickMethods={paymentMethods} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`bill-payment-${bill.id}-notes`}>Nota</Label>
+          <Textarea id={`bill-payment-${bill.id}-notes`} name="notes" placeholder="Ej. Factura de mayo" />
+        </div>
+      </section>
+      <div className="sheet-action-bar">
+        <SubmitButton type="submit" className="w-full" pendingText="Registrando...">
+          Registrar factura
+        </SubmitButton>
+      </div>
+    </form>
+  );
+
+  const createBill = (
+    <ResourceSheet title="Nuevo gasto fijo" trigger={<ResourceCreateButton />}>
+      {billForm({ prefix: "new-bill", dueDay: 10 })}
+    </ResourceSheet>
+  );
+
   return (
     <KineticPage>
-      <ScreenScaffold
-        title="Gastos fijos"
-        actions={
-          <ResourceSheet title="Nuevo gasto fijo" trigger={<ResourceCreateButton />}>
-            {billForm({ prefix: "new-bill", dueDay: 1, isActive: true })}
-          </ResourceSheet>
-        }
-      >
-        <FlashMessage message={params.error} tone="error" />
-        <FlashMessage message={params.message} tone="success" />
+      <FlashMessage message={params.error} tone="error" />
+      <FlashMessage message={params.message} tone="success" />
 
-        <GroupedSection eyebrow="Listado" title="Gastos fijos">
-          {bills.length === 0 ? (
-            <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero para anticipar los próximos pagos." compact className="m-4" />
-          ) : (
-            <div>
-              {bills.map((bill) => {
-                const prefix = `bill-${bill.id}`;
-                return (
-                  <ResourceSheet
-                    key={bill.id}
-                    title={bill.name}
-                    headerAction={
-                      <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”? Esta acción no se puede deshacer.`}>
-                        <input type="hidden" name="id" value={bill.id} />
-                        <Button type="submit" variant="ghost" size="icon" className="text-destructive hover:text-destructive" aria-label="Borrar gasto fijo">
-                          <Trash2 className="size-4" aria-hidden />
-                        </Button>
-                      </ConfirmForm>
-                    }
-                    trigger={
-                      <ResourceRowShell
-                        icon={<Repeat2 className="size-4" aria-hidden />}
-                        title={bill.name}
-                        meta={`Día ${bill.dueDay} · anual ${formatArs(Number(bill.amount) * 12)} · ${bill.paymentMethod?.name || "Sin medio"}`}
-                        trailing={<div className="text-right"><p className="money-row">{formatArs(bill.amount)}</p><StatusPill tone={bill.isActive ? "success" : "neutral"}>{bill.isActive ? "Activo" : "Pausado"}</StatusPill></div>}
-                      />
-                    }
-                  >
-                    {billForm({
-                      id: bill.id,
-                      prefix,
-                      name: bill.name,
-                      amount: moneyInputValue(bill.amount),
-                      dueDay: bill.dueDay,
-                      paymentMethodId: bill.paymentMethodId,
-                      notes: bill.notes,
-                      isActive: bill.isActive,
-                    })}
-                  </ResourceSheet>
-                );
-              })}
-            </div>
-          )}
-        </GroupedSection>
-      </ScreenScaffold>
+      <GroupedSection title="Gastos fijos" action={createBill}>
+        {bills.length === 0 ? (
+          <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero para seguir facturas y pagos mensuales." compact className="m-4" />
+        ) : (
+          <div>
+            {bills.map((bill) => {
+              const latestPayment = bill.payments[0] ?? null;
+              const pending = latestPayment && !latestPayment.paidAt;
+              return (
+                <ResourceSheet
+                  key={bill.id}
+                  title={bill.name}
+                  headerAction={
+                    <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”? Esta acción no se puede deshacer.`}>
+                      <input type="hidden" name="id" value={bill.id} />
+                      <Button type="submit" variant="ghost" size="icon" className="text-destructive hover:text-destructive" aria-label="Borrar gasto fijo">
+                        <Trash2 className="size-4" aria-hidden />
+                      </Button>
+                    </ConfirmForm>
+                  }
+                  trigger={
+                    <ResourceRowShell
+                      icon={<Repeat2 className="size-4" aria-hidden />}
+                      title={bill.name}
+                      meta={
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          <span>Día {bill.dueDay}</span>
+                          <span>{bill.paymentMethod?.name ?? "Sin medio"}</span>
+                          {latestPayment ? <span>Última {formatArs(latestPayment.amount)}</span> : <span>Sin facturas</span>}
+                        </div>
+                      }
+                      trailing={pending ? <span className="text-sm font-semibold text-amber-700">Pendiente</span> : null}
+                    />
+                  }
+                >
+                  <div className="space-y-6">
+                    <GroupedSection title="Detalle">
+                      {billForm({
+                        id: bill.id,
+                        prefix: `bill-${bill.id}`,
+                        name: bill.name,
+                        dueDay: bill.dueDay,
+                        paymentMethodId: bill.paymentMethodId,
+                        notes: bill.notes,
+                      })}
+                    </GroupedSection>
+
+                    <GroupedSection title="Nueva factura">
+                      {paymentForm(bill)}
+                    </GroupedSection>
+
+                    <GroupedSection title="Historial">
+                      {bill.payments.length === 0 ? (
+                        <EmptyState icon={ReceiptText} title="Sin facturas registradas" description="Acá vas a ver cuánto vino cada mes y cuándo se pagó." compact />
+                      ) : (
+                        <div>
+                          {bill.payments.map((payment) => (
+                            <ResourceRowShell
+                              key={payment.id}
+                              icon={payment.paidAt ? <CalendarCheck2 className="size-4" aria-hidden /> : <Clock3 className="size-4" aria-hidden />}
+                              title={formatArs(payment.amount)}
+                              meta={`${payment.paidAt ? `Pagado ${formatDate(payment.paidAt)}` : `Vence ${formatDate(payment.dueDate)}`} · ${payment.paymentMethod?.name ?? "Sin medio"}`}
+                              trailing={
+                                <ConfirmForm action={deleteRecurringBillPaymentAction} confirm="¿Borrar esta factura?">
+                                  <input type="hidden" name="id" value={payment.id} />
+                                  <Button type="submit" variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" aria-label="Borrar factura">
+                                    <Trash2 className="size-4" aria-hidden />
+                                  </Button>
+                                </ConfirmForm>
+                              }
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </GroupedSection>
+                  </div>
+                </ResourceSheet>
+              );
+            })}
+          </div>
+        )}
+      </GroupedSection>
     </KineticPage>
   );
 }

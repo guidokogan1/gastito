@@ -278,7 +278,7 @@ export function TransactionsPanel({
   const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income">("all");
   const [categoryFilterId, setCategoryFilterId] = useState<"all" | "none" | string>("all");
   const [methodFilterId, setMethodFilterId] = useState<"all" | "none" | string>("all");
-  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week">("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "7d" | "14d" | "30d">("all");
   const [sortBy, setSortBy] = useState<"date-desc" | "amount-desc" | "amount-asc">("date-desc");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -303,14 +303,14 @@ export function TransactionsPanel({
         typeFilter?: "all" | "expense" | "income";
         categoryFilterId?: "all" | "none" | string;
         methodFilterId?: "all" | "none" | string;
-        dateFilter?: "all" | "today" | "week";
+        dateFilter?: "all" | "today" | "7d" | "14d" | "30d" | "week";
         sortBy?: "date-desc" | "amount-desc" | "amount-asc";
       };
       setQuery(parsed.query ?? "");
       setTypeFilter(parsed.typeFilter ?? "all");
       setCategoryFilterId(parsed.categoryFilterId ?? "all");
       setMethodFilterId(parsed.methodFilterId ?? "all");
-      setDateFilter(parsed.dateFilter ?? "all");
+      setDateFilter(parsed.dateFilter === "week" ? "7d" : parsed.dateFilter ?? "all");
       setSortBy(parsed.sortBy ?? "date-desc");
     } catch {
       window.localStorage.removeItem("gastito.transactionFilters");
@@ -336,12 +336,18 @@ export function TransactionsPanel({
     const amountQuery = Number(trimmedQuery.replace(/\./g, "").replace(",", "."));
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const weekStart = new Date(todayStart);
-    weekStart.setDate(todayStart.getDate() - 6);
+    const sevenDaysStart = new Date(todayStart);
+    sevenDaysStart.setDate(todayStart.getDate() - 6);
+    const fourteenDaysStart = new Date(todayStart);
+    fourteenDaysStart.setDate(todayStart.getDate() - 13);
+    const thirtyDaysStart = new Date(todayStart);
+    thirtyDaysStart.setDate(todayStart.getDate() - 29);
     const filtered = transactions.filter((row) => {
       if (typeFilter !== "all" && row.type !== typeFilter) return false;
       if (dateFilter === "today" && row.date < todayStart) return false;
-      if (dateFilter === "week" && row.date < weekStart) return false;
+      if (dateFilter === "7d" && row.date < sevenDaysStart) return false;
+      if (dateFilter === "14d" && row.date < fourteenDaysStart) return false;
+      if (dateFilter === "30d" && row.date < thirtyDaysStart) return false;
       if (categoryFilterId !== "all") {
         const current = row.categoryId ?? "";
         if (categoryFilterId === "none") {
@@ -592,8 +598,14 @@ export function TransactionsPanel({
                       <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
                         <PillChip active={dateFilter === "today"}>Hoy</PillChip>
                       </button>
-                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "week" ? "all" : "week")}>
-                        <PillChip active={dateFilter === "week"}>7 días</PillChip>
+                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "7d" ? "all" : "7d")}>
+                        <PillChip active={dateFilter === "7d"} className="whitespace-nowrap">7 días</PillChip>
+                      </button>
+                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "14d" ? "all" : "14d")}>
+                        <PillChip active={dateFilter === "14d"} className="whitespace-nowrap">14 días</PillChip>
+                      </button>
+                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
+                        <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
                       </button>
                       <button type="button" className="pressable" onClick={() => setCategoryFilterId(categoryFilterId === "none" ? "all" : "none")}>
                         <PillChip active={categoryFilterId === "none"}>Sin categoría</PillChip>

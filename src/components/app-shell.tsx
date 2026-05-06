@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/app/bottom-nav";
 import { NavLink } from "@/components/app/nav-link";
 import { SubmitButton } from "@/components/app/submit-button";
+import { toTitleCase } from "@/lib/text";
 
 const links = [
   { href: "/", label: "Resumen", icon: LayoutDashboard, iconKey: "dashboard" },
@@ -49,6 +50,7 @@ export function AppShell({
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+  const displayHouseholdName = toTitleCase(householdName);
 
   return (
     <div className="app-shell">
@@ -60,7 +62,7 @@ export function AppShell({
               <div className="min-w-0">
                 <p className="stat-label text-sidebar-primary">Gastito</p>
                 <h1 className="truncate text-[1.05rem] font-semibold tracking-[-0.03em] text-sidebar-foreground">
-                  {householdName}
+                  {displayHouseholdName}
                 </h1>
               </div>
             </div>
@@ -90,13 +92,6 @@ export function AppShell({
       </aside>
 
       <main id="content" className="app-main">
-        <header className="mobile-topbar">
-          <div className="min-w-0">
-            <p className="stat-label">Gastito</p>
-            <p className="truncate text-base font-semibold tracking-[-0.03em]">{householdName}</p>
-          </div>
-          <div className="app-avatar size-10">{initials || "G"}</div>
-        </header>
         <div className="page-enter">{children}</div>
       </main>
       <BottomNav links={bottomNavLinks} />

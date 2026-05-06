@@ -64,7 +64,7 @@ export function ResourceRowShell({
       <div className="app-icon-tile">{icon}</div>
       <div className="min-w-0 flex-1">
         <p className="row-title truncate">{title}</p>
-        {meta ? <p className="row-meta mt-0.5 truncate">{meta}</p> : null}
+        {meta ? <div className="row-meta mt-1">{meta}</div> : null}
       </div>
       {trailing ? <div className="shrink-0">{trailing}</div> : null}
       <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden />

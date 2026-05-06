@@ -1,10 +1,9 @@
 import { deletePaymentMethodAction, savePaymentMethodAction } from "@/app/actions/resources";
-import { CreditCard, Trash2 } from "lucide-react";
+import { Banknote, CreditCard, Landmark, Smartphone, Trash2, WalletCards } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
-import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Input } from "@/components/ui/input";
@@ -26,31 +25,30 @@ export default async function PaymentMethodsPage({
     select: { id: true, name: true, isActive: true },
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
   });
+  const methodIcons = [CreditCard, WalletCards, Smartphone, Banknote, Landmark];
+
+  const createMethod = (
+    <ResourceSheet title="Nuevo medio" trigger={<ResourceCreateButton />}>
+      <form action={savePaymentMethodAction} className="space-y-4">
+        <section className="grouped-form-section space-y-3">
+          <input type="hidden" name="isActive" value="on" />
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Nombre</Label>
+            <Input id="name" name="name" placeholder="Ej. Tarjeta Visa" required autoFocus />
+          </div>
+        </section>
+        <div className="sheet-action-bar">
+          <SubmitButton type="submit" className="w-full" pendingText="Creando...">Crear medio</SubmitButton>
+        </div>
+      </form>
+    </ResourceSheet>
+  );
 
   return (
     <KineticPage>
-      <ScreenScaffold
-        title="Medios de pago"
-        actions={
-          <ResourceSheet title="Nuevo medio" trigger={<ResourceCreateButton />}>
-            <form action={savePaymentMethodAction} className="space-y-4">
-              <section className="grouped-form-section space-y-3">
-                <input type="hidden" name="isActive" value="on" />
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Nombre</Label>
-                  <Input id="name" name="name" placeholder="Ej. Tarjeta Visa" required autoFocus />
-                </div>
-              </section>
-              <div className="sheet-action-bar">
-                <SubmitButton type="submit" className="w-full" pendingText="Creando...">Crear medio</SubmitButton>
-              </div>
-            </form>
-          </ResourceSheet>
-        }
-      >
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <GroupedSection title="Medios">
+        <GroupedSection title="Medios" action={createMethod}>
             {methods.length === 0 ? (
               <EmptyState
                 icon={CreditCard}
@@ -61,7 +59,9 @@ export default async function PaymentMethodsPage({
               />
             ) : (
               <div>
-                {methods.map((method) => (
+                {methods.map((method, index) => {
+                  const Icon = methodIcons[index % methodIcons.length];
+                  return (
                   <ResourceSheet
                     key={method.id}
                     title={method.name}
@@ -74,10 +74,7 @@ export default async function PaymentMethodsPage({
                       </ConfirmForm>
                     }
                     trigger={
-                      <ResourceRowShell
-                        icon={<CreditCard className="size-4" aria-hidden />}
-                        title={method.name}
-                      />
+                      <ResourceRowShell icon={<Icon className="size-4" aria-hidden />} title={method.name} />
                     }
                   >
                     <form action={savePaymentMethodAction} className="space-y-4">
@@ -96,11 +93,11 @@ export default async function PaymentMethodsPage({
                       </div>
                     </form>
                   </ResourceSheet>
-                ))}
+                );
+                })}
               </div>
             )}
         </GroupedSection>
-      </ScreenScaffold>
     </KineticPage>
   );
 }

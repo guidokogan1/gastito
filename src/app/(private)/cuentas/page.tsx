@@ -1,10 +1,9 @@
 import { deleteAccountAction, saveAccountAction } from "@/app/actions/resources";
-import { Landmark, Trash2 } from "lucide-react";
+import { Banknote, Landmark, PiggyBank, Trash2, Wallet } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
-import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Input } from "@/components/ui/input";
@@ -37,40 +36,43 @@ export default async function AccountsPage({
     select: { id: true, name: true, type: true, isActive: true },
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
   });
+  const ACCOUNT_TYPE_ICON = {
+    cash: Banknote,
+    bank: Landmark,
+    wallet: Wallet,
+  } as const;
+
+  const createAccount = (
+    <ResourceSheet title="Nueva cuenta" trigger={<ResourceCreateButton />}>
+      <form action={saveAccountAction} className="space-y-4">
+        <section className="grouped-form-section space-y-3">
+          <input type="hidden" name="isActive" value="on" />
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Nombre</Label>
+            <Input id="name" name="name" placeholder="Ej. Cuenta sueldo" required autoFocus />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="type">Tipo</Label>
+            <NativeSelect id="type" name="type" defaultValue="bank">
+              {ACCOUNT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </NativeSelect>
+          </div>
+        </section>
+        <div className="sheet-action-bar">
+          <SubmitButton type="submit" className="w-full" pendingText="Creando...">Crear cuenta</SubmitButton>
+        </div>
+      </form>
+    </ResourceSheet>
+  );
 
   return (
     <KineticPage>
-      <ScreenScaffold
-        title="Bancos"
-        actions={
-          <ResourceSheet title="Nueva cuenta" trigger={<ResourceCreateButton />}>
-            <form action={saveAccountAction} className="space-y-4">
-              <section className="grouped-form-section space-y-3">
-                <input type="hidden" name="isActive" value="on" />
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Nombre</Label>
-                  <Input id="name" name="name" placeholder="Ej. Cuenta sueldo" required autoFocus />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="type">Tipo</Label>
-                  <NativeSelect id="type" name="type" defaultValue="bank">
-                    {ACCOUNT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </NativeSelect>
-                </div>
-              </section>
-              <div className="sheet-action-bar">
-                <SubmitButton type="submit" className="w-full" pendingText="Creando...">Crear cuenta</SubmitButton>
-              </div>
-            </form>
-          </ResourceSheet>
-        }
-      >
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <GroupedSection title="Bancos">
+        <GroupedSection title="Bancos" action={createAccount}>
             {accounts.length === 0 ? (
               <EmptyState
-                icon={Landmark}
+                icon={PiggyBank}
                 title="Todavía no hay cuentas"
                 description="Creá la primera cuenta a la derecha."
                 compact
@@ -78,7 +80,9 @@ export default async function AccountsPage({
               />
             ) : (
               <div>
-                {accounts.map((account) => (
+                {accounts.map((account) => {
+                  const Icon = ACCOUNT_TYPE_ICON[account.type] ?? PiggyBank;
+                  return (
                   <ResourceSheet
                     key={account.id}
                     title={account.name}
@@ -92,7 +96,7 @@ export default async function AccountsPage({
                     }
                     trigger={
                       <ResourceRowShell
-                        icon={<Landmark className="size-4" aria-hidden />}
+                        icon={<Icon className="size-4" aria-hidden />}
                         title={account.name}
                         meta={ACCOUNT_TYPE_LABEL[account.type] ?? account.type}
                       />
@@ -127,11 +131,11 @@ export default async function AccountsPage({
                       </div>
                     </form>
                   </ResourceSheet>
-                ))}
+                );
+                })}
               </div>
             )}
         </GroupedSection>
-      </ScreenScaffold>
     </KineticPage>
   );
 }

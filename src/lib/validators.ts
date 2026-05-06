@@ -71,9 +71,28 @@ export const debtSchema = z
 export const recurringBillSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(2, "El nombre es obligatorio."),
-  amount: money,
+  amount: nonNegativeMoney.default("0"),
   dueDay: z.coerce.number().int().min(1).max(31),
   notes: z.string().trim().optional(),
   paymentMethodId: z.string().optional(),
   isActive: z.coerce.boolean().default(true),
+});
+
+export const recurringBillPaymentSchema = z.object({
+  id: z.string().optional(),
+  recurringBillId: z.string().min(1, "Falta el gasto fijo."),
+  amount: money,
+  issuedAt: z.string().optional(),
+  dueDate: z.string().min(1, "La fecha de vencimiento es obligatoria."),
+  paidAt: z.string().optional(),
+  paymentMethodId: z.string().optional(),
+  notes: z.string().trim().optional(),
+});
+
+export const debtPaymentSchema = z.object({
+  id: z.string().optional(),
+  debtId: z.string().min(1, "Falta la deuda."),
+  date: z.string().min(1, "La fecha es obligatoria."),
+  amount: money,
+  notes: z.string().trim().optional(),
 });

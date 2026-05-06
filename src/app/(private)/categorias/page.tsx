@@ -1,10 +1,9 @@
 import { deleteCategoryAction, saveCategoryAction } from "@/app/actions/resources";
-import { Car, Dumbbell, Gamepad2, GraduationCap, HeartPulse, Home, PawPrint, ReceiptText, Sparkles, Tags, Trash2, Utensils, Wifi, type LucideIcon } from "lucide-react";
+import { Baby, BookOpen, BriefcaseBusiness, Bus, Car, Dumbbell, Film, Gamepad2, Gift, GraduationCap, HeartPulse, Home, PawPrint, ReceiptText, Shirt, ShoppingCart, Sparkles, Tags, Trash2, Utensils, Wifi, type LucideIcon } from "lucide-react";
 import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
-import { ScreenScaffold } from "@/components/app/screen-scaffold";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Input } from "@/components/ui/input";
@@ -14,19 +13,24 @@ import { Button } from "@/components/ui/button";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-function categoryIcon(name: string): LucideIcon {
+const FALLBACK_ICONS: LucideIcon[] = [Sparkles, Gift, ShoppingCart, Film, Shirt, Baby, BookOpen, BriefcaseBusiness, Bus];
+
+function categoryIcon(name: string, used: Set<LucideIcon>, index: number): LucideIcon {
   const normalized = name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-  if (normalized.includes("comida") || normalized.includes("super")) return Utensils;
-  if (normalized.includes("educ")) return GraduationCap;
-  if (normalized.includes("hogar")) return Home;
-  if (normalized.includes("impuesto")) return ReceiptText;
-  if (normalized.includes("masc")) return PawPrint;
-  if (normalized.includes("ocio")) return Gamepad2;
-  if (normalized.includes("salud")) return HeartPulse;
-  if (normalized.includes("servicio") || normalized.includes("internet")) return Wifi;
-  if (normalized.includes("transporte")) return Car;
-  if (normalized.includes("deporte")) return Dumbbell;
-  return Sparkles;
+  const semantic =
+    normalized.includes("comida") || normalized.includes("super") ? Utensils :
+    normalized.includes("educ") ? GraduationCap :
+    normalized.includes("hogar") ? Home :
+    normalized.includes("impuesto") ? ReceiptText :
+    normalized.includes("masc") ? PawPrint :
+    normalized.includes("ocio") ? Gamepad2 :
+    normalized.includes("salud") ? HeartPulse :
+    normalized.includes("servicio") || normalized.includes("internet") ? Wifi :
+    normalized.includes("transporte") ? Car :
+    normalized.includes("deporte") ? Dumbbell :
+    FALLBACK_ICONS[index % FALLBACK_ICONS.length];
+  if (!used.has(semantic)) return semantic;
+  return FALLBACK_ICONS.find((Icon) => !used.has(Icon)) ?? semantic;
 }
 
 export default async function CategoriesPage({
@@ -42,32 +46,32 @@ export default async function CategoriesPage({
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
   });
 
+  const usedIcons = new Set<LucideIcon>();
+
+  const createCategory = (
+    <ResourceSheet title="Nueva categoría" trigger={<ResourceCreateButton />}>
+      <form action={saveCategoryAction} className="space-y-4">
+        <section className="grouped-form-section space-y-3">
+          <input type="hidden" name="isActive" value="on" />
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Nombre</Label>
+            <Input id="name" name="name" placeholder="Ej. Colegio" required autoFocus />
+          </div>
+        </section>
+        <div className="sheet-action-bar">
+          <SubmitButton type="submit" className="w-full" pendingText="Creando...">
+            Crear categoría
+          </SubmitButton>
+        </div>
+      </form>
+    </ResourceSheet>
+  );
+
   return (
     <KineticPage>
-      <ScreenScaffold
-        title="Categorías"
-        actions={
-          <ResourceSheet title="Nueva categoría" trigger={<ResourceCreateButton />}>
-            <form action={saveCategoryAction} className="space-y-4">
-              <section className="grouped-form-section space-y-3">
-                <input type="hidden" name="isActive" value="on" />
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Nombre</Label>
-                  <Input id="name" name="name" placeholder="Ej. Colegio" required autoFocus />
-                </div>
-              </section>
-              <div className="sheet-action-bar">
-                <SubmitButton type="submit" className="w-full" pendingText="Creando...">
-                  Crear categoría
-                </SubmitButton>
-              </div>
-            </form>
-          </ResourceSheet>
-        }
-      >
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <GroupedSection title="Categorías">
+        <GroupedSection title="Categorías" action={createCategory}>
             {categories.length === 0 ? (
               <EmptyState
                 icon={Tags}
@@ -78,9 +82,10 @@ export default async function CategoriesPage({
               />
             ) : (
               <div>
-                {categories.map((category) => (
+                {categories.map((category, index) => (
                   (() => {
-                    const Icon = categoryIcon(category.name);
+                    const Icon = categoryIcon(category.name, usedIcons, index);
+                    usedIcons.add(Icon);
                     return (
                   <ResourceSheet
                     key={category.id}
@@ -122,7 +127,6 @@ export default async function CategoriesPage({
               </div>
             )}
         </GroupedSection>
-      </ScreenScaffold>
     </KineticPage>
   );
 }

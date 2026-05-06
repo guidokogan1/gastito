@@ -46,14 +46,13 @@ export function DayOfMonthField({
   return (
     <div className="space-y-2">
       <input type="hidden" id={id} name={name} value={value} />
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5">
         {normalizedQuickDays.map((day) => (
           <Button
             key={day}
             type="button"
             variant={value === String(day) ? "default" : "outline"}
-            size="sm"
-            className={cn("h-9 rounded-full", value !== String(day) && "bg-background")}
+            className={cn("h-11 rounded-full px-4 text-[0.98rem]", value !== String(day) && "bg-background")}
             onClick={() => setValue(String(day))}
           >
             {day}
@@ -64,11 +63,10 @@ export function DayOfMonthField({
           placeholder="Más…"
           options={options}
           onValueChange={setValue}
-          className="h-9"
+          className="h-11 min-w-24"
           inputPlaceholder="Buscar día…"
         />
       </div>
     </div>
   );
 }
-

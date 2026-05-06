@@ -107,7 +107,9 @@ export default async function DashboardPage({
         <KineticCard>
           <GroupedSection eyebrow="Compromisos" title="Gastos fijos">
             {snapshot.upcomingBills.length === 0 ? (
-              <EmptyState icon={Repeat2} title="Sin vencimientos próximos" description="Los gastos fijos activos van a aparecer acá." compact />
+              <FinanceList>
+                <FinanceRow icon={Repeat2} title="Sin vencimientos próximos" meta="Los gastos fijos activos van a aparecer acá." direction="neutral" />
+              </FinanceList>
             ) : (
               <FinanceList>
                 <FinanceRow icon={Repeat2} title="Total mensual" meta="Compromisos activos" amount={formatArs(snapshot.recurringTotal)} direction="expense" />
@@ -121,7 +123,9 @@ export default async function DashboardPage({
         <KineticCard>
           <GroupedSection eyebrow="Saldos" title="Deudas activas">
             {snapshot.activeDebts.length === 0 ? (
-              <EmptyState icon={HandCoins} title="Sin deudas activas" description="Los saldos pendientes van a aparecer acá." compact />
+              <FinanceList>
+                <FinanceRow icon={HandCoins} title="Sin deudas activas" meta="Los saldos pendientes van a aparecer acá." direction="neutral" />
+              </FinanceList>
             ) : (
               <FinanceList>
                 <FinanceRow icon={HandCoins} title="Saldo total" meta={`${snapshot.activeDebts.length} activa${snapshot.activeDebts.length === 1 ? "" : "s"}`} amount={formatArs(snapshot.debtBalance)} direction="expense" />

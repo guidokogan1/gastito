@@ -8,6 +8,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+let bodyLockCount = 0;
+let previousBodyOverflow = "";
+
 export function Slideout({
   open,
   title,
@@ -31,8 +34,13 @@ export function Slideout({
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
   const titleId = useId();
   const descriptionId = useId();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     setMounted(true);
@@ -50,7 +58,7 @@ export function Slideout({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
       if (event.key !== "Tab") return;
 
@@ -81,8 +89,11 @@ export function Slideout({
     }
 
     document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (bodyLockCount === 0) {
+      previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    bodyLockCount += 1;
     window.setTimeout(() => {
       const panel = panelRef.current;
       const firstFocusable = panel?.querySelector<HTMLElement>(
@@ -93,10 +104,13 @@ export function Slideout({
 
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      bodyLockCount = Math.max(0, bodyLockCount - 1);
+      if (bodyLockCount === 0) {
+        document.body.style.overflow = previousBodyOverflow;
+      }
       previouslyFocusedRef.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!mounted) return null;
 

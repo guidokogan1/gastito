@@ -1,11 +1,9 @@
 import {
   ArrowRightLeft,
-  CreditCard,
   HandCoins,
-  Landmark,
   LayoutDashboard,
+  MoreHorizontal,
   Repeat2,
-  Tags,
 } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth";
@@ -18,11 +16,9 @@ import { toTitleCase } from "@/lib/text";
 const links = [
   { href: "/", label: "Resumen", icon: LayoutDashboard, iconKey: "dashboard" },
   { href: "/movimientos", label: "Movimientos", icon: ArrowRightLeft, iconKey: "transactions" },
-  { href: "/categorias", label: "Categorías", icon: Tags, iconKey: "categories" },
-  { href: "/medios-de-pago", label: "Medios de pago", icon: CreditCard, iconKey: "paymentMethods" },
-  { href: "/cuentas", label: "Cuentas", icon: Landmark, iconKey: "accounts" },
-  { href: "/deudas", label: "Deudas", icon: HandCoins, iconKey: "debts" },
   { href: "/gastos-fijos", label: "Gastos fijos", icon: Repeat2, iconKey: "recurringBills" },
+  { href: "/deudas", label: "Deudas", icon: HandCoins, iconKey: "debts" },
+  { href: "/mas", label: "Más", icon: MoreHorizontal, iconKey: "more" },
 ] as const;
 
 const bottomNavLinks = [
@@ -30,9 +26,7 @@ const bottomNavLinks = [
   { href: "/movimientos", label: "Movimientos", iconKey: "transactions" },
   { href: "/gastos-fijos", label: "Gastos fijos", iconKey: "recurringBills" },
   { href: "/deudas", label: "Deudas", iconKey: "debts" },
-  { href: "/categorias", label: "Categorías", iconKey: "categories" },
-  { href: "/medios-de-pago", label: "Medios de pago", iconKey: "paymentMethods" },
-  { href: "/cuentas", label: "Bancos", iconKey: "accounts" },
+  { href: "/mas", label: "Más", iconKey: "more" },
 ] as const;
 
 export function AppShell({

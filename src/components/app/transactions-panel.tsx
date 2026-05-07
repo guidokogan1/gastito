@@ -37,7 +37,7 @@ import { formatArs, moneyInputValue, toNumber } from "@/lib/format";
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
 import { FinanceList, FinanceRow } from "@/components/app/finance-list";
 import { ConfirmForm } from "@/components/app/confirm-form";
-import { KineticCard, KineticPage } from "@/components/app/kinetic";
+import { KineticPage } from "@/components/app/kinetic";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Slideout } from "@/components/app/slideout";
 import { Button } from "@/components/ui/button";
@@ -504,8 +504,7 @@ export function TransactionsPanel({
           </Button>
         }
       />
-      <KineticCard>
-        <section className="space-y-4">
+      <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">{monthControl}</div>
             <div className="flex shrink-0 gap-2">
@@ -687,8 +686,7 @@ export function TransactionsPanel({
             </div>
           )}
         </div>
-        </section>
-      </KineticCard>
+      </section>
 
       <Slideout
         open={filtersOpen}

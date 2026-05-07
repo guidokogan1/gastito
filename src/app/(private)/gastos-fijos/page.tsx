@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DayOfMonthField } from "@/components/app/day-of-month-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { formatArs, formatDate, moneyInputValue } from "@/lib/format";
+import { formatArs, formatDate } from "@/lib/format";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -34,6 +34,18 @@ function dueDateForDay(day: number) {
   const now = new Date();
   const safeDay = Math.max(1, Math.min(28, day));
   return new Date(now.getFullYear(), now.getMonth(), safeDay).toISOString().slice(0, 10);
+}
+
+function isSameMonth(date: Date) {
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
+
+function daysUntil(date: Date) {
+  const today = new Date();
+  const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  return Math.ceil((startDate - startToday) / 86_400_000);
 }
 
 export default async function BillsPage({
@@ -49,6 +61,7 @@ export default async function BillsPage({
       select: {
         id: true,
         name: true,
+        amount: true,
         dueDay: true,
         notes: true,
         paymentMethodId: true,
@@ -79,6 +92,28 @@ export default async function BillsPage({
   ]);
 
   const quickDays = [...new Set(bills.map((bill) => bill.dueDay))].slice(0, 8);
+  const now = new Date();
+  const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long" }).format(now);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const calendarDays = Array.from({ length: daysInMonth }, (_, index) => index + 1);
+  const billItems = bills.map((bill) => {
+    const currentPayment = bill.payments.find((payment) => isSameMonth(payment.dueDate)) ?? null;
+    const latestPayment = bill.payments[0] ?? null;
+    const dueDate = currentPayment?.dueDate ?? new Date(now.getFullYear(), now.getMonth(), Math.max(1, Math.min(28, bill.dueDay)));
+    const amount = Number(currentPayment?.amount ?? latestPayment?.amount ?? bill.amount);
+    return {
+      bill,
+      currentPayment,
+      latestPayment,
+      dueDate,
+      amount,
+      paid: Boolean(currentPayment?.paidAt),
+    };
+  });
+  const pendingItems = billItems.filter((item) => !item.paid);
+  const paidItems = billItems.filter((item) => item.paid);
+  const pendingTotal = pendingItems.reduce((total, item) => total + item.amount, 0);
+  const dueDays = new Map(billItems.map((item) => [item.dueDate.getDate(), item.paid ? "paid" : "pending"]));
 
   const billForm = ({
     id,
@@ -172,17 +207,111 @@ export default async function BillsPage({
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
 
-      <GroupedSection>
-        {bills.length === 0 ? (
-          <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero para seguir facturas y pagos mensuales." compact className="m-4" />
-        ) : (
-          <div>
-            {bills.map((bill) => {
-              const latestPayment = bill.payments[0] ?? null;
-              const pending = latestPayment && !latestPayment.paidAt;
-              return (
+      {bills.length === 0 ? (
+        <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero para seguir facturas y pagos mensuales." compact />
+      ) : (
+        <>
+          <section className="space-y-3 border-b border-border/70 pb-5">
+            <div>
+              <p className="section-eyebrow">Pendientes este mes</p>
+              <p className="money-hero mt-1 text-amber-700">{formatArs(pendingTotal)}</p>
+              <p className="row-meta mt-1">
+                {pendingItems.length} servicios sin pagar · {paidItems.length} pagados
+              </p>
+            </div>
+            <div className="flex items-end justify-between gap-4">
+              <p className="section-eyebrow">{monthLabel}</p>
+              <p className="row-meta">Hoy {now.getDate()}</p>
+            </div>
+            <div className="mobile-scroll-row">
+              {calendarDays.map((day) => {
+                const state = dueDays.get(day);
+                const isToday = day === now.getDate();
+                return (
+                  <span
+                    key={day}
+                    className={[
+                      "grid h-10 w-6 place-items-center rounded-full text-[0.78rem] font-semibold",
+                      isToday ? "bg-[var(--finance-green)] text-white" : "bg-muted/45 text-muted-foreground",
+                      state === "pending" ? "bg-amber-100 text-amber-800" : "",
+                      state === "paid" ? "bg-[var(--income-bg)] text-[var(--income)]" : "",
+                    ].join(" ")}
+                  >
+                    {day}
+                  </span>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="section-eyebrow">Pendientes</h2>
+            {pendingItems.length === 0 ? (
+              <EmptyState icon={CalendarCheck2} title="Todo pago este mes" description="No tenés facturas pendientes registradas." compact />
+            ) : (
+              <div>
+                {pendingItems.map(({ bill, dueDate, amount }) => {
+                  const remainingDays = daysUntil(dueDate);
+                  const dateMeta = remainingDays >= 0 ? `en ${remainingDays} días` : "vencido";
+                  return (
+                    <BillSheet
+                      key={bill.id}
+                      bill={bill}
+                      trigger={
+                        <ResourceRowShell
+                          icon={<Repeat2 className="size-4" aria-hidden />}
+                          title={bill.name}
+                          meta={`Vence ${formatDate(dueDate)} · ${dateMeta}`}
+                          trailing={<p className="money-row text-right">{amount > 0 ? formatArs(amount) : "Sin factura"}</p>}
+                        />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {paidItems.length > 0 ? (
+            <section className="space-y-2">
+              <h2 className="section-eyebrow">Pagados</h2>
+              <div>
+                {paidItems.map(({ bill, amount }) => (
+                  <BillSheet
+                    key={bill.id}
+                    bill={bill}
+                    trigger={
+                      <ResourceRowShell
+                        icon={<CalendarCheck2 className="size-4" aria-hidden />}
+                        title={bill.name}
+                        meta={`~día ${bill.dueDay} · ${bill.paymentMethod?.name ?? "Sin medio"}`}
+                        trailing={
+                          <span className="inline-flex items-center gap-3 text-muted-foreground">
+                            <CalendarCheck2 className="size-4 text-[var(--income)]" aria-hidden />
+                            <span className="money-row">{formatArs(amount)}</span>
+                          </span>
+                        }
+                      />
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </>
+      )}
+    </KineticPage>
+  );
+
+  function BillSheet({
+    bill,
+    trigger,
+  }: {
+    bill: (typeof bills)[number];
+    trigger: React.ReactNode;
+  }) {
+    return (
                 <ResourceSheet
-                  key={bill.id}
                   title={bill.name}
                   headerAction={
                     <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”? Esta acción no se puede deshacer.`}>
@@ -192,20 +321,7 @@ export default async function BillsPage({
                       </Button>
                     </ConfirmForm>
                   }
-                  trigger={
-                    <ResourceRowShell
-                      icon={<Repeat2 className="size-4" aria-hidden />}
-                      title={bill.name}
-                      meta={
-                        <div className="flex flex-wrap gap-x-3 gap-y-1">
-                          <span>Día {bill.dueDay}</span>
-                          <span>{bill.paymentMethod?.name ?? "Sin medio"}</span>
-                          {latestPayment ? <span>Última {formatArs(latestPayment.amount)}</span> : <span>Sin facturas</span>}
-                        </div>
-                      }
-                      trailing={pending ? <span className="text-sm font-semibold text-amber-700">Pendiente</span> : null}
-                    />
-                  }
+                  trigger={trigger}
                 >
                   <div className="space-y-6">
                     <GroupedSection title="Detalle">
@@ -249,11 +365,6 @@ export default async function BillsPage({
                     </GroupedSection>
                   </div>
                 </ResourceSheet>
-              );
-            })}
-          </div>
-        )}
-      </GroupedSection>
-    </KineticPage>
-  );
+    );
+  }
 }

@@ -4,6 +4,7 @@ import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
+import { ScreenHeader } from "@/components/app/screen-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Input } from "@/components/ui/input";
@@ -46,10 +47,11 @@ export default async function PaymentMethodsPage({
   );
 
   return (
-    <KineticPage>
+    <KineticPage className="space-y-5">
+        <ScreenHeader title="Medios" action={createMethod} />
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <GroupedSection title="Medios" action={createMethod}>
+        <GroupedSection>
             {methods.length === 0 ? (
               <EmptyState
                 icon={CreditCard}

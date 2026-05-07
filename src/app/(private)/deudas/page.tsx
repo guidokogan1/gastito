@@ -12,6 +12,7 @@ import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
+import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
 import { Button } from "@/components/ui/button";
@@ -154,11 +155,12 @@ export default async function DebtsPage({
   );
 
   return (
-    <KineticPage>
+    <KineticPage className="space-y-5">
+      <ScreenHeader title="Deudas" action={createDebt} />
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
 
-      <GroupedSection title="Deudas" action={createDebt}>
+      <GroupedSection>
         {debts.length === 0 ? (
           <EmptyState icon={HandCoins} title="Todavía no hay deudas" description="Agregá la primera para seguir pagos y saldos sin planillas." compact className="m-4" />
         ) : (

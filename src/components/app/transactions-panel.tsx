@@ -48,6 +48,7 @@ import { PillChip } from "@/components/app/pill-chip";
 import { EmptyState } from "@/components/app/empty-state";
 import { FinancialAmount } from "@/components/app/financial-amount";
 import { MoneyField } from "@/components/app/money-field";
+import { ScreenHeader } from "@/components/app/screen-header";
 import { cn } from "@/lib/utils";
 
 type SelectOption = { id: string; name: string };
@@ -486,6 +487,23 @@ export function TransactionsPanel({
 
   return (
     <KineticPage className="space-y-5">
+      <ScreenHeader
+        title="Movimientos"
+        action={
+          <Button
+            type="button"
+            size="icon"
+            aria-label="Nuevo movimiento"
+            className="icon-action bg-[var(--finance-green)] text-white"
+            onClick={() => {
+              setSelectedId(null);
+              setDrawerOpen(true);
+            }}
+          >
+            <Plus className="size-5" aria-hidden />
+          </Button>
+        }
+      />
       <KineticCard>
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -505,18 +523,6 @@ export function TransactionsPanel({
                     {activeFilterCount}
                   </span>
                 ) : null}
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                aria-label="Nuevo movimiento"
-                className="icon-action bg-[var(--finance-green)] text-white"
-                onClick={() => {
-                  setSelectedId(null);
-                  setDrawerOpen(true);
-                }}
-              >
-                <Plus className="size-5" aria-hidden />
               </Button>
             </div>
           </div>

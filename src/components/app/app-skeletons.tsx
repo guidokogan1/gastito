@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function SectionHeaderSkeleton({ titleWidth = "w-36" }: { titleWidth?: string }) {
   return (
     <div className="flex items-center justify-between gap-3 pb-3 pt-1">
-      <Skeleton className={`h-8 ${titleWidth} rounded-xl`} />
+      <Skeleton className={`h-11 ${titleWidth} rounded-2xl`} />
       <Skeleton className="size-11 rounded-full" />
     </div>
   );

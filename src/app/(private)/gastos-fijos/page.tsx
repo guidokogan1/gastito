@@ -13,6 +13,7 @@ import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
+import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
 import { Button } from "@/components/ui/button";
@@ -166,11 +167,12 @@ export default async function BillsPage({
   );
 
   return (
-    <KineticPage>
+    <KineticPage className="space-y-5">
+      <ScreenHeader title="Gastos fijos" action={createBill} />
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
 
-      <GroupedSection title="Gastos fijos" action={createBill}>
+      <GroupedSection>
         {bills.length === 0 ? (
           <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero para seguir facturas y pagos mensuales." compact className="m-4" />
         ) : (

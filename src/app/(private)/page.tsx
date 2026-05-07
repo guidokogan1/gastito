@@ -46,7 +46,7 @@ export default async function DashboardPage({
     signals.push({
       icon: Repeat2,
       title: firstUpcomingBill.name,
-      meta: `Vence el día ${firstUpcomingBill.dueDay} · ${firstUpcomingBill.paymentMethod?.name ?? "Sin medio"}`,
+      meta: `Vence ${formatDate(firstUpcomingBill.dueDate)} · ${firstUpcomingBill.paymentMethod?.name ?? "Sin medio"}`,
       value: formatArs(firstUpcomingBill.amount),
       tone: "warning",
     });

@@ -26,13 +26,27 @@ export const onboardingSchema = z.object({
 export const categorySchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(2, "El nombre es obligatorio."),
+  icon: z.string().trim().min(1).default("tag"),
+  color: z.string().trim().min(1).default("#F7F7F8"),
+  budget: nonNegativeMoney.default("0"),
+  sortOrder: z.coerce.number().int().default(0),
+  kind: z.enum(["expense", "income"]).default("expense"),
   isActive: z.coerce.boolean().default(true),
 });
 
 export const paymentMethodSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(2, "El nombre es obligatorio."),
+  type: z.enum(["credit", "debit", "wallet", "cash", "transfer", "auto"]).default("cash"),
+  bankId: z.string().optional(),
+  last4: z.string().trim().max(4, "Usá hasta 4 dígitos.").optional(),
   isActive: z.coerce.boolean().default(true),
+});
+
+export const bankSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().trim().min(2, "El nombre es obligatorio."),
+  color: z.string().trim().min(1, "Elegí un color.").default("#0E3B2E"),
 });
 
 export const accountSchema = z.object({
@@ -50,6 +64,8 @@ export const transactionSchema = z.object({
   accountId: z.string().optional(),
   categoryId: z.string().optional(),
   paymentMethodId: z.string().optional(),
+  sourceType: z.enum(["recurring_bill_payment", "debt_payment"]).optional(),
+  sourceId: z.string().optional(),
   detail: z.string().trim().optional(),
 });
 
@@ -73,6 +89,8 @@ export const recurringBillSchema = z.object({
   name: z.string().trim().min(2, "El nombre es obligatorio."),
   amount: nonNegativeMoney.default("0"),
   dueDay: z.coerce.number().int().min(1).max(31),
+  icon: z.string().trim().min(1).default("repeat"),
+  defaultCategoryId: z.string().optional(),
   notes: z.string().trim().optional(),
   paymentMethodId: z.string().optional(),
   isActive: z.coerce.boolean().default(true),
@@ -86,6 +104,8 @@ export const recurringBillPaymentSchema = z.object({
   dueDate: z.string().min(1, "La fecha de vencimiento es obligatoria."),
   paidAt: z.string().optional(),
   paymentMethodId: z.string().optional(),
+  categoryId: z.string().optional(),
+  createTransaction: z.coerce.boolean().default(false),
   notes: z.string().trim().optional(),
 });
 
@@ -94,5 +114,6 @@ export const debtPaymentSchema = z.object({
   debtId: z.string().min(1, "Falta la deuda."),
   date: z.string().min(1, "La fecha es obligatoria."),
   amount: money,
+  createTransaction: z.coerce.boolean().default(false),
   notes: z.string().trim().optional(),
 });

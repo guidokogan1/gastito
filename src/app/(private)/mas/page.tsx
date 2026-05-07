@@ -29,11 +29,11 @@ function initials(name: string) {
 
 export default async function MorePage() {
   const { household } = await requireHousehold();
-  const [memberCount, categoryCount, paymentMethodCount, accountCount] = await Promise.all([
+  const [memberCount, categoryCount, paymentMethodCount, bankCount] = await Promise.all([
     prisma.membership.count({ where: { householdId: household.id } }),
     prisma.category.count({ where: { householdId: household.id, deletedAt: null } }),
     prisma.paymentMethod.count({ where: { householdId: household.id, deletedAt: null } }),
-    prisma.account.count({ where: { householdId: household.id, deletedAt: null } }),
+    prisma.bank.count({ where: { householdId: household.id, deletedAt: null } }),
   ]);
 
   const householdName = toTitleCase(household.name);
@@ -57,9 +57,9 @@ export default async function MorePage() {
       </section>
 
       <SettingsGroup label="Catálogos">
-        <SettingsRow href="/categorias" icon={Tags} title="Categorías" subtitle={`${categoryCount} categorías`} />
-        <SettingsRow href="/medios-de-pago" icon={CreditCard} title="Medios de pago" subtitle={`${paymentMethodCount} medios`} />
-        <SettingsRow href="/cuentas" icon={Landmark} title="Bancos y billeteras" subtitle={`${accountCount} cuentas`} />
+        <SettingsRow href="/mas/categorias" icon={Tags} title="Categorías" subtitle={`${categoryCount} categorías`} />
+        <SettingsRow href="/mas/medios" icon={CreditCard} title="Medios de pago" subtitle={`${paymentMethodCount} medios`} />
+        <SettingsRow href="/mas/bancos" icon={Landmark} title="Bancos y billeteras" subtitle={`${bankCount} bancos`} />
       </SettingsGroup>
 
       <SettingsGroup label="Preferencias">

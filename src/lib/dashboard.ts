@@ -37,7 +37,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       expenseTotals,
       previousExpenseTotals,
       categoryTotals,
-      recurringBills,
+      pendingBillPayments,
       activeDebts,
       monthBuckets,
     ] = await Promise.all([
@@ -73,10 +73,22 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         orderBy: { _sum: { amount: "desc" } },
         take: 5,
       }),
-      prisma.recurringBill.findMany({
-        where: { householdId, deletedAt: null, isActive: true },
-        select: { id: true, name: true, amount: true, dueDay: true, paymentMethod: { select: { name: true } } },
-        orderBy: { dueDay: "asc" },
+      prisma.recurringBillPayment.findMany({
+        where: {
+          householdId,
+          deletedAt: null,
+          paidAt: null,
+          dueDate: { gte: range.start, lt: range.end },
+          recurringBill: { deletedAt: null, isActive: true },
+        },
+        select: {
+          id: true,
+          amount: true,
+          dueDate: true,
+          paymentMethod: { select: { name: true } },
+          recurringBill: { select: { name: true, dueDay: true, paymentMethod: { select: { name: true } } } },
+        },
+        orderBy: { dueDate: "asc" },
         take: 6,
       }),
       prisma.debt.findMany({
@@ -112,10 +124,19 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
     const elapsedDays = isCurrentMonth ? Math.max(1, today.getDate()) : new Date(range.end.getTime() - 1).getDate();
     const daysInMonth = new Date(range.end.getTime() - 1).getDate();
     const projectedExpenses = isCurrentMonth ? Math.round((expenses / elapsedDays) * daysInMonth) : expenses;
-    const recurringTotal = recurringBills.reduce((acc, bill) => acc + toNumber(bill.amount), 0);
-    const upcomingBills = recurringBills
-      .filter((bill) => !isCurrentMonth || bill.dueDay >= today.getDate())
-      .slice(0, 4);
+    const recurringTotal = pendingBillPayments.reduce((acc, payment) => acc + toNumber(payment.amount), 0);
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const upcomingBills = pendingBillPayments
+      .filter((payment) => !isCurrentMonth || payment.dueDate >= todayStart)
+      .slice(0, 4)
+      .map((payment) => ({
+        id: payment.id,
+        name: payment.recurringBill.name,
+        amount: payment.amount,
+        dueDate: payment.dueDate,
+        dueDay: payment.recurringBill.dueDay,
+        paymentMethod: payment.paymentMethod ?? payment.recurringBill.paymentMethod,
+      }));
     const debtBalance = activeDebts.reduce((acc, debt) => acc + toNumber(debt.remainingBalance), 0);
     const topCategories = categoryTotals.map((row) => ({
       name: row.categoryId ? categoryNames.get(row.categoryId) ?? "Sin categoría" : "Sin categoría",

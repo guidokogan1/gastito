@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 
 type OwnedModel =
   | "category"
+  | "bank"
   | "paymentMethod"
   | "account"
   | "transaction"
@@ -16,6 +17,8 @@ async function findOwned(model: OwnedModel, id: string, householdId: string) {
   switch (model) {
     case "category":
       return prisma.category.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
+    case "bank":
+      return prisma.bank.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
     case "paymentMethod":
       return prisma.paymentMethod.findFirst({ where: { id, householdId, deletedAt: null }, select: { id: true } });
     case "account":

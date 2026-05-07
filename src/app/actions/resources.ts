@@ -6,10 +6,12 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { assertOptionalOwnedResource, assertOwnedResource } from "@/lib/db/ownership";
+import { debtPaymentTransactionType, shouldCreateRecurringBillTransaction } from "@/lib/product-model";
 import { seedHousehold } from "@/lib/seed-household";
 import { recordAuditEvent, requireMutationContext } from "@/lib/security";
 import {
   accountSchema,
+  bankSchema,
   categorySchema,
   debtPaymentSchema,
   debtSchema,
@@ -99,7 +101,12 @@ export async function saveCategoryAction(formData: FormData) {
   const parsed = categorySchema.safeParse({
     id: optionalString(getString(formData, "id")),
     name: getString(formData, "name"),
-    isActive: formData.get("isActive") === "on",
+    icon: optionalString(getString(formData, "icon")) ?? "tag",
+    color: optionalString(getString(formData, "color")) ?? "#F7F7F8",
+    budget: optionalString(getString(formData, "budget")) ?? "0",
+    sortOrder: optionalString(getString(formData, "sortOrder")) ?? "0",
+    kind: optionalString(getString(formData, "kind")) ?? "expense",
+    isActive: true,
   });
 
   if (!parsed.success) {
@@ -112,6 +119,11 @@ export async function saveCategoryAction(formData: FormData) {
       where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         name: parsed.data.name,
+        icon: parsed.data.icon,
+        color: parsed.data.color,
+        budget: parsed.data.budget,
+        sortOrder: parsed.data.sortOrder,
+        kind: parsed.data.kind,
         isActive: parsed.data.isActive,
       },
     });
@@ -120,6 +132,11 @@ export async function saveCategoryAction(formData: FormData) {
       data: {
         householdId: household.id,
         name: parsed.data.name,
+        icon: parsed.data.icon,
+        color: parsed.data.color,
+        budget: parsed.data.budget,
+        sortOrder: parsed.data.sortOrder,
+        kind: parsed.data.kind,
         isActive: parsed.data.isActive,
       },
     });
@@ -164,7 +181,10 @@ export async function savePaymentMethodAction(formData: FormData) {
   const parsed = paymentMethodSchema.safeParse({
     id: optionalString(getString(formData, "id")),
     name: getString(formData, "name"),
-    isActive: formData.get("isActive") === "on",
+    type: optionalString(getString(formData, "type")) ?? "cash",
+    bankId: optionalString(getString(formData, "bankId")),
+    last4: optionalString(getString(formData, "last4")),
+    isActive: true,
   });
 
   if (!parsed.success) {
@@ -173,18 +193,26 @@ export async function savePaymentMethodAction(formData: FormData) {
 
   if (parsed.data.id) {
     await assertOwnedResource("paymentMethod", parsed.data.id, household.id);
+    await assertOptionalOwnedResource("bank", toNullableId(parsed.data.bankId ?? ""), household.id);
     await prisma.paymentMethod.updateMany({
       where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         name: parsed.data.name,
+        type: parsed.data.type,
+        bankId: toNullableId(parsed.data.bankId ?? ""),
+        last4: parsed.data.last4,
         isActive: parsed.data.isActive,
       },
     });
   } else {
+    await assertOptionalOwnedResource("bank", toNullableId(parsed.data.bankId ?? ""), household.id);
     await prisma.paymentMethod.create({
       data: {
         householdId: household.id,
         name: parsed.data.name,
+        type: parsed.data.type,
+        bankId: toNullableId(parsed.data.bankId ?? ""),
+        last4: parsed.data.last4,
         isActive: parsed.data.isActive,
       },
     });
@@ -208,6 +236,59 @@ export async function savePaymentMethodAction(formData: FormData) {
       parsed.data.id ? "Medio de pago actualizado." : "Medio de pago creado.",
     ),
   );
+}
+
+export async function saveBankAction(formData: FormData) {
+  const { user, household, requestId } = await requireMutationContext("bank.save");
+  const parsed = bankSchema.safeParse({
+    id: optionalString(getString(formData, "id")),
+    name: getString(formData, "name"),
+    color: optionalString(getString(formData, "color")) ?? "#0E3B2E",
+  });
+
+  if (!parsed.success) {
+    redirect(`/mas/bancos?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "No se pudo guardar el banco.")}`);
+  }
+
+  if (parsed.data.id) {
+    await assertOwnedResource("bank", parsed.data.id, household.id);
+    await prisma.bank.updateMany({
+      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
+      data: { name: parsed.data.name, color: parsed.data.color },
+    });
+  } else {
+    await prisma.bank.create({
+      data: { householdId: household.id, name: parsed.data.name, color: parsed.data.color },
+    });
+  }
+
+  await recordAuditEvent({
+    userId: user.id,
+    householdId: household.id,
+    requestId,
+    action: parsed.data.id ? "bank.update" : "bank.create",
+    targetType: "bank",
+    targetId: parsed.data.id,
+  });
+
+  revalidatePath("/mas");
+  revalidatePath("/mas/bancos");
+  redirect(withMessage("/mas/bancos", parsed.data.id ? "Banco actualizado." : "Banco creado."));
+}
+
+export async function deleteBankAction(formData: FormData) {
+  const { user, household, requestId } = await requireMutationContext("bank.delete");
+  const id = getString(formData, "id");
+  await assertOwnedResource("bank", id, household.id);
+  const usageCount = await prisma.paymentMethod.count({ where: { householdId: household.id, bankId: id, deletedAt: null } });
+  if (usageCount > 0) {
+    redirect("/mas/bancos?error=Ese banco tiene medios asociados. Editá esos medios antes de borrarlo.");
+  }
+  await prisma.bank.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date() } });
+  await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "bank.delete", targetType: "bank", targetId: id });
+  revalidatePath("/mas");
+  revalidatePath("/mas/bancos");
+  redirect(withMessage("/mas/bancos", "Banco borrado."));
 }
 
 export async function deletePaymentMethodAction(formData: FormData) {
@@ -305,6 +386,8 @@ export async function saveTransactionAction(formData: FormData) {
     accountId: optionalString(getString(formData, "accountId")),
     categoryId: optionalString(getString(formData, "categoryId")),
     paymentMethodId: optionalString(getString(formData, "paymentMethodId")),
+    sourceType: optionalString(getString(formData, "sourceType")),
+    sourceId: optionalString(getString(formData, "sourceId")),
     detail: optionalString(getString(formData, "detail")),
   });
 
@@ -323,6 +406,8 @@ export async function saveTransactionAction(formData: FormData) {
         date: new Date(parsed.data.date),
         amount: parsed.data.amount,
         type: parsed.data.type,
+        sourceType: parsed.data.sourceType,
+        sourceId: parsed.data.sourceId,
         detail: parsed.data.detail,
         accountId: toNullableId(parsed.data.accountId ?? ""),
         categoryId: toNullableId(parsed.data.categoryId ?? ""),
@@ -339,6 +424,8 @@ export async function saveTransactionAction(formData: FormData) {
         date: new Date(parsed.data.date),
         amount: parsed.data.amount,
         type: parsed.data.type,
+        sourceType: parsed.data.sourceType,
+        sourceId: parsed.data.sourceId,
         detail: parsed.data.detail,
         accountId: toNullableId(parsed.data.accountId ?? ""),
         categoryId: toNullableId(parsed.data.categoryId ?? ""),
@@ -380,13 +467,16 @@ export async function deleteTransactionAction(formData: FormData) {
 
 export async function saveDebtAction(formData: FormData) {
   const { user, household, requestId } = await requireMutationContext("debt.save");
+  const id = optionalString(getString(formData, "id"));
   const originalAmount = getString(formData, "originalAmount");
   const paidAmount = optionalString(getString(formData, "paidAmount"));
   const remainingBalance = paidAmount
     ? String(Math.max(0, Number(originalAmount.replace(",", ".")) - Number(paidAmount.replace(",", "."))))
-    : getString(formData, "remainingBalance");
+    : id
+      ? "0"
+      : getString(formData, "remainingBalance");
   const parsed = debtSchema.safeParse({
-    id: optionalString(getString(formData, "id")),
+    id,
     entityName: getString(formData, "entityName"),
     direction: getString(formData, "direction"),
     originalAmount,
@@ -401,13 +491,18 @@ export async function saveDebtAction(formData: FormData) {
 
   if (parsed.data.id) {
     await assertOwnedResource("debt", parsed.data.id, household.id);
+    const paidTotal = await prisma.debtPayment.aggregate({
+      where: { householdId: household.id, debtId: parsed.data.id, deletedAt: null },
+      _sum: { amount: true },
+    });
+    const computedRemainingBalance = String(Math.max(0, Number(parsed.data.originalAmount) - Number(paidTotal._sum.amount ?? 0)));
     await prisma.debt.updateMany({
       where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         entityName: parsed.data.entityName,
         direction: parsed.data.direction,
         originalAmount: parsed.data.originalAmount,
-        remainingBalance: parsed.data.remainingBalance,
+        remainingBalance: computedRemainingBalance,
         notes: parsed.data.notes,
         isActive: parsed.data.isActive,
       },
@@ -447,6 +542,7 @@ export async function saveDebtPaymentAction(formData: FormData) {
     debtId: getString(formData, "debtId"),
     date: getString(formData, "date"),
     amount: getString(formData, "amount"),
+    createTransaction: formData.get("createTransaction") === "on" || formData.get("createTransaction") === "true",
     notes: optionalString(getString(formData, "notes")),
   });
 
@@ -458,10 +554,16 @@ export async function saveDebtPaymentAction(formData: FormData) {
   const amount = Number(parsed.data.amount);
 
   await prisma.$transaction(async (tx) => {
+    const debt = await tx.debt.findFirst({
+      where: { id: parsed.data.debtId, householdId: household.id, deletedAt: null },
+      select: { id: true, entityName: true, direction: true },
+    });
+    if (!debt) throw new Error("No encontramos esa deuda.");
+
     if (parsed.data.id) {
       const previous = await tx.debtPayment.findFirst({
         where: { id: parsed.data.id, householdId: household.id, debtId: parsed.data.debtId, deletedAt: null },
-        select: { amount: true },
+        select: { id: true, amount: true, transactionId: true },
       });
       if (!previous) throw new Error("No encontramos ese pago.");
       await tx.debtPayment.updateMany({
@@ -473,8 +575,40 @@ export async function saveDebtPaymentAction(formData: FormData) {
         where: { id: parsed.data.debtId, householdId: household.id, deletedAt: null },
         data: { remainingBalance: { decrement: delta } },
       });
+      if (parsed.data.createTransaction) {
+        const transactionData = {
+          householdId: household.id,
+          date: toDate(parsed.data.date),
+          amount: parsed.data.amount,
+          type: debtPaymentTransactionType(debt.direction),
+          detail: `Pago deuda · ${debt.entityName}`,
+          sourceType: "debt_payment" as const,
+          sourceId: previous.id,
+        };
+        if (previous.transactionId) {
+          await tx.transaction.updateMany({
+            where: { id: previous.transactionId, householdId: household.id, deletedAt: null },
+            data: transactionData,
+          });
+        } else {
+          const transaction = await tx.transaction.create({ data: transactionData });
+          await tx.debtPayment.updateMany({
+            where: { id: previous.id, householdId: household.id },
+            data: { transactionId: transaction.id },
+          });
+        }
+      } else if (previous.transactionId) {
+        await tx.transaction.updateMany({
+          where: { id: previous.transactionId, householdId: household.id },
+          data: { deletedAt: new Date() },
+        });
+        await tx.debtPayment.updateMany({
+          where: { id: previous.id, householdId: household.id },
+          data: { transactionId: null },
+        });
+      }
     } else {
-      await tx.debtPayment.create({
+      const payment = await tx.debtPayment.create({
         data: {
           householdId: household.id,
           debtId: parsed.data.debtId,
@@ -483,6 +617,23 @@ export async function saveDebtPaymentAction(formData: FormData) {
           notes: parsed.data.notes,
         },
       });
+      if (parsed.data.createTransaction) {
+        const transaction = await tx.transaction.create({
+          data: {
+            householdId: household.id,
+            date: toDate(parsed.data.date),
+            amount: parsed.data.amount,
+            type: debtPaymentTransactionType(debt.direction),
+            detail: `Pago deuda · ${debt.entityName}`,
+            sourceType: "debt_payment",
+            sourceId: payment.id,
+          },
+        });
+        await tx.debtPayment.updateMany({
+          where: { id: payment.id, householdId: household.id },
+          data: { transactionId: transaction.id },
+        });
+      }
       await tx.debt.updateMany({
         where: { id: parsed.data.debtId, householdId: household.id, deletedAt: null },
         data: { remainingBalance: { decrement: amount } },
@@ -500,8 +651,9 @@ export async function saveDebtPaymentAction(formData: FormData) {
   });
 
   revalidatePath("/deudas");
+  revalidatePath(`/deudas/${parsed.data.debtId}`);
   revalidatePath("/");
-  redirect(withMessage("/deudas", parsed.data.id ? "Pago actualizado." : "Pago registrado."));
+  redirect(withMessage(`/deudas/${parsed.data.debtId}`, parsed.data.id ? "Pago actualizado." : "Pago registrado."));
 }
 
 export async function deleteDebtPaymentAction(formData: FormData) {
@@ -509,17 +661,21 @@ export async function deleteDebtPaymentAction(formData: FormData) {
   const id = getString(formData, "id");
   const payment = await prisma.debtPayment.findFirst({
     where: { id, householdId: household.id, deletedAt: null },
-    select: { id: true, debtId: true, amount: true },
+    select: { id: true, debtId: true, amount: true, transactionId: true },
   });
   if (!payment) throw new Error("No encontramos ese pago.");
-  await prisma.$transaction([
-    prisma.debtPayment.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date() } }),
-    prisma.debt.updateMany({ where: { id: payment.debtId, householdId: household.id }, data: { remainingBalance: { increment: Number(payment.amount) } } }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    await tx.debtPayment.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), transactionId: null } });
+    await tx.debt.updateMany({ where: { id: payment.debtId, householdId: household.id }, data: { remainingBalance: { increment: Number(payment.amount) } } });
+    if (payment.transactionId) {
+      await tx.transaction.updateMany({ where: { id: payment.transactionId, householdId: household.id }, data: { deletedAt: new Date() } });
+    }
+  });
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "debt_payment.delete", targetType: "debtPayment", targetId: id });
   revalidatePath("/deudas");
+  revalidatePath(`/deudas/${payment.debtId}`);
   revalidatePath("/");
-  redirect(withMessage("/deudas", "Pago borrado."));
+  redirect(withMessage(`/deudas/${payment.debtId}`, "Pago borrado."));
 }
 
 export async function deleteDebtAction(formData: FormData) {
@@ -539,6 +695,8 @@ export async function saveRecurringBillAction(formData: FormData) {
     name: getString(formData, "name"),
     amount: optionalString(getString(formData, "amount")) ?? "0",
     dueDay: getString(formData, "dueDay"),
+    icon: optionalString(getString(formData, "icon")) ?? "repeat",
+    defaultCategoryId: optionalString(getString(formData, "defaultCategoryId")),
     notes: optionalString(getString(formData, "notes")),
     paymentMethodId: optionalString(getString(formData, "paymentMethodId")),
     isActive: true,
@@ -551,12 +709,15 @@ export async function saveRecurringBillAction(formData: FormData) {
   if (parsed.data.id) {
     await assertOwnedResource("recurringBill", parsed.data.id, household.id);
     await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+    await assertOptionalOwnedResource("category", toNullableId(parsed.data.defaultCategoryId ?? ""), household.id);
     await prisma.recurringBill.updateMany({
       where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
       data: {
         name: parsed.data.name,
         amount: parsed.data.amount,
         dueDay: parsed.data.dueDay,
+        icon: parsed.data.icon,
+        defaultCategoryId: toNullableId(parsed.data.defaultCategoryId ?? ""),
         notes: parsed.data.notes,
         paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
         isActive: parsed.data.isActive,
@@ -564,12 +725,15 @@ export async function saveRecurringBillAction(formData: FormData) {
     });
   } else {
     await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+    await assertOptionalOwnedResource("category", toNullableId(parsed.data.defaultCategoryId ?? ""), household.id);
     await prisma.recurringBill.create({
       data: {
         householdId: household.id,
         name: parsed.data.name,
         amount: parsed.data.amount,
         dueDay: parsed.data.dueDay,
+        icon: parsed.data.icon,
+        defaultCategoryId: toNullableId(parsed.data.defaultCategoryId ?? ""),
         notes: parsed.data.notes,
         paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
         isActive: parsed.data.isActive,
@@ -606,6 +770,8 @@ export async function saveRecurringBillPaymentAction(formData: FormData) {
     dueDate: getString(formData, "dueDate"),
     paidAt: optionalString(getString(formData, "paidAt")),
     paymentMethodId: optionalString(getString(formData, "paymentMethodId")),
+    categoryId: optionalString(getString(formData, "categoryId")),
+    createTransaction: formData.get("createTransaction") === "on" || formData.get("createTransaction") === "true",
     notes: optionalString(getString(formData, "notes")),
   });
 
@@ -615,34 +781,99 @@ export async function saveRecurringBillPaymentAction(formData: FormData) {
 
   await assertOwnedResource("recurringBill", parsed.data.recurringBillId, household.id);
   await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+  await assertOptionalOwnedResource("category", toNullableId(parsed.data.categoryId ?? ""), household.id);
 
-  if (parsed.data.id) {
-    await assertOwnedResource("recurringBillPayment", parsed.data.id, household.id);
-    await prisma.recurringBillPayment.updateMany({
-      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
-      data: {
-        amount: parsed.data.amount,
-        issuedAt: parsed.data.issuedAt ? toDate(parsed.data.issuedAt) : null,
-        dueDate: toDate(parsed.data.dueDate),
-        paidAt: parsed.data.paidAt ? toDate(parsed.data.paidAt) : null,
-        paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
-        notes: parsed.data.notes,
-      },
+  await prisma.$transaction(async (tx) => {
+    const bill = await tx.recurringBill.findFirst({
+      where: { id: parsed.data.recurringBillId, householdId: household.id, deletedAt: null },
+      select: { id: true, name: true, defaultCategoryId: true },
     });
-  } else {
-    await prisma.recurringBillPayment.create({
-      data: {
-        householdId: household.id,
-        recurringBillId: parsed.data.recurringBillId,
-        amount: parsed.data.amount,
-        issuedAt: parsed.data.issuedAt ? toDate(parsed.data.issuedAt) : null,
-        dueDate: toDate(parsed.data.dueDate),
-        paidAt: parsed.data.paidAt ? toDate(parsed.data.paidAt) : null,
-        paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
-        notes: parsed.data.notes,
-      },
-    });
-  }
+    if (!bill) throw new Error("No encontramos ese gasto fijo.");
+    const categoryId = toNullableId(parsed.data.categoryId ?? "") ?? bill.defaultCategoryId;
+    const shouldCreateTransaction = shouldCreateRecurringBillTransaction(parsed.data.createTransaction, parsed.data.paidAt);
+    const paymentData = {
+      amount: parsed.data.amount,
+      issuedAt: parsed.data.issuedAt ? toDate(parsed.data.issuedAt) : null,
+      dueDate: toDate(parsed.data.dueDate),
+      paidAt: parsed.data.paidAt ? toDate(parsed.data.paidAt) : null,
+      paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
+      notes: parsed.data.notes,
+    };
+
+    if (parsed.data.id) {
+      await assertOwnedResource("recurringBillPayment", parsed.data.id, household.id);
+      const previous = await tx.recurringBillPayment.findFirst({
+        where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
+        select: { id: true, transactionId: true },
+      });
+      if (!previous) throw new Error("No encontramos esa factura.");
+      await tx.recurringBillPayment.updateMany({
+        where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
+        data: paymentData,
+      });
+      if (shouldCreateTransaction) {
+        const transactionData = {
+          householdId: household.id,
+          date: toDate(parsed.data.paidAt ?? parsed.data.dueDate),
+          amount: parsed.data.amount,
+          type: "expense" as const,
+          detail: bill.name,
+          categoryId,
+          paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
+          sourceType: "recurring_bill_payment" as const,
+          sourceId: previous.id,
+        };
+        if (previous.transactionId) {
+          await tx.transaction.updateMany({
+            where: { id: previous.transactionId, householdId: household.id, deletedAt: null },
+            data: transactionData,
+          });
+        } else {
+          const transaction = await tx.transaction.create({ data: transactionData });
+          await tx.recurringBillPayment.updateMany({
+            where: { id: previous.id, householdId: household.id },
+            data: { transactionId: transaction.id },
+          });
+        }
+      } else if (previous.transactionId) {
+        await tx.transaction.updateMany({
+          where: { id: previous.transactionId, householdId: household.id },
+          data: { deletedAt: new Date() },
+        });
+        await tx.recurringBillPayment.updateMany({
+          where: { id: previous.id, householdId: household.id },
+          data: { transactionId: null },
+        });
+      }
+    } else {
+      const payment = await tx.recurringBillPayment.create({
+        data: {
+          householdId: household.id,
+          recurringBillId: parsed.data.recurringBillId,
+          ...paymentData,
+        },
+      });
+      if (shouldCreateTransaction) {
+        const transaction = await tx.transaction.create({
+          data: {
+            householdId: household.id,
+            date: toDate(parsed.data.paidAt ?? parsed.data.dueDate),
+            amount: parsed.data.amount,
+            type: "expense",
+            detail: bill.name,
+            categoryId,
+            paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
+            sourceType: "recurring_bill_payment",
+            sourceId: payment.id,
+          },
+        });
+        await tx.recurringBillPayment.updateMany({
+          where: { id: payment.id, householdId: household.id },
+          data: { transactionId: transaction.id },
+        });
+      }
+    }
+  });
 
   await recordAuditEvent({
     userId: user.id,
@@ -654,19 +885,30 @@ export async function saveRecurringBillPaymentAction(formData: FormData) {
   });
 
   revalidatePath("/gastos-fijos");
+  revalidatePath(`/gastos-fijos/${parsed.data.recurringBillId}`);
   revalidatePath("/");
-  redirect(withMessage("/gastos-fijos", parsed.data.id ? "Pago actualizado." : "Pago registrado."));
+  redirect(withMessage(`/gastos-fijos/${parsed.data.recurringBillId}`, parsed.data.id ? "Pago actualizado." : "Pago registrado."));
 }
 
 export async function deleteRecurringBillPaymentAction(formData: FormData) {
   const { user, household, requestId } = await requireMutationContext("recurringBillPayment.delete");
   const id = getString(formData, "id");
-  await assertOwnedResource("recurringBillPayment", id, household.id);
-  await prisma.recurringBillPayment.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date() } });
+  const payment = await prisma.recurringBillPayment.findFirst({
+    where: { id, householdId: household.id, deletedAt: null },
+    select: { recurringBillId: true, transactionId: true },
+  });
+  if (!payment) throw new Error("No encontramos esa factura.");
+  await prisma.$transaction(async (tx) => {
+    await tx.recurringBillPayment.updateMany({ where: { id, householdId: household.id }, data: { deletedAt: new Date(), transactionId: null } });
+    if (payment.transactionId) {
+      await tx.transaction.updateMany({ where: { id: payment.transactionId, householdId: household.id }, data: { deletedAt: new Date() } });
+    }
+  });
   await recordAuditEvent({ userId: user.id, householdId: household.id, requestId, action: "recurring_bill_payment.delete", targetType: "recurringBillPayment", targetId: id });
   revalidatePath("/gastos-fijos");
+  revalidatePath(`/gastos-fijos/${payment.recurringBillId}`);
   revalidatePath("/");
-  redirect(withMessage("/gastos-fijos", "Pago borrado."));
+  redirect(withMessage(`/gastos-fijos/${payment.recurringBillId}`, "Pago borrado."));
 }
 
 export async function deleteRecurringBillAction(formData: FormData) {

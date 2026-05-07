@@ -81,9 +81,9 @@ function normalizeOptionLabel(name?: string | null) {
   return (name ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 }
 
-const INCOME_CATEGORY_NAMES = new Set(DEFAULT_INCOME_CATEGORIES.map(normalizeOptionLabel));
+const INCOME_CATEGORY_NAMES = new Set(DEFAULT_INCOME_CATEGORIES.map((category) => normalizeOptionLabel(category.name)));
 const INCOME_CATEGORY_ORDER = new Map(
-  DEFAULT_INCOME_CATEGORIES.map((name, index) => [normalizeOptionLabel(name), index]),
+  DEFAULT_INCOME_CATEGORIES.map((category, index) => [normalizeOptionLabel(category.name), index]),
 );
 
 function isIncomeCategoryName(name?: string | null) {

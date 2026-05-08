@@ -72,11 +72,9 @@ function DashboardAction({
   return (
     <Link
       href={href}
-      className="pressable flex min-h-[4.15rem] items-center justify-center gap-2.5 rounded-[1.15rem] bg-[var(--surface-pill)] px-3.5 text-[1.05rem] font-semibold"
+      className="pressable flex min-h-[3.65rem] items-center justify-center gap-2 rounded-[1rem] bg-[var(--surface-pill)] px-4 text-[1rem] font-semibold text-foreground"
     >
-      <span className="grid size-8 place-items-center rounded-full bg-background">
-        <Icon className={tone === "income" ? "size-4 text-[var(--income)]" : "size-4 text-red-700"} aria-hidden />
-      </span>
+      <Icon className="size-4 text-muted-foreground" aria-hidden />
       {label}
     </Link>
   );

@@ -1,18 +1,28 @@
 import { z } from "zod";
 
+import { normalizeMoneyString } from "@/lib/format";
+
 const money = z
   .string()
   .trim()
-  .regex(/^\d+([.,]\d{1,2})?$/, "Ingresá un monto válido.")
-  .transform((value) => value.replace(",", "."))
-  .refine((value) => Number(value) > 0, "El monto debe ser mayor a cero.");
+  .transform((value) => normalizeMoneyString(value))
+  .pipe(
+    z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "Ingresá un monto válido.")
+      .refine((value) => Number(value) > 0, "El monto debe ser mayor a cero."),
+  );
 
 const nonNegativeMoney = z
   .string()
   .trim()
-  .regex(/^\d+([.,]\d{1,2})?$/, "Ingresá un monto válido.")
-  .transform((value) => value.replace(",", "."))
-  .refine((value) => Number(value) >= 0, "El monto no puede ser negativo.");
+  .transform((value) => normalizeMoneyString(value))
+  .pipe(
+    z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "Ingresá un monto válido.")
+      .refine((value) => Number(value) >= 0, "El monto no puede ser negativo."),
+  );
 
 export const authSchema = z.object({
   email: z.string().trim().email("Ingresá un email válido."),

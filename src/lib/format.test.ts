@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatArs } from "@/lib/format";
+import { formatArs, formatMoneyInput, normalizeMoneyString } from "@/lib/format";
 
 describe("format helpers", () => {
   it("formats ARS values without awkward currency spacing", () => {
@@ -9,5 +9,18 @@ describe("format helpers", () => {
 
   it("keeps negative ARS values compact", () => {
     expect(formatArs(-100)).toBe("-$100");
+  });
+
+  it("keeps ARS cents when present", () => {
+    expect(formatArs(20000.12)).toBe("$20.000,12");
+  });
+
+  it("formats money input with Argentine separators", () => {
+    expect(formatMoneyInput("20000")).toBe("$20.000");
+    expect(formatMoneyInput("20000,12")).toBe("$20.000,12");
+  });
+
+  it("normalizes formatted money strings for persistence", () => {
+    expect(normalizeMoneyString("$20.000,12")).toBe("20000.12");
   });
 });

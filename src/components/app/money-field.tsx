@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatArs, toNumber } from "@/lib/format";
+import { formatArs, formatMoneyInput, normalizeMoneyString, toNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function MoneyField({
@@ -28,7 +28,7 @@ export function MoneyField({
 }) {
   const [value, setValue] = useState(defaultValue);
   const preview = useMemo(() => {
-    const normalized = value.trim().replace(/\./g, "").replace(",", ".");
+    const normalized = normalizeMoneyString(value);
     if (!/^\d+(\.\d{0,2})?$/.test(normalized)) return null;
     const number = toNumber(normalized || 0);
     return number > 0 ? formatArs(number) : null;
@@ -45,10 +45,9 @@ export function MoneyField({
         type="text"
         inputMode="decimal"
         required={required}
-        pattern="^[0-9]+([,.][0-9]{1,2})?$"
-        placeholder="0"
+        placeholder="$0"
         value={value}
-        onChange={(event) => setValue(event.target.value)}
+        onChange={(event) => setValue(formatMoneyInput(event.target.value))}
         className={cn(
           "h-20 appearance-none border-0 bg-transparent px-0 text-center text-[clamp(3.1rem,17vw,4.35rem)] font-semibold leading-none tracking-[-0.035em] shadow-none focus-visible:bg-transparent focus-visible:ring-0",
           inputClassName,

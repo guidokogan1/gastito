@@ -26,11 +26,12 @@ function currentMonthKey() {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string; month?: string; compose?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; month?: string; compose?: string; type?: string }>;
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
   const monthKey = monthRange(params.month ?? "") ? String(params.month) : currentMonthKey();
+  const initialTransactionType = params.type === "income" ? "income" : "expense";
   const range = monthRange(monthKey) ?? monthRange(currentMonthKey());
   if (!range) throw new Error("No se pudo calcular el rango del mes.");
 
@@ -106,6 +107,7 @@ export default async function TransactionsPage({
         saveAction={saveTransactionAction}
         deleteAction={deleteTransactionAction}
         initialComposeOpen={params.compose === "1"}
+        initialTransactionType={initialTransactionType}
       />
     </>
   );

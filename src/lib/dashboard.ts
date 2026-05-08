@@ -112,7 +112,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
           amount: true,
           dueDate: true,
           paymentMethod: { select: { name: true } },
-          recurringBill: { select: { name: true, dueDay: true, paymentMethod: { select: { name: true } } } },
+          recurringBill: { select: { id: true, name: true, icon: true, dueDay: true, paymentMethod: { select: { name: true } } } },
         },
         orderBy: { dueDate: "asc" },
         take: 6,
@@ -167,10 +167,12 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const upcomingBills = pendingBillPayments
       .filter((payment) => !isCurrentMonth || payment.dueDate >= todayStart)
-      .slice(0, 4)
+      .slice(0, 2)
       .map((payment) => ({
         id: payment.id,
+        recurringBillId: payment.recurringBill.id,
         name: payment.recurringBill.name,
+        icon: payment.recurringBill.icon,
         amount: payment.amount,
         dueDate: payment.dueDate,
         dueDay: payment.recurringBill.dueDay,

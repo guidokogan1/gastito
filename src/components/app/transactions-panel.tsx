@@ -259,6 +259,7 @@ export function TransactionsPanel({
   saveAction,
   deleteAction,
   initialComposeOpen = false,
+  initialTransactionType = "expense",
 }: {
   monthKey: string;
   monthControl: ReactNode;
@@ -269,6 +270,7 @@ export function TransactionsPanel({
   saveAction: (formData: FormData) => Promise<void>;
   deleteAction: (formData: FormData) => Promise<void>;
   initialComposeOpen?: boolean;
+  initialTransactionType?: "expense" | "income";
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -292,8 +294,9 @@ export function TransactionsPanel({
   useEffect(() => {
     if (!initialComposeOpen) return;
     setSelectedId(null);
+    setFormType(initialTransactionType);
     setDrawerOpen(true);
-  }, [initialComposeOpen]);
+  }, [initialComposeOpen, initialTransactionType]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("gastito.transactionFilters");
@@ -428,7 +431,7 @@ export function TransactionsPanel({
 
   useEffect(() => {
     if (!drawerOpen) return;
-    setFormType((selected?.type ?? "expense") as "expense" | "income");
+    setFormType((selected?.type ?? initialTransactionType) as "expense" | "income");
     setFormDate((selected?.date ?? new Date()).toISOString().slice(0, 10));
     setFormCategoryId(selected?.categoryId ?? "");
     setFormPaymentMethodId(selected?.paymentMethodId ?? "");
@@ -440,6 +443,7 @@ export function TransactionsPanel({
     selected?.date,
     selected?.paymentMethodId,
     selected?.type,
+    initialTransactionType,
   ]);
 
   useEffect(() => {

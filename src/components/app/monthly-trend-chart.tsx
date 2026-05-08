@@ -8,14 +8,15 @@ type TrendMonth = {
 };
 
 function buildPoints(values: number[], maxValue: number) {
-  const width = 320;
-  const top = 18;
-  const height = 94;
-  const step = width / Math.max(values.length - 1, 1);
+  const left = 20;
+  const right = 340;
+  const top = 16;
+  const height = 88;
+  const step = (right - left) / Math.max(values.length - 1, 1);
   const safeMax = maxValue > 0 ? maxValue : 1;
 
   return values.map((value, index) => {
-    const x = Math.round(index * step);
+    const x = Math.round(left + index * step);
     const y = maxValue > 0 ? Math.round(top + (1 - value / safeMax) * height) : top + Math.round(height * 0.55);
     return { x, y };
   });
@@ -28,7 +29,7 @@ function toPath(points: Array<{ x: number; y: number }>) {
 
 function toAreaPath(points: Array<{ x: number; y: number }>) {
   if (points.length === 0) return "";
-  const baseline = 132;
+  const baseline = 128;
   return `${toPath(points)} L ${points[points.length - 1]?.x ?? 0} ${baseline} L ${points[0]?.x ?? 0} ${baseline} Z`;
 }
 
@@ -78,8 +79,8 @@ export function MonthlyTrendChart({
         </div>
       </div>
 
-      <div role="img" aria-label="Tendencia de gastos e ingresos de los últimos 7 meses" className="overflow-hidden">
-        <svg viewBox="0 0 320 166" className="h-[13.25rem] w-full overflow-visible" preserveAspectRatio="none">
+      <div role="img" aria-label="Tendencia de gastos e ingresos de los últimos 7 meses" className="-mx-1">
+        <svg viewBox="0 0 360 158" className="h-[12.25rem] w-full overflow-visible" preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id="dashboard-expense-fill" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="var(--finance-green)" stopOpacity="0.13" />
@@ -111,7 +112,7 @@ export function MonthlyTrendChart({
           {months.map((month, index) => {
             const x = expensePoints[index]?.x ?? 0;
             return (
-              <text key={month.key} x={x} y="160" textAnchor="middle" className="fill-muted-foreground text-[0.82rem] font-semibold">
+              <text key={month.key} x={x} y="150" textAnchor="middle" className="fill-muted-foreground text-[0.72rem] font-semibold">
                 {month.label}
               </text>
             );

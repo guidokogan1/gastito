@@ -63,10 +63,10 @@
   --ink-primary: oklch(0.17 0.015 255);
   --ink-secondary: oklch(0.38 0.012 255);
   --ink-tertiary: oklch(0.55 0.01 255);
-  --surface-page: oklch(0.985 0.002 92);
-  --surface-raised: oklch(1 0 0);
-  --surface-inset: oklch(0.948 0.002 92);
-  --surface-pill: oklch(0.94 0.003 92);
+  --surface-page: #fafafa;
+  --surface-raised: #ffffff;
+  --surface-inset: #f4f4f4;
+  --surface-pill: #f0f0f0;
   --surface-selected: oklch(0.93 0.04 157);
   --surface-base: var(--surface-page);
   --surface-grouped: var(--surface-raised);
@@ -106,7 +106,7 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0.002 92 / 76%);
+  --sidebar: rgb(250 250 250 / 76%);
   --sidebar-foreground: var(--ink-primary);
   --sidebar-primary: var(--finance-green);
   --sidebar-primary-foreground: oklch(0.99 0 0);
@@ -352,7 +352,7 @@
     @apply bg-[var(--finance-green-soft)] text-[var(--finance-green)] hover:bg-[var(--finance-green-soft)] hover:text-[var(--finance-green)];
   }
   .bottom-nav {
-    @apply fixed inset-x-0 bottom-0 z-40 mx-auto grid grid-cols-5 gap-0 border-t border-border/60 bg-background/78 px-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-2xl lg:hidden;
+    @apply fixed inset-x-0 bottom-0 z-40 mx-auto grid grid-cols-5 gap-0 border-t border-border/60 bg-[var(--surface-raised)]/86 px-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-2xl lg:hidden;
     box-shadow: var(--shadow-nav);
   }
   .bottom-nav-item {
@@ -396,14 +396,14 @@
     @apply fixed inset-0 z-50 bg-black/28 backdrop-blur-[12px];
   }
   .sheet-panel {
-    @apply fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] rounded-t-[2.125rem] border border-border bg-background/98 backdrop-blur-xl lg:inset-x-auto lg:bottom-auto lg:right-4 lg:top-4 lg:h-[calc(100dvh-2rem)] lg:w-full lg:max-w-[540px] lg:rounded-[1.9rem];
+    @apply fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] rounded-t-[2.125rem] border border-border bg-[var(--surface-raised)]/98 backdrop-blur-xl lg:inset-x-auto lg:bottom-auto lg:right-4 lg:top-4 lg:h-[calc(100dvh-2rem)] lg:w-full lg:max-w-[540px] lg:rounded-[1.9rem];
     box-shadow: var(--shadow-sheet);
   }
   .sheet-handle {
     @apply mx-auto mt-2.5 h-1 w-10 rounded-full bg-muted-foreground/18 lg:hidden;
   }
   .sheet-header {
-    @apply sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border/60 bg-background/86 px-5 pb-4 pt-3.5 backdrop-blur-2xl sm:px-6 lg:pt-5;
+    @apply sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border/60 bg-[var(--surface-raised)]/90 px-5 pb-4 pt-3.5 backdrop-blur-2xl sm:px-6 lg:pt-5;
   }
   .sheet-scroll {
     @apply min-h-0 overflow-y-auto px-5 pb-0 pt-4 sm:px-6 lg:flex-1;
@@ -419,7 +419,7 @@
     display: none;
   }
   .sheet-action-bar {
-    @apply sticky bottom-0 mt-5 -mx-5 border-t border-border/60 bg-background/86 px-5 pb-[calc(0.9rem+env(safe-area-inset-bottom))] pt-3.5 backdrop-blur-2xl sm:-mx-6 sm:px-6;
+    @apply sticky bottom-0 mt-5 -mx-5 border-t border-border/60 bg-[var(--surface-raised)]/90 px-5 pb-[calc(0.9rem+env(safe-area-inset-bottom))] pt-3.5 backdrop-blur-2xl sm:-mx-6 sm:px-6;
   }
   .sheet-action-bar button {
     @apply min-h-13 text-[1rem];

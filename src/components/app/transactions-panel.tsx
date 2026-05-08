@@ -35,7 +35,6 @@ import {
 
 import { formatArs, moneyInputValue, toNumber } from "@/lib/format";
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
-import { FinanceList, FinanceRow } from "@/components/app/finance-list";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { KineticPage } from "@/components/app/kinetic";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -48,7 +47,6 @@ import { PillChip } from "@/components/app/pill-chip";
 import { EmptyState } from "@/components/app/empty-state";
 import { FinancialAmount } from "@/components/app/financial-amount";
 import { MoneyField } from "@/components/app/money-field";
-import { ScreenHeader } from "@/components/app/screen-header";
 import { cn } from "@/lib/utils";
 
 type SelectOption = { id: string; name: string };
@@ -95,7 +93,7 @@ function getCategoryIcon(name?: string | null, type: "expense" | "income" = "exp
   if (normalized.includes("sueldo")) return Banknote;
   if (normalized.includes("devolucion")) return RotateCcw;
   if (normalized.includes("descuento")) return BadgePercent;
-  if (type === "income") return ArrowDownLeft;
+  if (type === "income") return ArrowUpRight;
   if (normalized.includes("comida") || normalized.includes("super")) return Utensils;
   if (normalized.includes("educ")) return GraduationCap;
   if (normalized.includes("hogar")) return Home;
@@ -109,6 +107,22 @@ function getCategoryIcon(name?: string | null, type: "expense" | "income" = "exp
   if (normalized.includes("deporte")) return Dumbbell;
   if (normalized.includes("otros")) return Sparkles;
   return ShoppingCart;
+}
+
+function getCategoryTone(name?: string | null, type: "expense" | "income" = "expense") {
+  const normalized = normalizeOptionLabel(name);
+  if (type === "income") return "bg-emerald-600 text-white";
+  if (normalized.includes("comida") || normalized.includes("super")) return "bg-orange-500 text-white";
+  if (normalized.includes("educ")) return "bg-violet-600 text-white";
+  if (normalized.includes("hogar") || normalized.includes("servicio") || normalized.includes("internet")) return "bg-teal-600 text-white";
+  if (normalized.includes("auto") || normalized.includes("transporte")) return "bg-blue-600 text-white";
+  if (normalized.includes("masc")) return "bg-fuchsia-600 text-white";
+  if (normalized.includes("ocio")) return "bg-amber-600 text-white";
+  if (normalized.includes("regalo")) return "bg-pink-600 text-white";
+  if (normalized.includes("salud")) return "bg-red-600 text-white";
+  if (normalized.includes("impuesto")) return "bg-slate-700 text-white";
+  if (normalized.includes("deporte")) return "bg-lime-700 text-white";
+  return "bg-zinc-700 text-white";
 }
 
 function formatGroupDate(date: Date) {
@@ -490,170 +504,173 @@ export function TransactionsPanel({
     (dateFilter !== "all" ? 1 : 0);
 
   return (
-    <KineticPage className="space-y-5">
-      <ScreenHeader
-        title="Movimientos"
-        action={
-          <Button
-            type="button"
-            size="icon"
-            aria-label="Nuevo movimiento"
-            className="icon-action bg-[var(--finance-green)] text-white"
-            onClick={() => {
-              setSelectedId(null);
-              setDrawerOpen(true);
-            }}
-          >
-            <Plus className="size-5" aria-hidden />
-          </Button>
-        }
-      />
-      <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">{monthControl}</div>
-            <div className="flex shrink-0 gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                aria-label="Abrir filtros"
-                className="icon-action"
-                onClick={() => setFiltersOpen(true)}
-              >
-                <Filter className="size-5" aria-hidden />
-                {activeFilterCount > 0 ? (
-                  <span className="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-[var(--finance-green)] text-[0.62rem] font-bold text-white">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </Button>
-            </div>
+    <KineticPage className="space-y-6">
+      <section className="space-y-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">{monthControl}</div>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              aria-label="Abrir filtros"
+              className="icon-action"
+              onClick={() => setFiltersOpen(true)}
+            >
+              <Filter className="size-5" aria-hidden />
+              {activeFilterCount > 0 ? (
+                <span className="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-[var(--finance-green)] text-[0.62rem] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              aria-label="Nuevo movimiento"
+              className="icon-action bg-[var(--finance-green)] text-white"
+              onClick={() => {
+                setSelectedId(null);
+                setDrawerOpen(true);
+              }}
+            >
+              <Plus className="size-5" aria-hidden />
+            </Button>
           </div>
-          <div>
-                {transactions.length === 0 ? (
+        </div>
+
+        <h1 className="text-[clamp(2.45rem,12vw,4rem)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
+          Movimientos
+        </h1>
+      </section>
+
+      <section className="space-y-5">
+        {transactions.length === 0 ? (
+          <EmptyState
+            icon={ArrowUpRight}
+            title="Todavía no cargaste movimientos"
+            description="Empezá cargando el primero."
+            compact
+          >
+            <Button
+              type="button"
+              onClick={() => {
+                setSelectedId(null);
+                setDrawerOpen(true);
+              }}
+            >
+              <Plus className="size-4" aria-hidden />
+              Cargar el primero
+            </Button>
+          </EmptyState>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="min-w-0">
+                <p className="text-[0.9rem] font-medium text-muted-foreground">Gastos</p>
+                <p className="mt-1 text-[1.28rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[0.9rem] font-medium text-muted-foreground">Ingresos</p>
+                <p className="mt-1 text-[1.28rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
+                  {formatArs(metrics.incomes)}
+                </p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[0.9rem] font-medium text-muted-foreground">Balance</p>
+                <p
+                  className={cn(
+                    "mt-1 text-[1.28rem] font-medium leading-none tabular-nums",
+                    metrics.balance < 0 ? "text-foreground" : "text-[var(--income)] dark:text-[var(--income-soft)]",
+                  )}
+                >
+                  {formatArs(metrics.balance)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {searchOpen ? (
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                  <Input
+                    id="tx-search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Buscar movimiento, categoría..."
+                    className="h-13 rounded-[1.25rem] pl-11 text-[1.05rem]"
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <Button type="button" variant="secondary" className="w-full justify-start rounded-[1.25rem]" onClick={() => setSearchOpen(true)}>
+                  <Search className="size-5 text-muted-foreground" aria-hidden />
+                  Buscar movimiento, categoría...
+                </Button>
+              )}
+              <div className="mobile-scroll-row">
+                <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
+                  <PillChip active={typeFilter === "all"}>Todos</PillChip>
+                </button>
+                <button type="button" className="pressable" onClick={() => setTypeFilter("expense")}>
+                  <PillChip active={typeFilter === "expense"}>Gastos</PillChip>
+                </button>
+                <button type="button" className="pressable" onClick={() => setTypeFilter("income")}>
+                  <PillChip active={typeFilter === "income"}>Ingresos</PillChip>
+                </button>
+                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
+                  <PillChip active={dateFilter === "today"}>Hoy</PillChip>
+                </button>
+                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "7d" ? "all" : "7d")}>
+                  <PillChip active={dateFilter === "7d"} className="whitespace-nowrap">7 días</PillChip>
+                </button>
+                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "14d" ? "all" : "14d")}>
+                  <PillChip active={dateFilter === "14d"} className="whitespace-nowrap">14 días</PillChip>
+                </button>
+                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
+                  <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
+                </button>
+                <button type="button" className="pressable" onClick={() => setCategoryFilterId(categoryFilterId === "none" ? "all" : "none")}>
+                  <PillChip active={categoryFilterId === "none"}>Sin categoría</PillChip>
+                </button>
+              </div>
+            </div>
+
+            {filteredTransactions.length === 0 ? (
               <EmptyState
-                icon={ArrowUpRight}
-                title="Todavía no cargaste movimientos"
-                description="Empezá cargando el primero."
+                icon={SearchX}
+                title="No encontramos movimientos con ese filtro"
+                description="Probá cambiando el texto de búsqueda o el tipo."
                 compact
               >
                 <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
-                    setSelectedId(null);
-                    setDrawerOpen(true);
+                    setQuery("");
+                    setTypeFilter("all");
+                    setCategoryFilterId("all");
+                    setMethodFilterId("all");
+                    setDateFilter("all");
                   }}
                 >
-                  <Plus className="size-4" aria-hidden />
-                  Cargar el primero
+                  Limpiar filtros
                 </Button>
               </EmptyState>
             ) : (
-              <div className="space-y-4">
-                <div className="finance-summary-strip rounded-[1.25rem] bg-[var(--surface-pill)] px-4 py-3">
-                  <div className="finance-summary-cell">
-                    <p className="stat-label">Gastos</p>
-                    <p className="money-row mt-1 text-foreground">{formatArs(metrics.expenses)}</p>
-                  </div>
-                  <div className="finance-summary-cell">
-                    <p className="stat-label">Ingresos</p>
-                    <p className="money-row mt-1 text-[var(--income)] dark:text-[var(--income-soft)]">
-                      {formatArs(metrics.incomes)}
-                    </p>
-                  </div>
-                  <div className="finance-summary-cell">
-                    <p className="stat-label">Balance</p>
-                    <p
-                      className={cn(
-                        "money-row mt-1",
-                        metrics.balance < 0 ? "text-foreground" : "text-[var(--income)] dark:text-[var(--income-soft)]",
-                      )}
-                    >
-                      {formatArs(metrics.balance)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  {searchOpen ? (
-                    <div className="relative flex-1">
-                      <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                      <Input
-                        id="tx-search"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Buscar movimiento"
-                        className="h-13 rounded-[1.25rem] pl-11 text-[1.05rem]"
-                        autoFocus
-                      />
-                    </div>
-                  ) : (
-                    <Button type="button" variant="secondary" className="w-full justify-start rounded-[1.25rem]" onClick={() => setSearchOpen(true)}>
-                      <Search className="size-5 text-muted-foreground" aria-hidden />
-                      Buscar movimiento
-                    </Button>
-                  )}
-                  <div className="space-y-3">
-                    <div className="mobile-scroll-row">
-                      <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
-                        <PillChip active={typeFilter === "all"}>Todos</PillChip>
-                      </button>
-                      <button type="button" className="pressable" onClick={() => setTypeFilter("expense")}>
-                        <PillChip active={typeFilter === "expense"}>Gastos</PillChip>
-                      </button>
-                      <button type="button" className="pressable" onClick={() => setTypeFilter("income")}>
-                        <PillChip active={typeFilter === "income"}>Ingresos</PillChip>
-                      </button>
-                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
-                        <PillChip active={dateFilter === "today"}>Hoy</PillChip>
-                      </button>
-                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "7d" ? "all" : "7d")}>
-                        <PillChip active={dateFilter === "7d"} className="whitespace-nowrap">7 días</PillChip>
-                      </button>
-                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "14d" ? "all" : "14d")}>
-                        <PillChip active={dateFilter === "14d"} className="whitespace-nowrap">14 días</PillChip>
-                      </button>
-                      <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
-                        <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
-                      </button>
-                      <button type="button" className="pressable" onClick={() => setCategoryFilterId(categoryFilterId === "none" ? "all" : "none")}>
-                        <PillChip active={categoryFilterId === "none"}>Sin categoría</PillChip>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {filteredTransactions.length === 0 ? (
-                  <EmptyState
-                    icon={SearchX}
-                    title="No encontramos movimientos con ese filtro"
-                    description="Probá cambiando el texto de búsqueda o el tipo."
-                    compact
-                  >
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => {
-                        setQuery("");
-                        setTypeFilter("all");
-                        setCategoryFilterId("all");
-                        setMethodFilterId("all");
-                        setDateFilter("all");
-                      }}
-                    >
-                      Limpiar filtros
-                    </Button>
-                  </EmptyState>
-                ) : (
-                  <div className="space-y-5">
-                    {groupedTransactions.map(([dateLabel, rows]) => (
-                      <section key={dateLabel} className="space-y-2">
-                        <h3 className="px-1 text-[0.82rem] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
-                          {dateLabel}
-                        </h3>
-                        <FinanceList>
+              <div className="space-y-5">
+                {groupedTransactions.map(([dateLabel, rows]) => {
+                  const dayTotal = rows.reduce((acc, row) => acc + (row.type === "income" ? toNumber(row.amount) : -toNumber(row.amount)), 0);
+                  return (
+                    <section key={dateLabel} className="space-y-2">
+                      <div className="flex items-center justify-between px-1 text-[0.82rem] font-medium uppercase tracking-[0.04em] text-muted-foreground">
+                        <h3>{dateLabel}</h3>
+                        <p className="normal-case tracking-normal">{formatArs(dayTotal)}</p>
+                      </div>
+                      <div className="app-list">
                         {rows.map((row) => {
                           const active = drawerOpen && row.id === selectedId;
+                          const Icon = getCategoryIcon(row.categoryName, row.type);
                           return (
                             <button
                               key={row.id}
@@ -665,31 +682,36 @@ export function TransactionsPanel({
                                 setDrawerOpen(true);
                               }}
                             >
-                              <FinanceRow
-                                icon={getCategoryIcon(row.categoryName, row.type)}
-                                title={toDetail(row)}
-                                meta={[row.categoryName, row.paymentMethodName, row.accountName].filter(Boolean).join(" · ") || undefined}
-                                amount={
-                                  <span className="inline-flex items-center gap-2">
-                                    <FinancialAmount value={row.amount} direction={row.type === "income" ? "income" : "expense"} showSign />
-                                    <ChevronRight className="size-4 opacity-45" aria-hidden />
-                                  </span>
-                                }
-                                direction={row.type === "income" ? "income" : "expense"}
-                                status={row.type === "income" ? "Ingreso" : undefined}
-                                active={active}
-                              />
+                              <div className={cn("app-list-row", active && "bg-[var(--surface-selected)]/55")}>
+                                <div className={cn("app-icon-tile rounded-[0.9rem]", getCategoryTone(row.categoryName, row.type))}>
+                                  <Icon className="size-4" aria-hidden />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-[1.06rem] font-medium text-foreground">{toDetail(row)}</p>
+                                  <p className="mt-0.5 truncate text-[0.95rem] font-normal text-muted-foreground">
+                                    {row.categoryName ?? (row.type === "income" ? "Ingreso" : "Sin categoría")}
+                                  </p>
+                                </div>
+                                <div
+                                  className={cn(
+                                    "shrink-0 text-right text-[1.18rem] font-medium tabular-nums",
+                                    row.type === "income" ? "text-[var(--income)] dark:text-[var(--income-soft)]" : "text-foreground",
+                                  )}
+                                >
+                                  <FinancialAmount value={row.amount} direction={row.type === "income" ? "income" : "expense"} showSign />
+                                </div>
+                              </div>
                             </button>
                           );
                         })}
-                      </FinanceList>
+                      </div>
                     </section>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       <Slideout

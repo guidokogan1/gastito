@@ -55,10 +55,10 @@ export function MonthlyTrendChart({
     <section className={cn("space-y-4 border-b border-border/70 pb-5", className)}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="section-eyebrow">Tendencia · 7 meses</p>
+          <p className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Tendencia · 7 meses</p>
           <p
             className={cn(
-              "mt-1 text-[1.08rem] font-semibold tracking-[-0.01em]",
+              "mt-1 text-[1.02rem] font-medium",
               trendTone === "positive" && "text-[var(--income)]",
               trendTone === "warning" && "text-amber-700",
               trendTone === "neutral" && "text-muted-foreground",
@@ -67,7 +67,7 @@ export function MonthlyTrendChart({
             {deltaLabel}
           </p>
         </div>
-        <div className="shrink-0 space-y-1 text-right text-[0.9rem] font-medium text-muted-foreground">
+        <div className="shrink-0 space-y-1 text-right text-[0.88rem] font-normal text-muted-foreground">
           <p className="flex items-center justify-end gap-2">
             <span className="h-1 w-6 rounded-full bg-[var(--finance-green)]" />
             Gastos
@@ -112,7 +112,7 @@ export function MonthlyTrendChart({
           {months.map((month, index) => {
             const x = expensePoints[index]?.x ?? 0;
             return (
-              <text key={month.key} x={x} y="150" textAnchor="middle" className="fill-muted-foreground text-[0.72rem] font-semibold">
+              <text key={month.key} x={x} y="150" textAnchor="middle" className="fill-muted-foreground text-[0.72rem] font-medium">
                 {month.label}
               </text>
             );

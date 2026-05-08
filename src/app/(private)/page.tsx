@@ -72,7 +72,7 @@ function DashboardAction({
   return (
     <Link
       href={href}
-      className="pressable flex min-h-[3.65rem] items-center justify-center gap-2 rounded-[1rem] bg-[var(--surface-pill)] px-4 text-[1rem] font-semibold text-foreground"
+      className="pressable flex min-h-[3.65rem] items-center justify-center gap-2 rounded-[1rem] bg-[var(--surface-pill)] px-4 text-[1rem] font-medium text-foreground"
     >
       <Icon className="size-4 text-muted-foreground" aria-hidden />
       {label}
@@ -96,7 +96,7 @@ export default async function DashboardPage({
 
   return (
     <KineticPage className="space-y-7 pb-8">
-      <header className="pt-1 text-[1.02rem] font-semibold leading-tight text-muted-foreground">
+      <header className="pt-1 text-[1rem] font-normal leading-tight text-muted-foreground">
         <p>Hola, {displayHouseholdName}</p>
         <p className="mt-1">{dashboardMonthLabel(snapshot.monthKey)}</p>
       </header>
@@ -111,7 +111,7 @@ export default async function DashboardPage({
 
       <section className="space-y-6">
         <div>
-          <p className="section-eyebrow">Balance del mes</p>
+          <p className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Balance del mes</p>
           <p className="money-hero mt-3">
             <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
           </p>
@@ -119,14 +119,14 @@ export default async function DashboardPage({
 
         <div className="grid grid-cols-2 gap-6">
           <div className="min-w-0">
-            <p className="text-[0.9rem] font-semibold text-muted-foreground">Ingresos</p>
-            <p className="mt-1 text-[1.5rem] font-semibold leading-none tabular-nums">
+            <p className="text-[0.9rem] font-medium text-muted-foreground">Ingresos</p>
+            <p className="mt-1 text-[1.5rem] font-medium leading-none tabular-nums">
               <FinancialAmount value={snapshot.incomes} direction="income" showSign />
             </p>
           </div>
           <div className="min-w-0">
-            <p className="text-[0.9rem] font-semibold text-muted-foreground">Gastos</p>
-            <p className="mt-1 text-[1.5rem] font-semibold leading-none tabular-nums">
+            <p className="text-[0.9rem] font-medium text-muted-foreground">Gastos</p>
+            <p className="mt-1 text-[1.5rem] font-medium leading-none tabular-nums">
               <FinancialAmount value={snapshot.expenses} direction="expense" showSign />
             </p>
           </div>
@@ -146,8 +146,8 @@ export default async function DashboardPage({
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="section-eyebrow">Próximos vencimientos</h2>
-          <Link href="/gastos-fijos" className="text-[1.05rem] font-semibold text-[var(--finance-green)]">
+          <h2 className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Próximos vencimientos</h2>
+          <Link href="/gastos-fijos" className="text-[1rem] font-medium text-[var(--finance-green)]">
             Ver todo
           </Link>
         </div>
@@ -158,8 +158,8 @@ export default async function DashboardPage({
               <Repeat2 className="size-4" aria-hidden />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="row-title truncate">Sin vencimientos próximos</p>
-              <p className="row-meta mt-0.5 truncate">Cuando registres facturas pendientes van a aparecer acá.</p>
+              <p className="truncate text-[1rem] font-medium text-foreground">Sin vencimientos próximos</p>
+              <p className="mt-0.5 truncate text-[0.9rem] font-normal text-muted-foreground">Cuando registres facturas pendientes van a aparecer acá.</p>
             </div>
           </div>
         ) : (
@@ -172,10 +172,10 @@ export default async function DashboardPage({
                     <Icon className="size-4" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="row-title truncate">{bill.name}</p>
-                    <p className="row-meta mt-0.5 truncate">{daysUntilLabel(bill.dueDate)}</p>
+                    <p className="truncate text-[1rem] font-medium text-foreground">{bill.name}</p>
+                    <p className="mt-0.5 truncate text-[0.9rem] font-normal text-muted-foreground">{daysUntilLabel(bill.dueDate)}</p>
                   </div>
-                  <p className="money-row shrink-0 text-right">{formatArs(bill.amount)}</p>
+                  <p className="shrink-0 text-right text-[1.02rem] font-medium tabular-nums">{formatArs(bill.amount)}</p>
                   <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden />
                 </Link>
               );
@@ -186,8 +186,8 @@ export default async function DashboardPage({
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="section-eyebrow">Últimos movimientos</h2>
-          <Link href={`/movimientos?month=${snapshot.monthKey}`} className="text-[1.05rem] font-semibold text-[var(--finance-green)]">
+          <h2 className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Últimos movimientos</h2>
+          <Link href={`/movimientos?month=${snapshot.monthKey}`} className="text-[1rem] font-medium text-[var(--finance-green)]">
             Ver todo
           </Link>
         </div>
@@ -198,8 +198,8 @@ export default async function DashboardPage({
               <Repeat2 className="size-4" aria-hidden />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="row-title truncate">Todavía no hay movimientos</p>
-              <p className="row-meta mt-0.5 truncate">Cargá un gasto o ingreso para ver actividad acá.</p>
+              <p className="truncate text-[1rem] font-medium text-foreground">Todavía no hay movimientos</p>
+              <p className="mt-0.5 truncate text-[0.9rem] font-normal text-muted-foreground">Cargá un gasto o ingreso para ver actividad acá.</p>
             </div>
           </div>
         ) : (
@@ -213,12 +213,12 @@ export default async function DashboardPage({
                     <Icon className="size-4" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="row-title truncate">{transaction.detail}</p>
-                    <p className="row-meta mt-0.5 truncate">
+                    <p className="truncate text-[1rem] font-medium text-foreground">{transaction.detail}</p>
+                    <p className="mt-0.5 truncate text-[0.9rem] font-normal text-muted-foreground">
                       {formatDate(transaction.date)} · {transaction.category?.name ?? (isIncome ? "Ingreso" : "Gasto")}
                     </p>
                   </div>
-                  <p className="money-row shrink-0 text-right">
+                  <p className="shrink-0 text-right text-[1.02rem] font-medium tabular-nums">
                     <FinancialAmount value={transaction.amount} direction={isIncome ? "income" : "expense"} showSign />
                   </p>
                 </Link>

@@ -7,12 +7,33 @@ import { KineticPage } from "@/components/app/kinetic";
 import { FinanceList, FinanceRow } from "@/components/app/finance-list";
 import { EmptyState } from "@/components/app/empty-state";
 import { FinancialAmount } from "@/components/app/financial-amount";
+import { MonthlyTrendChart } from "@/components/app/monthly-trend-chart";
 import { Button } from "@/components/ui/button";
 import { DashboardSignalList, type DashboardSignal } from "@/components/app/dashboard-signal-list";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
 import { formatArs, formatDate } from "@/lib/format";
 import { toTitleCase } from "@/lib/text";
+
+function dashboardMonthLabel(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-AR", { month: "long" }).format(new Date(year, month - 1, 1));
+}
+
+function previousDashboardMonthKey(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const previousMonth = new Date(year, month - 2, 1);
+  return `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function trendDeltaLabel(expenseDelta: number, previousExpenses: number, previousMonthLabel: string) {
+  if (previousExpenses <= 0) return "Sin comparación previa";
+  const percent = Math.abs((expenseDelta / previousExpenses) * 100).toLocaleString("es-AR", {
+    maximumFractionDigits: 1,
+  });
+  const arrow = expenseDelta <= 0 ? "↓" : "↑";
+  return `${arrow} ${percent}% vs. ${previousMonthLabel}`;
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -73,6 +94,8 @@ export default async function DashboardPage({
 
   const visibleSignals = signals.slice(0, 3);
   const displayHouseholdName = toTitleCase(household.name);
+  const previousMonthLabel = dashboardMonthLabel(previousDashboardMonthKey(snapshot.monthKey));
+  const trendTone = snapshot.previousExpenses <= 0 ? "neutral" : snapshot.expenseDelta <= 0 ? "positive" : "warning";
 
   return (
     <KineticPage className="space-y-6">
@@ -98,37 +121,37 @@ export default async function DashboardPage({
           />
         ) : null}
 
-        <section className="space-y-4 border-b border-border/70 pb-5">
+        <section className="space-y-4">
           <div className="space-y-4">
             <div>
-              <p className="text-[1rem] font-semibold text-foreground">Balance del mes</p>
+              <p className="section-eyebrow">Balance del mes</p>
               <p className="money-hero mt-1">
                 <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
               </p>
             </div>
           </div>
 
-          <div className="finance-summary-strip border-t border-border/70 pt-3">
-            <div className="finance-summary-cell">
-              <p className="stat-label">Gastos</p>
-              <p className="money-row mt-1">
-                <FinancialAmount value={snapshot.expenses} direction="expense" />
-              </p>
-            </div>
-            <div className="finance-summary-cell">
+          <div className="grid grid-cols-2 gap-6 pt-1">
+            <div className="min-w-0">
               <p className="stat-label">Ingresos</p>
-              <p className="money-row mt-1">
-                <FinancialAmount value={snapshot.incomes} direction="income" />
+              <p className="stat-value mt-1 text-[1.8rem]">
+                <FinancialAmount value={snapshot.incomes} direction="income" showSign />
               </p>
             </div>
-            <div className="finance-summary-cell">
-              <p className="stat-label">Balance</p>
-              <p className="money-row mt-1">
-                <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
+            <div className="min-w-0">
+              <p className="stat-label">Gastos</p>
+              <p className="stat-value mt-1 text-[1.8rem]">
+                <FinancialAmount value={snapshot.expenses} direction="expense" showSign />
               </p>
             </div>
           </div>
         </section>
+
+        <MonthlyTrendChart
+          months={snapshot.trendMonths}
+          deltaLabel={trendDeltaLabel(snapshot.expenseDelta, snapshot.previousExpenses, previousMonthLabel)}
+          trendTone={trendTone}
+        />
 
         {!hasTransactions ? (
           <EmptyState

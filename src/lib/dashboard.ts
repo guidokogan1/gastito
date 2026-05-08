@@ -19,6 +19,30 @@ export function monthRangeFromKey(monthKey?: string) {
   };
 }
 
+function addMonths(date: Date, amount: number) {
+  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
+}
+
+function monthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", { month: "short" }).format(date).replace(".", "");
+}
+
+function buildEmptyTrendMonths(endMonth: Date) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addMonths(endMonth, index - 6);
+    return {
+      key: monthKey(date),
+      label: monthLabel(date),
+      incomes: 0,
+      expenses: 0,
+    };
+  });
+}
+
 function isDatabaseUnavailableError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const anyError = error as { code?: unknown; message?: unknown };
@@ -29,6 +53,7 @@ function isDatabaseUnavailableError(error: unknown) {
 
 export async function getDashboardSnapshot(householdId: string, monthKey?: string) {
   const range = monthRangeFromKey(monthKey);
+  const trendMonthsStart = addMonths(range.start, -6);
 
   try {
     const [
@@ -39,7 +64,8 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       categoryTotals,
       pendingBillPayments,
       activeDebts,
-      monthBuckets,
+      availableMonthBuckets,
+      trendTotals,
     ] = await Promise.all([
       prisma.transaction.findMany({
         where: { householdId, deletedAt: null, date: { gte: range.start, lt: range.end } },
@@ -107,6 +133,19 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         GROUP BY 1
         ORDER BY 1 DESC
       `,
+      prisma.$queryRaw<{ month: string; type: "expense" | "income"; total: unknown }[]>`
+        SELECT
+          to_char(date_trunc('month', "date"), 'YYYY-MM') AS month,
+          "type"::text AS type,
+          COALESCE(sum("amount"), 0) AS total
+        FROM "Transaction"
+        WHERE "householdId" = ${householdId}
+          AND "deletedAt" IS NULL
+          AND "date" >= ${trendMonthsStart}
+          AND "date" < ${range.end}
+        GROUP BY 1, 2
+        ORDER BY 1 ASC
+      `,
     ]);
 
     const categoryIds = categoryTotals.flatMap((row) => (row.categoryId ? [row.categoryId] : []));
@@ -142,11 +181,21 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       name: row.categoryId ? categoryNames.get(row.categoryId) ?? "Sin categoría" : "Sin categoría",
       total: toNumber(row._sum.amount ?? 0),
     }));
-    const byKey = new Map(monthBuckets.map((row) => [row.month, { key: row.month, count: row.count }]));
+    const trendMonths = buildEmptyTrendMonths(range.start);
+    const trendByKey = new Map(trendMonths.map((row) => [row.key, row]));
+    for (const row of trendTotals) {
+      const month = trendByKey.get(row.month);
+      if (!month) continue;
+      if (row.type === "income") month.incomes = toNumber(row.total as number | string);
+      if (row.type === "expense") month.expenses = toNumber(row.total as number | string);
+    }
+
+    const byKey = new Map(availableMonthBuckets.map((row) => [row.month, { key: row.month, count: row.count }]));
     if (!byKey.has(range.key)) byKey.set(range.key, { key: range.key, count: 0 });
 
     return {
       monthKey: range.key,
+      trendMonths,
       incomes,
       expenses,
       previousExpenses,
@@ -173,6 +222,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       expenseDelta: 0,
       savings: 0,
       recurringTotal: 0,
+      trendMonths: buildEmptyTrendMonths(range.start),
       upcomingBills: [],
       activeDebts: [],
       debtBalance: 0,

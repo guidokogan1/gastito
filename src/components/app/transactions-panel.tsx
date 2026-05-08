@@ -148,7 +148,7 @@ function SelectableSection({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-[1.05rem] font-semibold tracking-[-0.02em]">{title}</p>
+        <p className="text-[1.02rem] font-medium">{title}</p>
         <p className="text-xs text-muted-foreground">
           {options.find((option) => option.value === value)?.label ?? "Todas"}
         </p>
@@ -161,7 +161,7 @@ function SelectableSection({
               key={`${title}-${option.value || option.label}`}
               type="button"
               className={cn(
-                "pressed-scale focus-hairline flex min-h-13 w-full items-center justify-between gap-3 py-3 text-left text-[1.02rem] font-semibold transition-colors",
+                "pressed-scale focus-hairline flex min-h-13 w-full items-center justify-between gap-3 py-3 text-left text-[1.02rem] font-medium transition-colors",
                 active ? "text-foreground" : "text-muted-foreground",
               )}
               onClick={() => onValueChange(option.value)}
@@ -255,7 +255,7 @@ function SettingPickerRow({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium text-muted-foreground">{label}</span>
-          <span className="block truncate text-[1.08rem] font-semibold text-foreground">{value}</span>
+          <span className="block truncate text-[1.06rem] font-medium text-foreground">{value}</span>
         </span>
       </span>
       <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
@@ -539,7 +539,7 @@ export function TransactionsPanel({
           </div>
         </div>
 
-        <h1 className="text-[clamp(2.45rem,12vw,4rem)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
+        <h1 className="text-[clamp(2.35rem,11vw,3.75rem)] font-medium leading-[0.98] text-foreground">
           Movimientos
         </h1>
       </section>
@@ -568,11 +568,11 @@ export function TransactionsPanel({
             <div className="grid grid-cols-3 gap-4">
               <div className="min-w-0">
                 <p className="text-[0.9rem] font-medium text-muted-foreground">Gastos</p>
-                <p className="mt-1 text-[1.28rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
+                <p className="mt-1 text-[1.18rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
               </div>
               <div className="min-w-0">
                 <p className="text-[0.9rem] font-medium text-muted-foreground">Ingresos</p>
-                <p className="mt-1 text-[1.28rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
+                <p className="mt-1 text-[1.18rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
                   {formatArs(metrics.incomes)}
                 </p>
               </div>
@@ -580,7 +580,7 @@ export function TransactionsPanel({
                 <p className="text-[0.9rem] font-medium text-muted-foreground">Balance</p>
                 <p
                   className={cn(
-                    "mt-1 text-[1.28rem] font-medium leading-none tabular-nums",
+                    "mt-1 text-[1.18rem] font-medium leading-none tabular-nums",
                     metrics.balance < 0 ? "text-foreground" : "text-[var(--income)] dark:text-[var(--income-soft)]",
                   )}
                 >
@@ -687,14 +687,14 @@ export function TransactionsPanel({
                                   <Icon className="size-4" aria-hidden />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-[1.06rem] font-medium text-foreground">{toDetail(row)}</p>
-                                  <p className="mt-0.5 truncate text-[0.95rem] font-normal text-muted-foreground">
+                                  <p className="truncate text-[1.02rem] font-medium text-foreground">{toDetail(row)}</p>
+                                  <p className="mt-0.5 truncate text-[0.92rem] font-normal text-muted-foreground">
                                     {row.categoryName ?? (row.type === "income" ? "Ingreso" : "Sin categoría")}
                                   </p>
                                 </div>
                                 <div
                                   className={cn(
-                                    "shrink-0 text-right text-[1.18rem] font-medium tabular-nums",
+                                    "shrink-0 text-right text-[1.08rem] font-medium tabular-nums",
                                     row.type === "income" ? "text-[var(--income)] dark:text-[var(--income-soft)]" : "text-foreground",
                                   )}
                                 >

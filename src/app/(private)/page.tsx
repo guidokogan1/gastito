@@ -68,11 +68,11 @@ function DashboardAction({
   label: string;
   tone: "expense" | "income";
 }) {
-  const Icon = tone === "income" ? ArrowDownLeft : ArrowUpRight;
+  const Icon = tone === "income" ? ArrowUpRight : ArrowDownLeft;
   return (
     <Link
       href={href}
-      className="pressable flex min-h-[3.65rem] items-center justify-center gap-2 rounded-[1rem] bg-[var(--surface-pill)] px-4 text-[1rem] font-medium text-foreground"
+      className="pressable flex min-h-[3.65rem] items-center justify-center gap-2 rounded-[1rem] bg-[var(--surface-pill)] px-4 text-[1rem] font-medium text-foreground transition-[background,color,transform,box-shadow] duration-150 hover:bg-[var(--surface-selected)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--finance-green)]/20 active:scale-[0.985]"
     >
       <Icon className="size-4 text-muted-foreground" aria-hidden />
       {label}

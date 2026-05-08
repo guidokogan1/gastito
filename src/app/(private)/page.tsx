@@ -15,7 +15,7 @@ import { FinancialAmount } from "@/components/app/financial-amount";
 import { MonthlyTrendChart } from "@/components/app/monthly-trend-chart";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
-import { formatArs } from "@/lib/format";
+import { formatArs, formatDate } from "@/lib/format";
 import { toTitleCase } from "@/lib/text";
 
 function dashboardMonthLabel(monthKey: string, format: "long" | "short" = "long") {
@@ -177,6 +177,50 @@ export default async function DashboardPage({
                   </div>
                   <p className="money-row shrink-0 text-right">{formatArs(bill.amount)}</p>
                   <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="section-eyebrow">Últimos movimientos</h2>
+          <Link href={`/movimientos?month=${snapshot.monthKey}`} className="text-[1.05rem] font-semibold text-[var(--finance-green)]">
+            Ver todo
+          </Link>
+        </div>
+
+        {snapshot.recentTransactions.length === 0 ? (
+          <div className="app-list-row">
+            <div className="app-icon-tile rounded-[0.85rem]">
+              <Repeat2 className="size-4" aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="row-title truncate">Todavía no hay movimientos</p>
+              <p className="row-meta mt-0.5 truncate">Cargá un gasto o ingreso para ver actividad acá.</p>
+            </div>
+          </div>
+        ) : (
+          <div>
+            {snapshot.recentTransactions.slice(0, 2).map((transaction) => {
+              const isIncome = transaction.type === "income";
+              const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
+              return (
+                <Link key={transaction.id} href={`/movimientos?month=${snapshot.monthKey}`} className="app-list-row">
+                  <div className="app-icon-tile rounded-[0.85rem]">
+                    <Icon className="size-4" aria-hidden />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="row-title truncate">{transaction.detail}</p>
+                    <p className="row-meta mt-0.5 truncate">
+                      {formatDate(transaction.date)} · {transaction.category?.name ?? (isIncome ? "Ingreso" : "Gasto")}
+                    </p>
+                  </div>
+                  <p className="money-row shrink-0 text-right">
+                    <FinancialAmount value={transaction.amount} direction={isIncome ? "income" : "expense"} showSign />
+                  </p>
                 </Link>
               );
             })}

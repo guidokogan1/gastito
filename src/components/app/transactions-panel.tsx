@@ -746,32 +746,14 @@ export function TransactionsPanel({
             </div>
             <div className="mobile-scroll-row">
               <button type="button" className="pressable" onClick={() => setSortBy("date-desc")}>
-                <PillChip active={sortBy === "date-desc"}>Más recientes</PillChip>
+                <PillChip active={sortBy === "date-desc"}>Recientes</PillChip>
               </button>
               <button type="button" className="pressable" onClick={() => setSortBy("amount-desc")}>
-                <PillChip active={sortBy === "amount-desc"}>Mayor monto</PillChip>
+                <PillChip active={sortBy === "amount-desc"}>Mayor valor</PillChip>
               </button>
               <button type="button" className="pressable" onClick={() => setSortBy("amount-asc")}>
-                <PillChip active={sortBy === "amount-asc"}>Menor monto</PillChip>
+                <PillChip active={sortBy === "amount-asc"}>Menor valor</PillChip>
               </button>
-            </div>
-          </section>
-
-          <section className="grouped-form-section space-y-2">
-            <p className="text-sm font-medium">Totales del filtro</p>
-            <div className="finance-summary-strip">
-              <div className="finance-summary-cell">
-                <p className="stat-label">Gastos</p>
-                <p className="money-row mt-1">{formatArs(metrics.expenses)}</p>
-              </div>
-              <div className="finance-summary-cell">
-                <p className="stat-label">Ingresos</p>
-                <p className="money-row mt-1 text-[var(--income)]">{formatArs(metrics.incomes)}</p>
-              </div>
-              <div className="finance-summary-cell">
-                <p className="stat-label">Balance</p>
-                <p className="money-row mt-1">{formatArs(metrics.balance)}</p>
-              </div>
             </div>
           </section>
 

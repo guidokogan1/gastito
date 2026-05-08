@@ -119,14 +119,14 @@ export default async function DashboardPage({
 
         <div className="grid grid-cols-2 gap-6">
           <div className="min-w-0">
-            <p className="text-[0.95rem] font-semibold text-muted-foreground">Ingresos</p>
-            <p className="mt-1 text-[1.75rem] font-semibold leading-none tracking-[-0.025em] tabular-nums">
+            <p className="text-[0.9rem] font-semibold text-muted-foreground">Ingresos</p>
+            <p className="mt-1 text-[1.5rem] font-semibold leading-none tabular-nums">
               <FinancialAmount value={snapshot.incomes} direction="income" showSign />
             </p>
           </div>
           <div className="min-w-0">
-            <p className="text-[0.95rem] font-semibold text-muted-foreground">Gastos</p>
-            <p className="mt-1 text-[1.75rem] font-semibold leading-none tracking-[-0.025em] tabular-nums">
+            <p className="text-[0.9rem] font-semibold text-muted-foreground">Gastos</p>
+            <p className="mt-1 text-[1.5rem] font-semibold leading-none tabular-nums">
               <FinancialAmount value={snapshot.expenses} direction="expense" showSign />
             </p>
           </div>

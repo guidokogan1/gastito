@@ -191,7 +191,7 @@
 
 @layer components {
   .page-title {
-    font-size: clamp(1.6rem, 6.3vw, 2rem);
+    font-size: clamp(1.4rem, 5.4vw, 1.75rem);
     line-height: 1.05;
     letter-spacing: -0.012em;
     color: var(--foreground);
@@ -200,7 +200,7 @@
     font-weight: 560;
   }
   .screen-title {
-    font-size: clamp(1.6rem, 6.3vw, 2rem);
+    font-size: clamp(1.4rem, 5.4vw, 1.75rem);
     line-height: 1.05;
     letter-spacing: -0.012em;
     font-weight: 560;

@@ -59,10 +59,30 @@ export function BottomNav({ links }: { links: readonly BottomNavLink[] }) {
 
 function BottomNavItem({ link }: { link: BottomNavLink }) {
   const Icon = icons[link.iconKey];
+  const router = useRouter();
   const shortLabel = link.iconKey === "recurringBills" ? "Fijos" : link.label;
 
   return (
-    <NavLink href={link.href} className={cn("bottom-nav-item")} activeClassName="bottom-nav-item-active">
+    <NavLink
+      href={link.href}
+      className={cn("bottom-nav-item")}
+      activeClassName="bottom-nav-item-active"
+      onClick={(event) => {
+        if (
+          event.defaultPrevented ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey ||
+          event.button !== 0
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        router.push(link.href);
+      }}
+    >
       <Icon className="size-4" aria-hidden />
       <span>{shortLabel}</span>
     </NavLink>

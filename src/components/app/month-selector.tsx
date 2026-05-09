@@ -82,7 +82,7 @@ export function MonthSelector({
         <button
           id={id}
           type="button"
-          className="pressed-scale focus-hairline inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-border/55 bg-[var(--surface-pill)] px-3 text-left transition-colors"
+          className="pressed-scale focus-hairline inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-border/55 bg-[var(--surface-pill)] px-3.5 py-2 text-left transition-colors"
           onClick={() => setOpen(true)}
         >
           <CalendarDays className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />

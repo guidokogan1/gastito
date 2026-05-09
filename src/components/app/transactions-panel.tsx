@@ -458,7 +458,7 @@ export function TransactionsPanel({
               variant="secondary"
               size="icon"
               aria-label="Abrir filtros"
-              className="icon-action size-9 text-muted-foreground"
+              className="icon-action size-10 text-muted-foreground"
               onClick={() => setFiltersOpen(true)}
             >
               <Filter className="size-4.5" aria-hidden />

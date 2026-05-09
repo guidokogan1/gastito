@@ -362,10 +362,11 @@
     @apply bg-[var(--finance-green-soft)] text-[var(--finance-green)] hover:bg-[var(--finance-green-soft)] hover:text-[var(--finance-green)];
   }
   .bottom-nav {
-    @apply fixed z-40 mx-auto grid max-w-[30rem] grid-cols-5 gap-0 px-3 pb-2 pt-2 lg:hidden;
-    left: 1rem;
-    right: 1rem;
+    @apply fixed z-40 grid grid-cols-5 gap-0 px-3 pb-2 pt-2 lg:hidden;
+    left: 50%;
+    width: min(calc(100% - 2rem), 30rem);
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
     border: 1px solid var(--border-glass-nav);
     border-radius: 1.65rem;
     background: var(--surface-glass-nav);
@@ -570,9 +571,10 @@
   }
 
   .mobile-scroll-row {
-    @apply -mx-1 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 pr-12;
+    @apply -mx-1 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 pr-16;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 2.25rem), transparent 100%);
   }
   .mobile-scroll-row > * {
     @apply shrink-0;

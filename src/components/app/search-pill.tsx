@@ -32,7 +32,7 @@ export function SearchPill({
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
           placeholder={placeholder}
-          className="h-10 rounded-[0.95rem] pl-10 text-[0.9rem]"
+          className="h-10 rounded-[1rem] border-transparent bg-[var(--surface-pill)] pl-10 text-[0.9rem]"
           autoFocus
         />
       </div>
@@ -43,7 +43,7 @@ export function SearchPill({
     <Button
       type="button"
       variant="secondary"
-      className={cn("h-10 w-full justify-start rounded-[0.95rem] text-[0.9rem] font-normal", className)}
+      className={cn("h-10 w-full justify-start rounded-[1rem] text-[0.9rem] font-normal", className)}
       onClick={onOpen}
     >
       <Search className="size-4.5 text-muted-foreground" aria-hidden />

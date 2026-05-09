@@ -448,8 +448,8 @@ export function TransactionsPanel({
     (dateFilter !== "all" ? 1 : 0);
 
   return (
-    <KineticPage className="space-y-4">
-      <section className="space-y-3">
+    <KineticPage className="space-y-5">
+      <section className="space-y-3.5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">{monthControl}</div>
           <div className="flex shrink-0 gap-2">
@@ -458,10 +458,10 @@ export function TransactionsPanel({
               variant="secondary"
               size="icon"
               aria-label="Abrir filtros"
-              className="icon-action size-10"
+              className="icon-action size-9 text-muted-foreground"
               onClick={() => setFiltersOpen(true)}
             >
-              <Filter className="size-5" aria-hidden />
+              <Filter className="size-4.5" aria-hidden />
               {activeFilterCount > 0 ? (
                 <span className="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-[var(--finance-green)] text-[0.62rem] font-bold text-white">
                   {activeFilterCount}
@@ -488,7 +488,7 @@ export function TransactionsPanel({
         </h1>
       </section>
 
-      <section className="space-y-5">
+      <section className="space-y-6">
         {transactions.length === 0 ? (
           <EmptyState
             icon={ArrowUpRight}
@@ -517,7 +517,7 @@ export function TransactionsPanel({
               ]}
             />
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3.5">
               <SearchPill
                 id="tx-search"
                 open={searchOpen}
@@ -526,7 +526,7 @@ export function TransactionsPanel({
                 onOpen={() => setSearchOpen(true)}
                 onValueChange={setQuery}
               />
-              <div className="mobile-scroll-row gap-2.5">
+              <div className="mobile-scroll-row gap-2.5 pb-0.5">
                 <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
                   <PillChip active={typeFilter === "all"}>Todos</PillChip>
                 </button>

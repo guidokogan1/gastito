@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +26,14 @@ export function MoneyField({
   inputClassName?: string;
   showPreview?: boolean;
 }) {
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState(() => formatMoneyInput(defaultValue));
+  const handleValueChange = (rawValue: string) => {
+    setValue(formatMoneyInput(rawValue));
+  };
+
+  useEffect(() => {
+    setValue(formatMoneyInput(defaultValue));
+  }, [defaultValue]);
   const preview = useMemo(() => {
     const normalized = normalizeMoneyString(value);
     if (!/^\d+(\.\d{0,2})?$/.test(normalized)) return null;
@@ -47,7 +54,9 @@ export function MoneyField({
         required={required}
         placeholder="$0"
         value={value}
-        onChange={(event) => setValue(formatMoneyInput(event.target.value))}
+        onChange={(event) => handleValueChange(event.target.value)}
+        onInput={(event) => handleValueChange(event.currentTarget.value)}
+        onBlur={(event) => handleValueChange(event.currentTarget.value)}
         className={cn(
           "h-20 appearance-none border-0 bg-transparent px-0 text-center text-[clamp(3.1rem,17vw,4.35rem)] font-semibold leading-none tracking-[-0.035em] shadow-none focus-visible:bg-transparent focus-visible:ring-0",
           inputClassName,

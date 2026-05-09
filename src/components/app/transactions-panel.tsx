@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label";
 import { PillChip } from "@/components/app/pill-chip";
 import { EmptyState } from "@/components/app/empty-state";
 import { MoneyField } from "@/components/app/money-field";
+import { MetricStrip } from "@/components/app/metric-strip";
+import { SearchPill } from "@/components/app/search-pill";
 import { TransactionListRow, getTransactionCategoryIcon, normalizeCategoryLabel } from "@/components/app/transaction-list-row";
 import { cn } from "@/lib/utils";
 
@@ -507,49 +509,23 @@ export function TransactionsPanel({
           </EmptyState>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="min-w-0">
-                <p className="text-[0.82rem] font-normal text-muted-foreground">Gastos</p>
-                <p className="mt-1 text-[1rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[0.82rem] font-normal text-muted-foreground">Ingresos</p>
-                <p className="mt-1 text-[1rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
-                  {formatArs(metrics.incomes)}
-                </p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[0.82rem] font-normal text-muted-foreground">Balance</p>
-                <p
-                  className={cn(
-                    "mt-1 text-[1rem] font-medium leading-none tabular-nums",
-                    metrics.balance < 0 ? "text-foreground" : "text-[var(--income)] dark:text-[var(--income-soft)]",
-                  )}
-                >
-                  {formatArs(metrics.balance)}
-                </p>
-              </div>
-            </div>
+            <MetricStrip
+              items={[
+                { label: "Gastos", value: formatArs(metrics.expenses) },
+                { label: "Ingresos", value: formatArs(metrics.incomes), tone: "income" },
+                { label: "Balance", value: formatArs(metrics.balance), tone: metrics.balance >= 0 ? "income" : "default" },
+              ]}
+            />
 
             <div className="flex flex-col gap-3">
-              {searchOpen ? (
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                  <Input
-                    id="tx-search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Buscar movimiento, categoría..."
-                    className="h-11 rounded-[1rem] pl-10 text-[0.94rem]"
-                    autoFocus
-                  />
-                </div>
-              ) : (
-                <Button type="button" variant="secondary" className="h-11 w-full justify-start rounded-[1rem] text-[0.94rem] font-normal" onClick={() => setSearchOpen(true)}>
-                  <Search className="size-4.5 text-muted-foreground" aria-hidden />
-                  Buscar movimiento, categoría...
-                </Button>
-              )}
+              <SearchPill
+                id="tx-search"
+                open={searchOpen}
+                value={query}
+                placeholder="Buscar movimiento, categoría..."
+                onOpen={() => setSearchOpen(true)}
+                onValueChange={setQuery}
+              />
               <div className="mobile-scroll-row gap-2">
                 <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
                   <PillChip active={typeFilter === "all"}>Todos</PillChip>

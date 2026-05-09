@@ -46,9 +46,10 @@ export function MoneyField({
       <Label htmlFor={id} className="sr-only">
         {label}
       </Label>
+      <input type="hidden" name={name} value={normalizeMoneyString(value)} />
       <Input
         id={id}
-        name={name}
+        name={`${name}Display`}
         type="text"
         inputMode="decimal"
         required={required}

@@ -17,10 +17,13 @@ describe("format helpers", () => {
 
   it("formats money input with Argentine separators", () => {
     expect(formatMoneyInput("20000")).toBe("$20.000");
+    expect(formatMoneyInput("121212")).toBe("$121.212");
     expect(formatMoneyInput("20000,12")).toBe("$20.000,12");
+    expect(formatMoneyInput("$20.000,12")).toBe("$20.000,12");
   });
 
   it("normalizes formatted money strings for persistence", () => {
     expect(normalizeMoneyString("$20.000,12")).toBe("20000.12");
+    expect(normalizeMoneyString("$121.212")).toBe("121212");
   });
 });

@@ -12,7 +12,9 @@ import {
 import { FlashMessage } from "@/components/flash-message";
 import { KineticPage } from "@/components/app/kinetic";
 import { FinancialAmount } from "@/components/app/financial-amount";
+import { MetricStrip } from "@/components/app/metric-strip";
 import { MonthlyTrendChart } from "@/components/app/monthly-trend-chart";
+import { SectionHeaderLink } from "@/components/app/section-header-link";
 import { TransactionListRow } from "@/components/app/transaction-list-row";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
@@ -120,20 +122,14 @@ export default async function DashboardPage({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div className="min-w-0">
-            <p className="text-[0.9rem] font-medium text-muted-foreground">Ingresos</p>
-            <p className="mt-1 text-[1.5rem] font-medium leading-none tabular-nums">
-              <FinancialAmount value={snapshot.incomes} direction="income" showSign />
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[0.9rem] font-medium text-muted-foreground">Gastos</p>
-            <p className="mt-1 text-[1.5rem] font-medium leading-none tabular-nums">
-              <FinancialAmount value={snapshot.expenses} direction="expense" showSign />
-            </p>
-          </div>
-        </div>
+        <MetricStrip
+          columns={2}
+          className="[&_p:last-child]:text-[1.42rem]"
+          items={[
+            { label: "Ingresos", value: <FinancialAmount value={snapshot.incomes} direction="income" showSign />, tone: "income" },
+            { label: "Gastos", value: <FinancialAmount value={snapshot.expenses} direction="expense" showSign /> },
+          ]}
+        />
 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <DashboardAction href={expenseHref} label="Gasto" tone="expense" />
@@ -148,12 +144,7 @@ export default async function DashboardPage({
       />
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Próximos vencimientos</h2>
-          <Link href="/gastos-fijos" className="text-[1rem] font-medium text-[var(--finance-green)]">
-            Ver todo
-          </Link>
-        </div>
+        <SectionHeaderLink title="Próximos vencimientos" href="/gastos-fijos" />
 
         {snapshot.upcomingBills.length === 0 ? (
           <div className="app-list-row">
@@ -188,12 +179,7 @@ export default async function DashboardPage({
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Últimos movimientos</h2>
-          <Link href={`/movimientos?month=${snapshot.monthKey}`} className="text-[1rem] font-medium text-[var(--finance-green)]">
-            Ver todo
-          </Link>
-        </div>
+        <SectionHeaderLink title="Últimos movimientos" href={`/movimientos?month=${snapshot.monthKey}`} />
 
         {snapshot.recentTransactions.length === 0 ? (
           <div className="app-list-row">

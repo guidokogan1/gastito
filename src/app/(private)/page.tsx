@@ -208,12 +208,12 @@ export default async function DashboardPage({
         ) : (
           <div>
             {snapshot.recentTransactions.slice(0, 2).map((transaction) => {
-              const isIncome = transaction.type === "income";
+              const categoryName = transaction.category?.name ?? "Sin categoría";
               return (
                 <Link key={transaction.id} href={`/movimientos?month=${snapshot.monthKey}`} className="block border-b border-border/70 py-2.5 last:border-b-0">
                   <TransactionListRow
-                    title={transaction.detail?.trim() || transaction.category?.name || "Movimiento sin detalle"}
-                    categoryName={transaction.category?.name ?? (isIncome ? "Ingreso" : null)}
+                    title={transaction.detail?.trim() || categoryName}
+                    categoryName={categoryName}
                     metaPrefix={formatDate(transaction.date)}
                     amount={transaction.amount}
                     type={transaction.type}

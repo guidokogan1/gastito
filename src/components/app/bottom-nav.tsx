@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { ArrowRightLeft, CreditCard, HandCoins, Landmark, LayoutDashboard, MoreHorizontal, Repeat2, Tags } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { NavLink } from "@/components/app/nav-link";
 import { cn } from "@/lib/utils";
@@ -23,6 +25,29 @@ export type BottomNavLink = {
 };
 
 export function BottomNav({ links }: { links: readonly BottomNavLink[] }) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const scheduler = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const prefetchRoutes = () => {
+      for (const link of links) {
+        if (link.href !== pathname) router.prefetch(link.href);
+      }
+    };
+
+    if (scheduler.requestIdleCallback && scheduler.cancelIdleCallback) {
+      const idleId = scheduler.requestIdleCallback(prefetchRoutes, { timeout: 1800 });
+      return () => scheduler.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(prefetchRoutes, 900);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [links, pathname, router]);
+
   return (
     <nav className="bottom-nav lg:hidden" aria-label="Navegación principal">
       {links.map((link) => (

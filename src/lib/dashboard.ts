@@ -61,10 +61,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       incomeTotals,
       expenseTotals,
       previousExpenseTotals,
-      categoryTotals,
       pendingBillPayments,
-      activeDebts,
-      availableMonthBuckets,
       trendTotals,
     ] = await Promise.all([
       prisma.transaction.findMany({
@@ -92,13 +89,6 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         where: { householdId, deletedAt: null, date: { gte: range.previousStart, lt: range.start }, type: "expense" },
         _sum: { amount: true },
       }),
-      prisma.transaction.groupBy({
-        by: ["categoryId"],
-        where: { householdId, deletedAt: null, date: { gte: range.start, lt: range.end }, type: "expense" },
-        _sum: { amount: true },
-        orderBy: { _sum: { amount: "desc" } },
-        take: 5,
-      }),
       prisma.recurringBillPayment.findMany({
         where: {
           householdId,
@@ -117,22 +107,6 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         orderBy: { dueDate: "asc" },
         take: 6,
       }),
-      prisma.debt.findMany({
-        where: { householdId, deletedAt: null, isActive: true },
-        select: { id: true, entityName: true, direction: true, remainingBalance: true },
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-      }),
-      prisma.$queryRaw<{ month: string; count: number }[]>`
-        SELECT
-          to_char(date_trunc('month', "date"), 'YYYY-MM') AS month,
-          count(*)::int AS count
-        FROM "Transaction"
-        WHERE "householdId" = ${householdId}
-          AND "deletedAt" IS NULL
-        GROUP BY 1
-        ORDER BY 1 DESC
-      `,
       prisma.$queryRaw<{ month: string; type: "expense" | "income"; total: unknown }[]>`
         SELECT
           to_char(date_trunc('month', "date"), 'YYYY-MM') AS month,
@@ -147,13 +121,6 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         ORDER BY 1 ASC
       `,
     ]);
-
-    const categoryIds = categoryTotals.flatMap((row) => (row.categoryId ? [row.categoryId] : []));
-    const categories = await prisma.category.findMany({
-      where: { householdId, id: { in: categoryIds }, deletedAt: null },
-      select: { id: true, name: true },
-    });
-    const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
 
     const incomes = toNumber(incomeTotals._sum.amount ?? 0);
     const expenses = toNumber(expenseTotals._sum.amount ?? 0);
@@ -178,11 +145,6 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         dueDay: payment.recurringBill.dueDay,
         paymentMethod: payment.paymentMethod ?? payment.recurringBill.paymentMethod,
       }));
-    const debtBalance = activeDebts.reduce((acc, debt) => acc + toNumber(debt.remainingBalance), 0);
-    const topCategories = categoryTotals.map((row) => ({
-      name: row.categoryId ? categoryNames.get(row.categoryId) ?? "Sin categoría" : "Sin categoría",
-      total: toNumber(row._sum.amount ?? 0),
-    }));
     const trendMonths = buildEmptyTrendMonths(range.start);
     const trendByKey = new Map(trendMonths.map((row) => [row.key, row]));
     for (const row of trendTotals) {
@@ -191,9 +153,6 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       if (row.type === "income") month.incomes = toNumber(row.total as number | string);
       if (row.type === "expense") month.expenses = toNumber(row.total as number | string);
     }
-
-    const byKey = new Map(availableMonthBuckets.map((row) => [row.month, { key: row.month, count: row.count }]));
-    if (!byKey.has(range.key)) byKey.set(range.key, { key: range.key, count: 0 });
 
     return {
       monthKey: range.key,
@@ -206,11 +165,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       savings: incomes - expenses,
       recurringTotal,
       upcomingBills,
-      activeDebts,
-      debtBalance,
       recentTransactions,
-      topCategories,
-      availableMonths: [...byKey.values()].sort((a, b) => b.key.localeCompare(a.key)),
       updatedAt: new Date(),
       degraded: false,
       degradedReason: null as null | "db_unavailable",
@@ -226,11 +181,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       recurringTotal: 0,
       trendMonths: buildEmptyTrendMonths(range.start),
       upcomingBills: [],
-      activeDebts: [],
-      debtBalance: 0,
       recentTransactions: [],
-      topCategories: [],
-      availableMonths: [{ key: range.key, count: 0 }],
       monthKey: range.key,
       updatedAt: new Date(),
       degraded: true,

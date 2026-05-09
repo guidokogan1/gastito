@@ -483,7 +483,7 @@ export function TransactionsPanel({
           </div>
         </div>
 
-        <h1 className="text-[clamp(2rem,8.4vw,2.55rem)] font-medium leading-none tracking-[-0.012em] text-foreground">
+        <h1 className="screen-title">
           Movimientos
         </h1>
       </section>
@@ -517,7 +517,7 @@ export function TransactionsPanel({
               ]}
             />
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               <SearchPill
                 id="tx-search"
                 open={searchOpen}
@@ -526,7 +526,7 @@ export function TransactionsPanel({
                 onOpen={() => setSearchOpen(true)}
                 onValueChange={setQuery}
               />
-              <div className="mobile-scroll-row gap-2">
+              <div className="mobile-scroll-row gap-2.5">
                 <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
                   <PillChip active={typeFilter === "all"}>Todos</PillChip>
                 </button>

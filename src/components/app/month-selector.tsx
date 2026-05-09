@@ -82,11 +82,11 @@ export function MonthSelector({
         <button
           id={id}
           type="button"
-          className="pressed-scale focus-hairline inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border border-border/70 bg-[var(--surface-control)] px-4 text-left transition-colors"
+          className="pressed-scale focus-hairline inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-border/70 bg-[var(--surface-control)] px-3.5 text-left transition-colors"
           onClick={() => setOpen(true)}
         >
           <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="truncate text-[0.98rem] font-semibold">{formatMonthLabel(value)}</span>
+          <span className="truncate text-[0.95rem] font-medium">{formatMonthLabel(value)}</span>
           <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         </button>
       ) : (

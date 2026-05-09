@@ -13,10 +13,12 @@ import { FlashMessage } from "@/components/flash-message";
 import { KineticPage } from "@/components/app/kinetic";
 import { FinancialAmount } from "@/components/app/financial-amount";
 import { MonthlyTrendChart } from "@/components/app/monthly-trend-chart";
+import { TransactionListRow } from "@/components/app/transaction-list-row";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
 import { formatArs, formatDate } from "@/lib/format";
 import { toTitleCase } from "@/lib/text";
+import { cn } from "@/lib/utils";
 
 function dashboardMonthLabel(monthKey: string, format: "long" | "short" = "long") {
   const [year, month] = monthKey.split("-").map(Number);
@@ -69,12 +71,13 @@ function DashboardAction({
   tone: "expense" | "income";
 }) {
   const Icon = tone === "income" ? ArrowUpRight : ArrowDownLeft;
+  const toneClass = tone === "income" ? "text-[var(--income)]" : "text-red-600";
   return (
     <Link
       href={href}
-      className="pressable flex min-h-[3.65rem] items-center justify-center gap-2 rounded-[1rem] bg-[var(--surface-pill)] px-4 text-[1rem] font-medium text-foreground transition-[background,color,transform,box-shadow] duration-150 hover:bg-[var(--surface-selected)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--finance-green)]/20 active:scale-[0.985]"
+      className="pressable flex min-h-[3.35rem] items-center justify-center gap-2 rounded-[1rem] bg-[var(--surface-pill)] px-4 text-[0.98rem] font-medium text-foreground transition-[background,color,transform,box-shadow] duration-150 hover:bg-[var(--surface-selected)] hover:shadow-[0_1px_0_rgba(0,0,0,0.04)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--finance-green)]/20 active:scale-[0.985]"
     >
-      <Icon className="size-4 text-muted-foreground" aria-hidden />
+      <Icon className={cn("size-4", toneClass)} aria-hidden />
       {label}
     </Link>
   );
@@ -206,21 +209,16 @@ export default async function DashboardPage({
           <div>
             {snapshot.recentTransactions.slice(0, 2).map((transaction) => {
               const isIncome = transaction.type === "income";
-              const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
               return (
-                <Link key={transaction.id} href={`/movimientos?month=${snapshot.monthKey}`} className="app-list-row">
-                  <div className="app-icon-tile rounded-[0.85rem]">
-                    <Icon className="size-4" aria-hidden />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[1rem] font-medium text-foreground">{transaction.detail}</p>
-                    <p className="mt-0.5 truncate text-[0.9rem] font-normal text-muted-foreground">
-                      {formatDate(transaction.date)} · {transaction.category?.name ?? (isIncome ? "Ingreso" : "Gasto")}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-right text-[1.02rem] font-medium tabular-nums">
-                    <FinancialAmount value={transaction.amount} direction={isIncome ? "income" : "expense"} showSign />
-                  </p>
+                <Link key={transaction.id} href={`/movimientos?month=${snapshot.monthKey}`} className="block border-b border-border/70 py-2.5 last:border-b-0">
+                  <TransactionListRow
+                    title={transaction.detail?.trim() || transaction.category?.name || "Movimiento sin detalle"}
+                    categoryName={transaction.category?.name ?? (isIncome ? "Ingreso" : null)}
+                    metaPrefix={formatDate(transaction.date)}
+                    amount={transaction.amount}
+                    type={transaction.type}
+                    className="min-h-0 border-b-0 py-0 active:scale-100"
+                  />
                 </Link>
               );
             })}

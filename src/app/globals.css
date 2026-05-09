@@ -48,12 +48,15 @@
 }
 
 :root {
-  --font-sans-modern: "SF Pro Display", "SF Pro Text", "Avenir Next", "Segoe UI", Inter, system-ui, sans-serif;
+  --font-sans-modern: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Avenir Next", "Segoe UI", Inter, system-ui, sans-serif;
   --font-serif-editorial: var(--font-sans-modern);
   --radius: 0.875rem;
   --radius-sheet: 2.125rem;
   --radius-control: 1.125rem;
   --radius-row: 1rem;
+  --space-page-x: 1.25rem;
+  --space-section: 1.5rem;
+  --space-stack: 1rem;
   --motion-spring: cubic-bezier(0.2, 0.9, 0.2, 1);
   --finance-green: oklch(0.31 0.082 157);
   --finance-green-soft: oklch(0.92 0.055 157);
@@ -194,57 +197,57 @@
     color: var(--foreground);
     font-family: var(--font-sans-modern), sans-serif;
     font-style: normal;
-    font-weight: 720;
+    font-weight: 560;
   }
   .screen-title {
-    font-size: clamp(2.2rem, 9vw, 2.85rem);
-    line-height: 0.96;
-    letter-spacing: -0.032em;
-    font-weight: 640;
+    font-size: clamp(2rem, 8vw, 2.65rem);
+    line-height: 1;
+    letter-spacing: -0.018em;
+    font-weight: 560;
   }
   .detail-title {
     font-size: clamp(2rem, 8vw, 2.7rem);
     line-height: 0.98;
     letter-spacing: -0.03em;
-    font-weight: 700;
+    font-weight: 600;
   }
   .page-description {
-    @apply mt-3 text-[1rem] font-medium leading-relaxed text-muted-foreground text-balance;
+    @apply mt-3 text-[1rem] font-normal leading-relaxed text-muted-foreground text-balance;
     max-width: 40ch;
   }
   .section-title {
-    @apply text-[1.28rem] font-semibold text-foreground;
-    letter-spacing: -0.035em;
-  }
-  .row-title {
-    @apply text-[1.04rem] font-semibold text-foreground;
+    @apply text-[1.18rem] font-medium text-foreground;
     letter-spacing: -0.018em;
   }
+  .row-title {
+    @apply text-[1rem] font-medium text-foreground;
+    letter-spacing: 0;
+  }
   .row-meta {
-    @apply text-[0.9rem] font-medium text-muted-foreground;
-    letter-spacing: -0.01em;
+    @apply text-[0.9rem] font-normal text-muted-foreground;
+    letter-spacing: 0;
   }
   .section-description {
     @apply text-[0.95rem] font-medium text-muted-foreground text-pretty;
   }
   .stat-value {
-    @apply text-[2.15rem] leading-none font-semibold tabular-nums;
-    letter-spacing: -0.025em;
+    @apply text-[2rem] leading-none font-medium tabular-nums;
+    letter-spacing: 0;
   }
   .stat-label {
-    @apply text-[0.78rem] font-semibold text-muted-foreground;
-    letter-spacing: -0.006em;
+    @apply text-[0.78rem] font-medium text-muted-foreground;
+    letter-spacing: 0;
   }
   .section-eyebrow {
-    @apply text-[0.72rem] font-bold uppercase tracking-[0.075em] text-muted-foreground;
+    @apply text-[0.72rem] font-medium uppercase tracking-[0.075em] text-muted-foreground;
   }
   .money-hero {
-    @apply text-[clamp(3.35rem,15vw,5rem)] font-semibold leading-none tabular-nums;
-    letter-spacing: -0.035em;
+    @apply text-[clamp(3.2rem,14vw,4.65rem)] font-medium leading-none tabular-nums;
+    letter-spacing: -0.018em;
   }
   .money-row {
-    @apply text-[1.08rem] font-semibold tabular-nums;
-    letter-spacing: -0.018em;
+    @apply text-[1.02rem] font-medium tabular-nums;
+    letter-spacing: 0;
   }
   .card-page {
     @apply rounded-[1.375rem] border border-border bg-card transition-colors duration-300;
@@ -343,7 +346,7 @@
     @apply flex size-10 items-center justify-center rounded-full bg-[var(--finance-green-soft)] text-sm font-bold text-[var(--finance-green)];
   }
   .app-main {
-    @apply mx-auto w-full max-w-[880px] px-5 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8;
+    @apply mx-auto w-full max-w-[880px] px-5 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8;
   }
   .side-nav-link {
     @apply flex items-center gap-3 rounded-full px-3 py-2.5 text-[0.9rem] font-semibold text-sidebar-foreground/64 transition-all duration-200 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground active:scale-[0.985];
@@ -369,10 +372,19 @@
     box-shadow: none;
   }
   .app-list-row {
-    @apply flex min-h-[4.35rem] items-center gap-3.5 border-b border-border/70 px-0 py-2.5 transition-[background,transform] duration-150 ease-out last:border-b-0 active:scale-[0.992];
+    @apply flex min-h-16 items-center gap-3 border-b border-border/70 px-0 py-2.5 transition-[background,transform] duration-150 ease-out last:border-b-0 active:scale-[0.992];
   }
   .app-icon-tile {
-    @apply flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground;
+    @apply flex size-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-muted text-foreground;
+  }
+  .app-row-title {
+    @apply text-[1rem] font-medium text-foreground;
+  }
+  .app-row-meta {
+    @apply text-[0.9rem] font-normal text-muted-foreground;
+  }
+  .app-row-value {
+    @apply shrink-0 text-right text-[1.02rem] font-medium tabular-nums;
   }
   .metric-hero {
     @apply border-0 bg-transparent p-0;

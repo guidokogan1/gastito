@@ -2,33 +2,16 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
-  ArrowDownLeft,
   ArrowUpRight,
-  BadgePercent,
-  Banknote,
-  Car,
   Check,
   ChevronRight,
   CreditCard,
-  Dumbbell,
   Filter,
-  Gamepad2,
-  Gift,
-  GraduationCap,
-  HeartPulse,
-  Home,
   Landmark,
-  PawPrint,
   Plus,
-  ReceiptText,
   Search,
   SearchX,
-  ShoppingCart,
-  Sparkles,
   Trash2,
-  Utensils,
-  Wifi,
-  RotateCcw,
   SortAsc,
   type LucideIcon,
 } from "lucide-react";
@@ -45,8 +28,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PillChip } from "@/components/app/pill-chip";
 import { EmptyState } from "@/components/app/empty-state";
-import { FinancialAmount } from "@/components/app/financial-amount";
 import { MoneyField } from "@/components/app/money-field";
+import { TransactionListRow, getTransactionCategoryIcon, normalizeCategoryLabel } from "@/components/app/transaction-list-row";
 import { cn } from "@/lib/utils";
 
 type SelectOption = { id: string; name: string };
@@ -75,54 +58,13 @@ function optionName(options: SelectOption[], id: string) {
   return options.find((o) => o.id === id)?.name ?? null;
 }
 
-function normalizeOptionLabel(name?: string | null) {
-  return (name ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
-}
-
-const INCOME_CATEGORY_NAMES = new Set(DEFAULT_INCOME_CATEGORIES.map((category) => normalizeOptionLabel(category.name)));
+const INCOME_CATEGORY_NAMES = new Set(DEFAULT_INCOME_CATEGORIES.map((category) => normalizeCategoryLabel(category.name)));
 const INCOME_CATEGORY_ORDER = new Map(
-  DEFAULT_INCOME_CATEGORIES.map((category, index) => [normalizeOptionLabel(category.name), index]),
+  DEFAULT_INCOME_CATEGORIES.map((category, index) => [normalizeCategoryLabel(category.name), index]),
 );
 
 function isIncomeCategoryName(name?: string | null) {
-  return INCOME_CATEGORY_NAMES.has(normalizeOptionLabel(name));
-}
-
-function getCategoryIcon(name?: string | null, type: "expense" | "income" = "expense"): LucideIcon {
-  const normalized = normalizeOptionLabel(name);
-  if (normalized.includes("sueldo")) return Banknote;
-  if (normalized.includes("devolucion")) return RotateCcw;
-  if (normalized.includes("descuento")) return BadgePercent;
-  if (type === "income") return ArrowUpRight;
-  if (normalized.includes("comida") || normalized.includes("super")) return Utensils;
-  if (normalized.includes("educ")) return GraduationCap;
-  if (normalized.includes("hogar")) return Home;
-  if (normalized.includes("impuesto")) return ReceiptText;
-  if (normalized.includes("masc")) return PawPrint;
-  if (normalized.includes("ocio")) return Gamepad2;
-  if (normalized.includes("regalo")) return Gift;
-  if (normalized.includes("salud")) return HeartPulse;
-  if (normalized.includes("servicio") || normalized.includes("internet")) return Wifi;
-  if (normalized.includes("transporte")) return Car;
-  if (normalized.includes("deporte")) return Dumbbell;
-  if (normalized.includes("otros")) return Sparkles;
-  return ShoppingCart;
-}
-
-function getCategoryTone(name?: string | null, type: "expense" | "income" = "expense") {
-  const normalized = normalizeOptionLabel(name);
-  if (type === "income") return "bg-emerald-600 text-white";
-  if (normalized.includes("comida") || normalized.includes("super")) return "bg-orange-500 text-white";
-  if (normalized.includes("educ")) return "bg-violet-600 text-white";
-  if (normalized.includes("hogar") || normalized.includes("servicio") || normalized.includes("internet")) return "bg-teal-600 text-white";
-  if (normalized.includes("auto") || normalized.includes("transporte")) return "bg-blue-600 text-white";
-  if (normalized.includes("masc")) return "bg-fuchsia-600 text-white";
-  if (normalized.includes("ocio")) return "bg-amber-600 text-white";
-  if (normalized.includes("regalo")) return "bg-pink-600 text-white";
-  if (normalized.includes("salud")) return "bg-red-600 text-white";
-  if (normalized.includes("impuesto")) return "bg-slate-700 text-white";
-  if (normalized.includes("deporte")) return "bg-lime-700 text-white";
-  return "bg-zinc-700 text-white";
+  return INCOME_CATEGORY_NAMES.has(normalizeCategoryLabel(name));
 }
 
 function formatGroupDate(date: Date) {
@@ -430,8 +372,8 @@ export function TransactionsPanel({
         .filter((category) => isIncomeCategoryName(category.name))
         .sort(
           (a, b) =>
-            (INCOME_CATEGORY_ORDER.get(normalizeOptionLabel(a.name)) ?? 99) -
-            (INCOME_CATEGORY_ORDER.get(normalizeOptionLabel(b.name)) ?? 99),
+            (INCOME_CATEGORY_ORDER.get(normalizeCategoryLabel(a.name)) ?? 99) -
+            (INCOME_CATEGORY_ORDER.get(normalizeCategoryLabel(b.name)) ?? 99),
         ),
     [categories],
   );
@@ -504,8 +446,8 @@ export function TransactionsPanel({
     (dateFilter !== "all" ? 1 : 0);
 
   return (
-    <KineticPage className="space-y-6">
-      <section className="space-y-5">
+    <KineticPage className="space-y-5">
+      <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">{monthControl}</div>
           <div className="flex shrink-0 gap-2">
@@ -539,12 +481,12 @@ export function TransactionsPanel({
           </div>
         </div>
 
-        <h1 className="text-[clamp(2.35rem,11vw,3.75rem)] font-medium leading-[0.98] text-foreground">
+        <h1 className="text-[clamp(2rem,9vw,3rem)] font-medium leading-none text-foreground">
           Movimientos
         </h1>
       </section>
 
-      <section className="space-y-5">
+      <section className="space-y-6">
         {transactions.length === 0 ? (
           <EmptyState
             icon={ArrowUpRight}
@@ -567,20 +509,20 @@ export function TransactionsPanel({
           <>
             <div className="grid grid-cols-3 gap-4">
               <div className="min-w-0">
-                <p className="text-[0.9rem] font-medium text-muted-foreground">Gastos</p>
-                <p className="mt-1 text-[1.18rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
+                <p className="text-[0.86rem] font-normal text-muted-foreground">Gastos</p>
+                <p className="mt-1 text-[1.06rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
               </div>
               <div className="min-w-0">
-                <p className="text-[0.9rem] font-medium text-muted-foreground">Ingresos</p>
-                <p className="mt-1 text-[1.18rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
+                <p className="text-[0.86rem] font-normal text-muted-foreground">Ingresos</p>
+                <p className="mt-1 text-[1.06rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
                   {formatArs(metrics.incomes)}
                 </p>
               </div>
               <div className="min-w-0">
-                <p className="text-[0.9rem] font-medium text-muted-foreground">Balance</p>
+                <p className="text-[0.86rem] font-normal text-muted-foreground">Balance</p>
                 <p
                   className={cn(
-                    "mt-1 text-[1.18rem] font-medium leading-none tabular-nums",
+                    "mt-1 text-[1.06rem] font-medium leading-none tabular-nums",
                     metrics.balance < 0 ? "text-foreground" : "text-[var(--income)] dark:text-[var(--income-soft)]",
                   )}
                 >
@@ -589,7 +531,7 @@ export function TransactionsPanel({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3.5">
               {searchOpen ? (
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
@@ -598,17 +540,17 @@ export function TransactionsPanel({
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Buscar movimiento, categoría..."
-                    className="h-13 rounded-[1.25rem] pl-11 text-[1.05rem]"
+                    className="h-12 rounded-[1.15rem] pl-11 text-[0.98rem]"
                     autoFocus
                   />
                 </div>
               ) : (
-                <Button type="button" variant="secondary" className="w-full justify-start rounded-[1.25rem]" onClick={() => setSearchOpen(true)}>
+                <Button type="button" variant="secondary" className="h-12 w-full justify-start rounded-[1.15rem] text-[0.98rem] font-normal" onClick={() => setSearchOpen(true)}>
                   <Search className="size-5 text-muted-foreground" aria-hidden />
                   Buscar movimiento, categoría...
                 </Button>
               )}
-              <div className="mobile-scroll-row">
+              <div className="mobile-scroll-row gap-2">
                 <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
                   <PillChip active={typeFilter === "all"}>Todos</PillChip>
                 </button>
@@ -658,19 +600,18 @@ export function TransactionsPanel({
                 </Button>
               </EmptyState>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {groupedTransactions.map(([dateLabel, rows]) => {
                   const dayTotal = rows.reduce((acc, row) => acc + (row.type === "income" ? toNumber(row.amount) : -toNumber(row.amount)), 0);
                   return (
-                    <section key={dateLabel} className="space-y-2">
-                      <div className="flex items-center justify-between px-1 text-[0.82rem] font-medium uppercase tracking-[0.04em] text-muted-foreground">
+                    <section key={dateLabel} className="space-y-2.5">
+                      <div className="flex items-center justify-between px-1 text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                         <h3>{dateLabel}</h3>
                         <p className="normal-case tracking-normal">{formatArs(dayTotal)}</p>
                       </div>
                       <div className="app-list">
                         {rows.map((row) => {
                           const active = drawerOpen && row.id === selectedId;
-                          const Icon = getCategoryIcon(row.categoryName, row.type);
                           return (
                             <button
                               key={row.id}
@@ -682,25 +623,13 @@ export function TransactionsPanel({
                                 setDrawerOpen(true);
                               }}
                             >
-                              <div className={cn("app-list-row", active && "bg-[var(--surface-selected)]/55")}>
-                                <div className={cn("app-icon-tile rounded-[0.9rem]", getCategoryTone(row.categoryName, row.type))}>
-                                  <Icon className="size-4" aria-hidden />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-[1.02rem] font-medium text-foreground">{toDetail(row)}</p>
-                                  <p className="mt-0.5 truncate text-[0.92rem] font-normal text-muted-foreground">
-                                    {row.categoryName ?? (row.type === "income" ? "Ingreso" : "Sin categoría")}
-                                  </p>
-                                </div>
-                                <div
-                                  className={cn(
-                                    "shrink-0 text-right text-[1.08rem] font-medium tabular-nums",
-                                    row.type === "income" ? "text-[var(--income)] dark:text-[var(--income-soft)]" : "text-foreground",
-                                  )}
-                                >
-                                  <FinancialAmount value={row.amount} direction={row.type === "income" ? "income" : "expense"} showSign />
-                                </div>
-                              </div>
+                              <TransactionListRow
+                                title={toDetail(row)}
+                                categoryName={row.categoryName}
+                                amount={row.amount}
+                                type={row.type}
+                                active={active}
+                              />
                             </button>
                           );
                         })}
@@ -940,7 +869,7 @@ export function TransactionsPanel({
             </div>
             <div className="divide-y divide-border/60">
               <SettingPickerRow
-                icon={getCategoryIcon(selectedCategoryName, formType)}
+                icon={getTransactionCategoryIcon(selectedCategoryName, formType)}
                 label={categoryLabel}
                 value={selectedCategoryName ?? "Sin categoría"}
                 onClick={() => setPickerOpen("category")}

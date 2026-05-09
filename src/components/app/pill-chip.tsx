@@ -18,7 +18,7 @@ export function PillChip({
   return (
     <span
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-transparent bg-[var(--surface-pill)] px-3.5 text-[0.9rem] font-normal text-foreground transition-colors hover:bg-[var(--surface-selected)]",
+        "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-transparent bg-[var(--surface-pill)] px-3 text-[0.84rem] font-normal text-foreground transition-colors hover:bg-[var(--surface-selected)]",
         active && "bg-foreground text-background hover:bg-foreground",
         className,
       )}

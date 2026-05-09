@@ -86,7 +86,7 @@ export function MonthSelector({
           onClick={() => setOpen(true)}
         >
           <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="truncate text-[0.95rem] font-medium">{formatMonthLabel(value)}</span>
+          <span className="truncate text-[0.9rem] font-medium">{formatMonthLabel(value)}</span>
           <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         </button>
       ) : (

@@ -446,8 +446,8 @@ export function TransactionsPanel({
     (dateFilter !== "all" ? 1 : 0);
 
   return (
-    <KineticPage className="space-y-5">
-      <section className="space-y-4">
+    <KineticPage className="space-y-4">
+      <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">{monthControl}</div>
           <div className="flex shrink-0 gap-2">
@@ -456,7 +456,7 @@ export function TransactionsPanel({
               variant="secondary"
               size="icon"
               aria-label="Abrir filtros"
-              className="icon-action"
+              className="icon-action size-10"
               onClick={() => setFiltersOpen(true)}
             >
               <Filter className="size-5" aria-hidden />
@@ -470,7 +470,7 @@ export function TransactionsPanel({
               type="button"
               size="icon"
               aria-label="Nuevo movimiento"
-              className="icon-action bg-[var(--finance-green)] text-white"
+              className="icon-action size-10 bg-[var(--finance-green)] text-white"
               onClick={() => {
                 setSelectedId(null);
                 setDrawerOpen(true);
@@ -481,12 +481,12 @@ export function TransactionsPanel({
           </div>
         </div>
 
-        <h1 className="text-[clamp(2rem,9vw,3rem)] font-medium leading-none text-foreground">
+        <h1 className="text-[clamp(2rem,8.4vw,2.55rem)] font-medium leading-none tracking-[-0.012em] text-foreground">
           Movimientos
         </h1>
       </section>
 
-      <section className="space-y-6">
+      <section className="space-y-5">
         {transactions.length === 0 ? (
           <EmptyState
             icon={ArrowUpRight}
@@ -507,22 +507,22 @@ export function TransactionsPanel({
           </EmptyState>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div className="min-w-0">
-                <p className="text-[0.86rem] font-normal text-muted-foreground">Gastos</p>
-                <p className="mt-1 text-[1.06rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
+                <p className="text-[0.82rem] font-normal text-muted-foreground">Gastos</p>
+                <p className="mt-1 text-[1rem] font-medium leading-none tabular-nums text-foreground">{formatArs(metrics.expenses)}</p>
               </div>
               <div className="min-w-0">
-                <p className="text-[0.86rem] font-normal text-muted-foreground">Ingresos</p>
-                <p className="mt-1 text-[1.06rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
+                <p className="text-[0.82rem] font-normal text-muted-foreground">Ingresos</p>
+                <p className="mt-1 text-[1rem] font-medium leading-none tabular-nums text-[var(--income)] dark:text-[var(--income-soft)]">
                   {formatArs(metrics.incomes)}
                 </p>
               </div>
               <div className="min-w-0">
-                <p className="text-[0.86rem] font-normal text-muted-foreground">Balance</p>
+                <p className="text-[0.82rem] font-normal text-muted-foreground">Balance</p>
                 <p
                   className={cn(
-                    "mt-1 text-[1.06rem] font-medium leading-none tabular-nums",
+                    "mt-1 text-[1rem] font-medium leading-none tabular-nums",
                     metrics.balance < 0 ? "text-foreground" : "text-[var(--income)] dark:text-[var(--income-soft)]",
                   )}
                 >
@@ -531,7 +531,7 @@ export function TransactionsPanel({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-3">
               {searchOpen ? (
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
@@ -540,13 +540,13 @@ export function TransactionsPanel({
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Buscar movimiento, categoría..."
-                    className="h-12 rounded-[1.15rem] pl-11 text-[0.98rem]"
+                    className="h-11 rounded-[1rem] pl-10 text-[0.94rem]"
                     autoFocus
                   />
                 </div>
               ) : (
-                <Button type="button" variant="secondary" className="h-12 w-full justify-start rounded-[1.15rem] text-[0.98rem] font-normal" onClick={() => setSearchOpen(true)}>
-                  <Search className="size-5 text-muted-foreground" aria-hidden />
+                <Button type="button" variant="secondary" className="h-11 w-full justify-start rounded-[1rem] text-[0.94rem] font-normal" onClick={() => setSearchOpen(true)}>
+                  <Search className="size-4.5 text-muted-foreground" aria-hidden />
                   Buscar movimiento, categoría...
                 </Button>
               )}
@@ -600,11 +600,11 @@ export function TransactionsPanel({
                 </Button>
               </EmptyState>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {groupedTransactions.map(([dateLabel, rows]) => {
                   const dayTotal = rows.reduce((acc, row) => acc + (row.type === "income" ? toNumber(row.amount) : -toNumber(row.amount)), 0);
                   return (
-                    <section key={dateLabel} className="space-y-2.5">
+                    <section key={dateLabel} className="space-y-2">
                       <div className="flex items-center justify-between px-1 text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                         <h3>{dateLabel}</h3>
                         <p className="normal-case tracking-normal">{formatArs(dayTotal)}</p>

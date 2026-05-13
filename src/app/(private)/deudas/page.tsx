@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { ResourceCreateButton, ResourceSheet } from "@/components/app/resource-sheet";
+import { SegmentedControl } from "@/components/app/segmented-control";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
@@ -76,16 +77,7 @@ export default async function DebtsPage({
     <ResourceSheet title="Nueva deuda" trigger={<ResourceCreateButton />}>
       <form action={saveDebtAction} className="space-y-4">
         <section className="grouped-form-section space-y-4">
-          <div className="grid grid-cols-2 rounded-full bg-[var(--surface-pill)] p-1">
-            {DEBT_DIRECTIONS.map((item) => (
-              <label key={item.value} className="cursor-pointer">
-                <input type="radio" name="direction" value={item.value} defaultChecked={item.value === "we_owe"} className="peer sr-only" />
-                <span className="flex h-11 items-center justify-center rounded-full text-[0.98rem] font-semibold text-muted-foreground peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm">
-                  {item.label}
-                </span>
-              </label>
-            ))}
-          </div>
+          <SegmentedControl name="direction" options={DEBT_DIRECTIONS.map((item) => ({ value: item.value, label: item.label }))} defaultValue="we_owe" size="sm" />
           <MoneyField id="originalAmount" name="originalAmount" label="Monto total" showPreview={false} />
           <input type="hidden" name="paidAmount" value="0" />
           <div className="space-y-1.5">

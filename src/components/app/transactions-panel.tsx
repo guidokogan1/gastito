@@ -31,6 +31,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { MoneyField } from "@/components/app/money-field";
 import { MetricStrip } from "@/components/app/metric-strip";
 import { SearchPill } from "@/components/app/search-pill";
+import { SegmentedControl } from "@/components/app/segmented-control";
 import { TransactionListRow, getTransactionCategoryIcon, normalizeCategoryLabel } from "@/components/app/transaction-list-row";
 import { cn } from "@/lib/utils";
 
@@ -869,24 +870,15 @@ export function TransactionsPanel({
                 showPreview={false}
               />
             </div>
-            <div className="grid grid-cols-2 rounded-full bg-[var(--surface-pill)] p-1">
-              <Button
-                type="button"
-                variant={formType === "expense" ? "default" : "ghost"}
-                className="h-11 rounded-full"
-                onClick={() => setFormType("expense")}
-              >
-                Gasto
-              </Button>
-              <Button
-                type="button"
-                variant={formType === "income" ? "default" : "ghost"}
-                className="h-11 rounded-full"
-                onClick={() => setFormType("income")}
-              >
-                Ingreso
-              </Button>
-            </div>
+            <SegmentedControl
+              value={formType}
+              onValueChange={(nextValue) => setFormType(nextValue as "expense" | "income")}
+              options={[
+                { value: "expense", label: "Gasto" },
+                { value: "income", label: "Ingreso" },
+              ]}
+              size="sm"
+            />
 
             <div className="space-y-2">
               <Label htmlFor="date">Fecha</Label>

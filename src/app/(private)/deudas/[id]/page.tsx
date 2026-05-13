@@ -13,6 +13,7 @@ import { DebtPaymentSheet } from "@/components/app/debt-payment-sheet";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { ResourceSheet } from "@/components/app/resource-sheet";
+import { SegmentedControl } from "@/components/app/segmented-control";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
 import { Button } from "@/components/ui/button";
@@ -117,20 +118,14 @@ export default async function DebtDetailPage({
         <input type="hidden" name="id" value={debt.id} />
         <input type="hidden" name="remainingBalance" value={String(debt.remainingBalance)} />
         <section className="grouped-form-section space-y-4">
-          <div className="grid grid-cols-2 rounded-full bg-[var(--surface-pill)] p-1">
-            <label className="cursor-pointer">
-              <input type="radio" name="direction" value="we_owe" defaultChecked={isWeOwe} className="peer sr-only" />
-              <span className="flex h-12 items-center justify-center rounded-full text-[1rem] font-semibold text-muted-foreground peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm">
-                Debemos
-              </span>
-            </label>
-            <label className="cursor-pointer">
-              <input type="radio" name="direction" value="they_owe_us" defaultChecked={!isWeOwe} className="peer sr-only" />
-              <span className="flex h-12 items-center justify-center rounded-full text-[1rem] font-semibold text-muted-foreground peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm">
-                Nos deben
-              </span>
-            </label>
-          </div>
+          <SegmentedControl
+            name="direction"
+            options={[
+              { value: "we_owe", label: "Debemos" },
+              { value: "they_owe_us", label: "Nos deben" },
+            ]}
+            defaultValue={isWeOwe ? "we_owe" : "they_owe_us"}
+          />
           <MoneyField id="originalAmount" name="originalAmount" label="Monto total" defaultValue={String(debt.originalAmount)} showPreview={false} />
           <div className="space-y-1.5">
             <Label htmlFor="entityName">Persona o entidad</Label>

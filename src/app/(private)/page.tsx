@@ -23,6 +23,8 @@ import { TransactionListRow } from "@/components/app/transaction-list-row";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
 import { formatArs, formatDate } from "@/lib/format";
+import { buildPreviewDashboardSnapshot, getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset } from "@/lib/preview-mode";
 import { toTitleCase } from "@/lib/text";
 import { cn } from "@/lib/utils";
 
@@ -139,7 +141,10 @@ export default async function DashboardPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const snapshot = await getDashboardSnapshot(household.id, params.month);
+  const previewPreset = await getPreviewPreset();
+  const snapshot = previewPreset
+    ? buildPreviewDashboardSnapshot(getPreviewDataset(previewPreset), params.month)
+    : await getDashboardSnapshot(household.id, params.month);
   const displayHouseholdName = toTitleCase(household.name);
   const previousMonthLabel = dashboardMonthLabel(previousDashboardMonthKey(snapshot.monthKey), "short");
   const trendTone = snapshot.previousExpenses <= 0 ? "neutral" : snapshot.expenseDelta <= 0 ? "positive" : "warning";

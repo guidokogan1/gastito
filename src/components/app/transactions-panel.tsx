@@ -245,6 +245,7 @@ export function TransactionsPanel({
   deleteAction,
   initialComposeOpen = false,
   initialTransactionType = "expense",
+  readOnly = false,
 }: {
   monthKey: string;
   monthControl: ReactNode;
@@ -256,6 +257,7 @@ export function TransactionsPanel({
   deleteAction: (formData: FormData) => Promise<void>;
   initialComposeOpen?: boolean;
   initialTransactionType?: "expense" | "income";
+  readOnly?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -283,11 +285,11 @@ export function TransactionsPanel({
   };
 
   useEffect(() => {
-    if (!initialComposeOpen) return;
+    if (readOnly || !initialComposeOpen) return;
     setSelectedId(null);
     setFormType(initialTransactionType);
     setDrawerOpen(true);
-  }, [initialComposeOpen, initialTransactionType]);
+  }, [initialComposeOpen, initialTransactionType, readOnly]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("gastito.transactionFilters");
@@ -535,18 +537,20 @@ export function TransactionsPanel({
                 </span>
               ) : null}
             </Button>
-            <Button
-              type="button"
-              size="icon"
-              aria-label="Nuevo movimiento"
-              className="icon-action size-10 bg-[var(--finance-green)] text-white"
-              onClick={() => {
-                setSelectedId(null);
-                setDrawerOpen(true);
-              }}
-            >
-              <Plus className="size-5" aria-hidden />
-            </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                size="icon"
+                aria-label="Nuevo movimiento"
+                className="icon-action size-10 bg-[var(--finance-green)] text-white"
+                onClick={() => {
+                  setSelectedId(null);
+                  setDrawerOpen(true);
+                }}
+              >
+                <Plus className="size-5" aria-hidden />
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -563,16 +567,18 @@ export function TransactionsPanel({
             description="Empezá cargando el primero."
             compact
           >
-            <Button
-              type="button"
-              onClick={() => {
-                setSelectedId(null);
-                setDrawerOpen(true);
-              }}
-            >
-              <Plus className="size-4" aria-hidden />
-              Cargar el primero
-            </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setSelectedId(null);
+                  setDrawerOpen(true);
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                Cargar el primero
+              </Button>
+            ) : null}
           </EmptyState>
         ) : (
           <>
@@ -612,12 +618,6 @@ export function TransactionsPanel({
                 </button>
                 <button type="button" className="pressable" aria-pressed={dateFilter === "30d"} onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
                   <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
-                </button>
-                <button type="button" className="pressable" aria-pressed={categoryFilterId === "none"} onClick={() => setCategoryFilterId(categoryFilterId === "none" ? "all" : "none")}>
-                  <PillChip active={categoryFilterId === "none"} className="whitespace-nowrap">Sin categoría</PillChip>
-                </button>
-                <button type="button" className="pressable" aria-pressed={methodFilterId === "none"} onClick={() => setMethodFilterId(methodFilterId === "none" ? "all" : "none")}>
-                  <PillChip active={methodFilterId === "none"} className="whitespace-nowrap">Sin medio</PillChip>
                 </button>
               </div>
               {activeFilterLabels.length > 0 ? (
@@ -663,7 +663,19 @@ export function TransactionsPanel({
                       </div>
                       <div className="app-list">
                         {rows.map((row) => {
-                          const active = drawerOpen && row.id === selectedId;
+                          const active = !readOnly && drawerOpen && row.id === selectedId;
+                          if (readOnly) {
+                            return (
+                              <TransactionListRow
+                                key={row.id}
+                                title={toDetail(row)}
+                                categoryName={row.categoryName}
+                                amount={row.amount}
+                                type={row.type}
+                                active={false}
+                              />
+                            );
+                          }
                           return (
                             <button
                               key={row.id}
@@ -807,31 +819,32 @@ export function TransactionsPanel({
         </div>
       </Slideout>
 
-      <Slideout
-        open={drawerOpen}
-        title={panelTitle}
-        description={selected ? "Ajustá el movimiento sin perder el contexto del mes y los filtros actuales." : "Cargá el movimiento con el menor esfuerzo posible. Lo demás lo podés completar después."}
-        titleSize="small"
-        headerAction={
-          selected ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="text-destructive hover:text-destructive"
-              onClick={() => setDeleteConfirmOpen(true)}
-              aria-label="Borrar movimiento"
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          ) : null
-        }
-        onClose={() => {
-          setDrawerOpen(false);
-          setSelectedId(null);
-        }}
-      >
-        <form key={formKey} action={saveAction} className="mt-4 space-y-5">
+      {!readOnly ? (
+        <Slideout
+          open={drawerOpen}
+          title={panelTitle}
+          description={selected ? "Ajustá el movimiento sin perder el contexto del mes y los filtros actuales." : "Cargá el movimiento con el menor esfuerzo posible. Lo demás lo podés completar después."}
+          titleSize="small"
+          headerAction={
+            selected ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setDeleteConfirmOpen(true)}
+                aria-label="Borrar movimiento"
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            ) : null
+          }
+          onClose={() => {
+            setDrawerOpen(false);
+            setSelectedId(null);
+          }}
+        >
+          <form key={formKey} action={saveAction} className="mt-4 space-y-5">
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
           <input type="hidden" name="type" value={formType} />
           <input type="hidden" name="date" value={formDate} />
@@ -989,37 +1002,40 @@ export function TransactionsPanel({
               </Button>
             </div>
           </div>
-        </form>
+          </form>
 
-      </Slideout>
+        </Slideout>
+      ) : null}
 
-      <Slideout
-        open={deleteConfirmOpen}
-        title="Borrar movimiento"
-        description="Esta acción no se puede deshacer."
-        onClose={() => setDeleteConfirmOpen(false)}
-      >
-        {selected ? (
-          <div className="space-y-5">
-            <div className="rounded-[1.25rem] bg-destructive/6 p-4 text-sm font-medium text-muted-foreground">
-              Se va a borrar “{toDetail(selected)}” de forma permanente.
-            </div>
-            <div className="sheet-action-bar">
-              <div className="flex flex-col gap-2">
-                <ConfirmForm action={deleteAction} confirm="¿Borrar este movimiento? Esta acción no se puede deshacer.">
-                  <input type="hidden" name="id" value={selected.id} />
-                  <SubmitButton variant="destructive" className="w-full" pendingText="Borrando...">
-                    Borrar
-                  </SubmitButton>
-                </ConfirmForm>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setDeleteConfirmOpen(false)}>
-                  Cancelar
-                </Button>
+      {!readOnly ? (
+        <Slideout
+          open={deleteConfirmOpen}
+          title="Borrar movimiento"
+          description="Esta acción no se puede deshacer."
+          onClose={() => setDeleteConfirmOpen(false)}
+        >
+          {selected ? (
+            <div className="space-y-5">
+              <div className="rounded-[1.25rem] bg-destructive/6 p-4 text-sm font-medium text-muted-foreground">
+                Se va a borrar “{toDetail(selected)}” de forma permanente.
+              </div>
+              <div className="sheet-action-bar">
+                <div className="flex flex-col gap-2">
+                  <ConfirmForm action={deleteAction} confirm="¿Borrar este movimiento? Esta acción no se puede deshacer.">
+                    <input type="hidden" name="id" value={selected.id} />
+                    <SubmitButton variant="destructive" className="w-full" pendingText="Borrando...">
+                      Borrar
+                    </SubmitButton>
+                  </ConfirmForm>
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => setDeleteConfirmOpen(false)}>
+                    Cancelar
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
-      </Slideout>
+          ) : null}
+        </Slideout>
+      ) : null}
 
       <Slideout
         open={pickerOpen !== null}

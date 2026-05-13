@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs } from "@/lib/format";
+import { getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset } from "@/lib/preview-mode";
 
 const DEBT_DIRECTIONS = [
   { value: "we_owe", label: "Debemos" },
@@ -28,19 +30,33 @@ export default async function DebtsPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const debts = await prisma.debt.findMany({
-    where: { householdId: household.id, deletedAt: null },
-    select: {
-      id: true,
-      entityName: true,
-      direction: true,
-      originalAmount: true,
-      remainingBalance: true,
-      notes: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const debts = previewDataset
+    ? previewDataset.debts
+        .map((debt) => ({
+          id: debt.id,
+          entityName: debt.entityName,
+          direction: debt.direction,
+          originalAmount: debt.originalAmount,
+          remainingBalance: debt.remainingBalance,
+          notes: debt.notes,
+          createdAt: debt.createdAt,
+        }))
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    : await prisma.debt.findMany({
+        where: { householdId: household.id, deletedAt: null },
+        select: {
+          id: true,
+          entityName: true,
+          direction: true,
+          originalAmount: true,
+          remainingBalance: true,
+          notes: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
 
   const items = debts.map((debt) => {
     const total = Number(debt.originalAmount);
@@ -56,7 +72,7 @@ export default async function DebtsPage({
   const weOweTotal = weOweItems.reduce((total, item) => total + item.remaining, 0);
   const theyOweTotal = theyOweItems.reduce((total, item) => total + item.remaining, 0);
 
-  const createDebt = (
+  const createDebt = previewPreset ? null : (
     <ResourceSheet title="Nueva deuda" trigger={<ResourceCreateButton />}>
       <form action={saveDebtAction} className="space-y-4">
         <section className="grouped-form-section space-y-4">
@@ -92,7 +108,7 @@ export default async function DebtsPage({
 
   return (
     <KineticPage className="space-y-5">
-      <ScreenHeader title="Deudas" action={createDebt} />
+      <ScreenHeader title="Deudas" action={createDebt ?? undefined} />
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
 

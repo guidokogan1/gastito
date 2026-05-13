@@ -22,6 +22,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs } from "@/lib/format";
+import { findPreviewDebt, getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset } from "@/lib/preview-mode";
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -40,24 +42,41 @@ export default async function DebtDetailPage({
 }) {
   const { household } = await requireHousehold();
   const [{ id }, messages] = await Promise.all([params, searchParams]);
-  const debt = await prisma.debt.findFirst({
-    where: { id, householdId: household.id, deletedAt: null },
-    select: {
-      id: true,
-      entityName: true,
-      direction: true,
-      originalAmount: true,
-      remainingBalance: true,
-      notes: true,
-      payments: {
-        where: { deletedAt: null },
-        select: { id: true, date: true, amount: true, notes: true, transactionId: true },
-        orderBy: { date: "desc" },
-      },
-    },
-  });
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const debt = previewDataset
+    ? (() => {
+        const previewDebt = findPreviewDebt(previewDataset, id);
+        if (!previewDebt) return null;
+        return {
+          id: previewDebt.id,
+          entityName: previewDebt.entityName,
+          direction: previewDebt.direction,
+          originalAmount: previewDebt.originalAmount,
+          remainingBalance: previewDebt.remainingBalance,
+          notes: previewDebt.notes,
+          payments: [...previewDebt.payments].sort((a, b) => b.date.getTime() - a.date.getTime()),
+        };
+      })()
+    : await prisma.debt.findFirst({
+        where: { id, householdId: household.id, deletedAt: null },
+        select: {
+          id: true,
+          entityName: true,
+          direction: true,
+          originalAmount: true,
+          remainingBalance: true,
+          notes: true,
+          payments: {
+            where: { deletedAt: null },
+            select: { id: true, date: true, amount: true, notes: true, transactionId: true },
+            orderBy: { date: "desc" },
+          },
+        },
+      });
 
   if (!debt) notFound();
+  const readOnly = Boolean(previewPreset);
 
   const isWeOwe = debt.direction === "we_owe";
   const original = Number(debt.originalAmount);
@@ -74,7 +93,7 @@ export default async function DebtDetailPage({
   const paymentAmountClassName = isWeOwe ? "text-red-700" : "text-[var(--income)]";
   const paymentAmountPrefix = isWeOwe ? "-" : "+";
 
-  const editSheet = (
+  const editSheet = readOnly ? null : (
     <ResourceSheet
       title="Editar deuda"
       trigger={
@@ -173,7 +192,7 @@ export default async function DebtDetailPage({
         </section>
       ) : null}
 
-      {!settled ? (
+      {!settled && !readOnly ? (
         <DebtPaymentSheet
           debtId={debt.id}
           entityName={debt.entityName}
@@ -205,16 +224,18 @@ export default async function DebtDetailPage({
                   <p className={`money-row ${paymentAmountClassName}`}>{paymentAmountPrefix}{formatArs(Number(payment.amount))}</p>
                   {payment.transactionId ? <p className="row-meta">Movimiento</p> : null}
                 </div>
-                <ConfirmForm
-                  action={deleteDebtPaymentAction}
-                  confirm={`¿Borrar este ${isWeOwe ? "abono" : "cobro"}? Esta acción no se puede deshacer.`}
-                  confirmLabel="Borrar registro"
-                >
-                  <input type="hidden" name="id" value={payment.id} />
-                  <Button type="submit" variant="ghost" size="icon-sm" aria-label="Eliminar pago">
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </ConfirmForm>
+                {!readOnly ? (
+                  <ConfirmForm
+                    action={deleteDebtPaymentAction}
+                    confirm={`¿Borrar este ${isWeOwe ? "abono" : "cobro"}? Esta acción no se puede deshacer.`}
+                    confirmLabel="Borrar registro"
+                  >
+                    <input type="hidden" name="id" value={payment.id} />
+                    <Button type="submit" variant="ghost" size="icon-sm" aria-label="Eliminar pago">
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  </ConfirmForm>
+                ) : null}
               </div>
             ))}
           </div>

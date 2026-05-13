@@ -17,6 +17,8 @@ import { DayOfMonthField } from "@/components/app/day-of-month-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, formatDate } from "@/lib/format";
+import { getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset } from "@/lib/preview-mode";
 
 function isSameMonth(date: Date, reference = new Date()) {
   return date.getFullYear() === reference.getFullYear() && date.getMonth() === reference.getMonth();
@@ -64,38 +66,68 @@ export default async function BillsPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const [bills, paymentMethods, categories] = await Promise.all([
-    prisma.recurringBill.findMany({
-      where: { householdId: household.id, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        icon: true,
-        amount: true,
-        dueDay: true,
-        notes: true,
-        paymentMethodId: true,
-        paymentMethod: { select: { name: true } },
-        payments: {
-          where: { deletedAt: null },
-          select: { id: true, amount: true, dueDate: true, paidAt: true },
-          orderBy: { dueDate: "desc" },
-          take: 12,
-        },
-      },
-      orderBy: [{ dueDay: "asc" }, { name: "asc" }],
-    }),
-    prisma.paymentMethod.findMany({
-      where: { householdId: household.id, isActive: true, deletedAt: null },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.category.findMany({
-      where: { householdId: household.id, deletedAt: null, kind: "expense" },
-      select: { id: true, name: true },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    }),
-  ]);
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const [bills, paymentMethods, categories] = previewDataset
+    ? [
+        previewDataset.bills
+          .map((bill) => ({
+            id: bill.id,
+            name: bill.name,
+            icon: bill.icon,
+            amount: bill.amount,
+            dueDay: bill.dueDay,
+            notes: bill.notes,
+            paymentMethodId: bill.paymentMethodId,
+            paymentMethod: bill.paymentMethodId
+              ? { name: previewDataset.methods.find((method) => method.id === bill.paymentMethodId)?.name ?? "Sin medio" }
+              : null,
+            payments: bill.payments
+              .map((payment) => ({
+                id: payment.id,
+                amount: payment.amount,
+                dueDate: payment.dueDate,
+                paidAt: payment.paidAt,
+              }))
+              .sort((a, b) => b.dueDate.getTime() - a.dueDate.getTime())
+              .slice(0, 12),
+          }))
+          .sort((a, b) => a.dueDay - b.dueDay || a.name.localeCompare(b.name)),
+        previewDataset.methods.map((method) => ({ id: method.id, name: method.name })),
+        previewDataset.categories.filter((category) => category.kind === "expense").map((category) => ({ id: category.id, name: category.name })),
+      ]
+    : await Promise.all([
+        prisma.recurringBill.findMany({
+          where: { householdId: household.id, deletedAt: null },
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+            amount: true,
+            dueDay: true,
+            notes: true,
+            paymentMethodId: true,
+            paymentMethod: { select: { name: true } },
+            payments: {
+              where: { deletedAt: null },
+              select: { id: true, amount: true, dueDate: true, paidAt: true },
+              orderBy: { dueDate: "desc" },
+              take: 12,
+            },
+          },
+          orderBy: [{ dueDay: "asc" }, { name: "asc" }],
+        }),
+        prisma.paymentMethod.findMany({
+          where: { householdId: household.id, isActive: true, deletedAt: null },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+        prisma.category.findMany({
+          where: { householdId: household.id, deletedAt: null, kind: "expense" },
+          select: { id: true, name: true },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        }),
+      ]);
 
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -121,7 +153,7 @@ export default async function BillsPage({
   const overdueCount = pendingItems.filter((item) => item.hasInvoice && daysUntil(item.dueDate) < 0).length;
   const dueDays = new Map(billItems.map((item) => [item.dueDate.getDate(), item.paid ? "paid" : "pending"]));
 
-  const createBill = (
+  const createBill = previewPreset ? null : (
     <ResourceSheet title="Nuevo gasto fijo" trigger={<ResourceCreateButton />}>
       <form action={saveRecurringBillAction} className="space-y-4">
         <section className="grouped-form-section space-y-4">
@@ -166,7 +198,7 @@ export default async function BillsPage({
 
   return (
     <KineticPage className="space-y-5">
-      <ScreenHeader title="Gastos fijos" action={createBill} />
+      <ScreenHeader title="Gastos fijos" action={createBill ?? undefined} />
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
 

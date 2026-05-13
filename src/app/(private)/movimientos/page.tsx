@@ -4,6 +4,13 @@ import { MonthSelector } from "@/components/app/month-selector";
 import { TransactionsPanel } from "@/components/app/transactions-panel";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import {
+  currentPreviewMonthKey,
+  getPreviewDataset,
+  listPreviewMonths,
+  transactionsForPreviewMonth,
+} from "@/lib/preview-data";
+import { getPreviewPreset } from "@/lib/preview-mode";
 
 function monthRange(monthKey: string) {
   const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
@@ -30,55 +37,96 @@ export default async function TransactionsPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const monthKey = monthRange(params.month ?? "") ? String(params.month) : currentMonthKey();
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const defaultMonthKey = previewDataset ? currentPreviewMonthKey() : currentMonthKey();
+  const monthKey = monthRange(params.month ?? "") ? String(params.month) : defaultMonthKey;
   const initialTransactionType = params.type === "income" ? "income" : "expense";
-  const range = monthRange(monthKey) ?? monthRange(currentMonthKey());
-  if (!range) throw new Error("No se pudo calcular el rango del mes.");
+  let availableMonths: { key: string; count: number }[] = [];
+  let transactions: Parameters<typeof TransactionsPanel>[0]["transactions"] = [];
+  let accounts: Array<{ id: string; name: string }> = [];
+  let categories: Array<{ id: string; name: string }> = [];
+  let methods: Array<{ id: string; name: string }> = [];
 
-  const [monthBuckets, transactions, accounts, categories, methods] = await Promise.all([
-    prisma.$queryRaw<{ month: string; count: number }[]>`
-      SELECT
-        to_char(date_trunc('month', "date"), 'YYYY-MM') AS month,
-        count(*)::int AS count
-      FROM "Transaction"
-      WHERE "householdId" = ${household.id}
-        AND "deletedAt" IS NULL
-      GROUP BY 1
-      ORDER BY 1 DESC
-    `,
-    prisma.transaction.findMany({
-      where: { householdId: household.id, deletedAt: null, date: { gte: range.start, lt: range.end } },
-      select: {
-        id: true,
-        date: true,
-        amount: true,
-        type: true,
-        detail: true,
-        accountId: true,
-        categoryId: true,
-        paymentMethodId: true,
-        account: { select: { name: true } },
-        category: { select: { name: true } },
-        paymentMethod: { select: { name: true } },
-      },
-      orderBy: { date: "desc" },
-      take: 250,
-    }),
-    prisma.account.findMany({ where: { householdId: household.id, isActive: true, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.category.findMany({ where: { householdId: household.id, isActive: true, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.paymentMethod.findMany({ where: { householdId: household.id, isActive: true, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
-  ]);
+  if (previewDataset) {
+    availableMonths = listPreviewMonths(previewDataset);
+    transactions = transactionsForPreviewMonth(previewDataset, monthKey).map((t) => ({
+      id: t.id,
+      date: t.date,
+      amount: t.amount.toString(),
+      type: t.type,
+      detail: t.detail,
+      accountId: t.accountId,
+      categoryId: t.categoryId,
+      paymentMethodId: t.paymentMethodId,
+      accountName: previewDataset.accounts.find((account) => account.id === t.accountId)?.name ?? null,
+      categoryName: previewDataset.categories.find((category) => category.id === t.categoryId)?.name ?? null,
+      paymentMethodName: previewDataset.methods.find((method) => method.id === t.paymentMethodId)?.name ?? null,
+    }));
+    accounts = previewDataset.accounts.map((account) => ({ id: account.id, name: account.name }));
+    categories = previewDataset.categories.map((category) => ({ id: category.id, name: category.name }));
+    methods = previewDataset.methods.map((method) => ({ id: method.id, name: method.name }));
+  } else {
+    const range = monthRange(monthKey) ?? monthRange(defaultMonthKey);
+    if (!range) throw new Error("No se pudo calcular el rango del mes.");
 
-  const currentKey = currentMonthKey();
-  const availableMonths = (() => {
-    const items = monthBuckets.map((row) => ({ key: row.month, count: row.count }));
-    const byKey = new Map(items.map((it) => [it.key, it]));
+    const [monthBuckets, dbTransactions, dbAccounts, dbCategories, dbMethods] = await Promise.all([
+      prisma.$queryRaw<{ month: string; count: number }[]>`
+        SELECT
+          to_char(date_trunc('month', "date"), 'YYYY-MM') AS month,
+          count(*)::int AS count
+        FROM "Transaction"
+        WHERE "householdId" = ${household.id}
+          AND "deletedAt" IS NULL
+        GROUP BY 1
+        ORDER BY 1 DESC
+      `,
+      prisma.transaction.findMany({
+        where: { householdId: household.id, deletedAt: null, date: { gte: range.start, lt: range.end } },
+        select: {
+          id: true,
+          date: true,
+          amount: true,
+          type: true,
+          detail: true,
+          accountId: true,
+          categoryId: true,
+          paymentMethodId: true,
+          account: { select: { name: true } },
+          category: { select: { name: true } },
+          paymentMethod: { select: { name: true } },
+        },
+        orderBy: { date: "desc" },
+        take: 250,
+      }),
+      prisma.account.findMany({ where: { householdId: household.id, isActive: true, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+      prisma.category.findMany({ where: { householdId: household.id, isActive: true, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+      prisma.paymentMethod.findMany({ where: { householdId: household.id, isActive: true, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    ]);
 
+    const currentKey = currentMonthKey();
+    const byKey = new Map(monthBuckets.map((it) => [it.month, { key: it.month, count: it.count }]));
     if (!byKey.has(currentKey)) byKey.set(currentKey, { key: currentKey, count: 0 });
     if (!byKey.has(monthKey)) byKey.set(monthKey, { key: monthKey, count: 0 });
 
-    return [...byKey.values()].sort((a, b) => b.key.localeCompare(a.key));
-  })();
+    availableMonths = [...byKey.values()].sort((a, b) => b.key.localeCompare(a.key));
+    transactions = dbTransactions.map((t) => ({
+      id: t.id,
+      date: t.date,
+      amount: t.amount.toString(),
+      type: t.type,
+      detail: t.detail,
+      accountId: t.accountId,
+      categoryId: t.categoryId,
+      paymentMethodId: t.paymentMethodId,
+      accountName: t.account?.name ?? null,
+      categoryName: t.category?.name ?? null,
+      paymentMethodName: t.paymentMethod?.name ?? null,
+    }));
+    accounts = dbAccounts;
+    categories = dbCategories;
+    methods = dbMethods;
+  }
 
   return (
     <>
@@ -87,19 +135,7 @@ export default async function TransactionsPage({
       <TransactionsPanel
         monthKey={monthKey}
         monthControl={<MonthSelector value={monthKey} availableMonths={availableMonths} variant="pill" />}
-        transactions={transactions.map((t) => ({
-          id: t.id,
-          date: t.date,
-          amount: t.amount.toString(),
-          type: t.type,
-          detail: t.detail,
-          accountId: t.accountId,
-          categoryId: t.categoryId,
-          paymentMethodId: t.paymentMethodId,
-          accountName: t.account?.name ?? null,
-          categoryName: t.category?.name ?? null,
-          paymentMethodName: t.paymentMethod?.name ?? null,
-        }))}
+        transactions={transactions}
         accounts={accounts}
         categories={categories}
         methods={methods}
@@ -107,6 +143,7 @@ export default async function TransactionsPage({
         deleteAction={deleteTransactionAction}
         initialComposeOpen={params.compose === "1"}
         initialTransactionType={initialTransactionType}
+        readOnly={Boolean(previewPreset)}
       />
     </>
   );

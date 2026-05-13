@@ -156,26 +156,91 @@ const banks: PreviewBank[] = [
 
 function baseTransactionsFull(): PreviewTransaction[] {
   return [
-    { id: "tx-may-10-internet", date: atDay(0, 10), amount: 20000, type: "expense", detail: "Internet", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
-    { id: "tx-may-8-salary", date: atDay(0, 8), amount: 500000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
-    { id: "tx-may-5-spotify", date: atDay(0, 5), amount: 3990, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
-    { id: "tx-may-5-nafta", date: atDay(0, 5, 9), amount: 22500, type: "expense", detail: "Nafta YPF", accountId: "account-main", categoryId: "cat-auto", paymentMethodId: "method-debit-bank" },
-    { id: "tx-may-3-vet", date: atDay(0, 3), amount: 18200, type: "expense", detail: "Veterinaria Mora", accountId: "account-main", categoryId: "cat-pets", paymentMethodId: "method-mp" },
-    { id: "tx-may-2-coto", date: atDay(0, 2), amount: 68400, type: "expense", detail: "Coto — compra semanal", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
-    { id: "tx-apr-27-salary", date: atDay(-1, 27), amount: 820000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
-    { id: "tx-apr-19-coto", date: atDay(-1, 19), amount: 75400, type: "expense", detail: "Coto — compra semanal", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
-    { id: "tx-apr-12-rent", date: atDay(-1, 12), amount: 42000, type: "expense", detail: "Expensas", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
-    { id: "tx-mar-25-salary", date: atDay(-2, 25), amount: 810000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
-    { id: "tx-mar-16-gym", date: atDay(-2, 16), amount: 18000, type: "expense", detail: "Club", accountId: "account-main", categoryId: "cat-health", paymentMethodId: "method-debit-bank" },
-    { id: "tx-mar-9-grocery", date: atDay(-2, 9), amount: 63000, type: "expense", detail: "Compra mensual", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
-    { id: "tx-feb-24-salary", date: atDay(-3, 24), amount: 800000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
-    { id: "tx-feb-10-home", date: atDay(-3, 10), amount: 58000, type: "expense", detail: "Arreglo del lavarropas", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
-    { id: "tx-jan-26-salary", date: atDay(-4, 26), amount: 790000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
-    { id: "tx-jan-14-car", date: atDay(-4, 14), amount: 71000, type: "expense", detail: "Service auto", accountId: "account-main", categoryId: "cat-auto", paymentMethodId: "method-credit-visa" },
-    { id: "tx-dec-21-bonus", date: atDay(-5, 21), amount: 845000, type: "income", detail: "Sueldo + bono", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
-    { id: "tx-dec-10-food", date: atDay(-5, 10), amount: 92000, type: "expense", detail: "Compra mensual", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
-    { id: "tx-nov-18-salary", date: atDay(-6, 18), amount: 760000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
-    { id: "tx-nov-7-home", date: atDay(-6, 7), amount: 66000, type: "expense", detail: "Compra hogar", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-debit-bank" },
+    { id: "tx-may-01-expensas", date: atDay(0, 1, 10), amount: 92000, type: "expense", detail: "Expensas mayo", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
+    { id: "tx-may-02-renta", date: atDay(0, 2, 9), amount: 85000, type: "income", detail: "Transferencia cuarto", accountId: "account-main", categoryId: "cat-transfer", paymentMethodId: "method-transfer" },
+    { id: "tx-may-03-coto", date: atDay(0, 3, 13), amount: 68400, type: "expense", detail: "Coto — compra semanal", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
+    { id: "tx-may-04-vet", date: atDay(0, 4, 11), amount: 18200, type: "expense", detail: "Veterinaria Mora", accountId: "account-main", categoryId: "cat-pets", paymentMethodId: "method-mp" },
+    { id: "tx-may-05-spotify", date: atDay(0, 5, 9), amount: 3990, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+    { id: "tx-may-05-lucia", date: atDay(0, 5, 18), amount: 35000, type: "income", detail: "Cobro Lucía", accountId: "account-main", categoryId: "cat-transfer", paymentMethodId: "method-transfer" },
+    { id: "tx-may-06-edenor", date: atDay(0, 6, 8), amount: 34000, type: "expense", detail: "Edenor", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-may-07-nafta", date: atDay(0, 7, 17), amount: 22500, type: "expense", detail: "Nafta YPF", accountId: "account-main", categoryId: "cat-auto", paymentMethodId: "method-debit-bank" },
+    { id: "tx-may-08-salary", date: atDay(0, 8, 9), amount: 540000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-may-08-farmacia", date: atDay(0, 8, 20), amount: 12800, type: "expense", detail: "Farmacity", accountId: "account-main", categoryId: "cat-health", paymentMethodId: "method-mp" },
+    { id: "tx-may-09-juan", date: atDay(0, 9, 12), amount: 40000, type: "expense", detail: "Pago deuda Juan", accountId: "account-main", categoryId: "cat-other", paymentMethodId: "method-transfer" },
+    { id: "tx-may-10-colegio", date: atDay(0, 10, 10), amount: 78000, type: "expense", detail: "Colegio Tomi", accountId: "account-main", categoryId: "cat-edu", paymentMethodId: "method-transfer" },
+    { id: "tx-may-11-cafe", date: atDay(0, 11, 19), amount: 8900, type: "expense", detail: "Café + almacén", accountId: "account-wallet", categoryId: "cat-food", paymentMethodId: "method-cash" },
+    { id: "tx-may-12-freelance", date: atDay(0, 12, 15), amount: 165000, type: "income", detail: "Freelance diseño", accountId: "account-savings", categoryId: "cat-work", paymentMethodId: "method-transfer" },
+    { id: "tx-may-12-mascotas", date: atDay(0, 12, 19), amount: 14600, type: "expense", detail: "Balanceado Mora", accountId: "account-main", categoryId: "cat-pets", paymentMethodId: "method-debit-bank" },
+    { id: "tx-may-13-reintegro", date: atDay(0, 13, 10), amount: 12800, type: "income", detail: "Reintegro obra social", accountId: "account-main", categoryId: "cat-refund", paymentMethodId: "method-transfer" },
+    { id: "tx-may-13-super", date: atDay(0, 13, 14), amount: 24600, type: "expense", detail: "Super chino", accountId: "account-wallet", categoryId: "cat-food", paymentMethodId: "method-mp" },
+    { id: "tx-may-13-salida", date: atDay(0, 13, 22), amount: 15400, type: "expense", detail: "Cena viernes", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+
+    { id: "tx-apr-01-expensas", date: atDay(-1, 1, 10), amount: 88000, type: "expense", detail: "Expensas abril", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
+    { id: "tx-apr-05-spotify", date: atDay(-1, 5, 9), amount: 3990, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+    { id: "tx-apr-06-personal", date: atDay(-1, 6, 9), amount: 18600, type: "expense", detail: "Personal", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-apr-06-edenor", date: atDay(-1, 6, 11), amount: 29800, type: "expense", detail: "Edenor", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-apr-08-salary", date: atDay(-1, 8, 9), amount: 530000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-apr-10-internet", date: atDay(-1, 10, 10), amount: 29700, type: "expense", detail: "Internet Fibertel", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-apr-14-personal-familia", date: atDay(-1, 14, 18), amount: 9600, type: "expense", detail: "Regalo sobrino", accountId: "account-main", categoryId: "cat-gift", paymentMethodId: "method-credit-visa" },
+    { id: "tx-apr-18-swiss", date: atDay(-1, 18, 12), amount: 138000, type: "expense", detail: "Prepaga Swiss", accountId: "account-main", categoryId: "cat-health", paymentMethodId: "method-transfer" },
+    { id: "tx-apr-20-coto", date: atDay(-1, 20, 13), amount: 75400, type: "expense", detail: "Coto — compra quincenal", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
+    { id: "tx-apr-22-metrogas", date: atDay(-1, 22, 12), amount: 22100, type: "expense", detail: "Metrogas", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-apr-25-juan", date: atDay(-1, 25, 16), amount: 35000, type: "expense", detail: "Pago deuda Juan", accountId: "account-main", categoryId: "cat-other", paymentMethodId: "method-transfer" },
+    { id: "tx-apr-25-freelance", date: atDay(-1, 25, 18), amount: 140000, type: "income", detail: "Freelance branding", accountId: "account-savings", categoryId: "cat-work", paymentMethodId: "method-transfer" },
+    { id: "tx-apr-30-mama", date: atDay(-1, 30, 14), amount: 30000, type: "income", detail: "Cobro Mamá", accountId: "account-main", categoryId: "cat-transfer", paymentMethodId: "method-transfer" },
+
+    { id: "tx-mar-01-expensas", date: atDay(-2, 1, 10), amount: 84500, type: "expense", detail: "Expensas marzo", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
+    { id: "tx-mar-05-spotify", date: atDay(-2, 5, 9), amount: 3990, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+    { id: "tx-mar-06-edenor", date: atDay(-2, 6, 11), amount: 27400, type: "expense", detail: "Edenor", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-mar-08-salary", date: atDay(-2, 8, 9), amount: 520000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-mar-10-internet", date: atDay(-2, 10, 10), amount: 28900, type: "expense", detail: "Internet Fibertel", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-mar-14-personal", date: atDay(-2, 14, 12), amount: 17900, type: "expense", detail: "Personal", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-mar-17-metrogas", date: atDay(-2, 17, 12), amount: 19800, type: "expense", detail: "Metrogas", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-mar-20-swiss", date: atDay(-2, 20, 12), amount: 135000, type: "expense", detail: "Prepaga Swiss", accountId: "account-main", categoryId: "cat-health", paymentMethodId: "method-transfer" },
+    { id: "tx-mar-21-super", date: atDay(-2, 21, 13), amount: 63200, type: "expense", detail: "Compra mensual", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
+    { id: "tx-mar-25-lucia", date: atDay(-2, 25, 15), amount: 25000, type: "income", detail: "Cobro Lucía", accountId: "account-main", categoryId: "cat-transfer", paymentMethodId: "method-transfer" },
+    { id: "tx-mar-28-juan", date: atDay(-2, 28, 16), amount: 20000, type: "expense", detail: "Pago deuda Juan", accountId: "account-main", categoryId: "cat-other", paymentMethodId: "method-transfer" },
+
+    { id: "tx-feb-01-expensas", date: atDay(-3, 1, 10), amount: 81200, type: "expense", detail: "Expensas febrero", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
+    { id: "tx-feb-05-spotify", date: atDay(-3, 5, 9), amount: 3690, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+    { id: "tx-feb-07-edenor", date: atDay(-3, 7, 11), amount: 25100, type: "expense", detail: "Edenor", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-feb-08-salary", date: atDay(-3, 8, 9), amount: 510000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-feb-10-internet", date: atDay(-3, 10, 10), amount: 27400, type: "expense", detail: "Internet Fibertel", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-feb-14-personal", date: atDay(-3, 14, 12), amount: 16800, type: "expense", detail: "Personal", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-feb-17-metrogas", date: atDay(-3, 17, 12), amount: 18400, type: "expense", detail: "Metrogas", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-feb-19-swiss", date: atDay(-3, 19, 12), amount: 129000, type: "expense", detail: "Prepaga Swiss", accountId: "account-main", categoryId: "cat-health", paymentMethodId: "method-transfer" },
+    { id: "tx-feb-21-super", date: atDay(-3, 21, 13), amount: 59800, type: "expense", detail: "Compra mensual", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
+    { id: "tx-feb-26-mama", date: atDay(-3, 26, 14), amount: 30000, type: "income", detail: "Cobro Mamá", accountId: "account-main", categoryId: "cat-transfer", paymentMethodId: "method-transfer" },
+
+    { id: "tx-jan-02-expensas", date: atDay(-4, 2, 10), amount: 78400, type: "expense", detail: "Expensas enero", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
+    { id: "tx-jan-05-spotify", date: atDay(-4, 5, 9), amount: 3490, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+    { id: "tx-jan-06-edenor", date: atDay(-4, 6, 11), amount: 22800, type: "expense", detail: "Edenor", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-jan-08-salary", date: atDay(-4, 8, 9), amount: 505000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-jan-10-internet", date: atDay(-4, 10, 10), amount: 26100, type: "expense", detail: "Internet Fibertel", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-jan-14-personal", date: atDay(-4, 14, 12), amount: 15400, type: "expense", detail: "Personal", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-jan-17-metrogas", date: atDay(-4, 17, 12), amount: 16200, type: "expense", detail: "Metrogas", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-jan-20-swiss", date: atDay(-4, 20, 12), amount: 122000, type: "expense", detail: "Prepaga Swiss", accountId: "account-main", categoryId: "cat-health", paymentMethodId: "method-transfer" },
+    { id: "tx-jan-21-super", date: atDay(-4, 21, 13), amount: 55200, type: "expense", detail: "Compra mensual", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
+    { id: "tx-jan-27-lucia", date: atDay(-4, 27, 14), amount: 30000, type: "income", detail: "Cobro Lucía", accountId: "account-main", categoryId: "cat-transfer", paymentMethodId: "method-transfer" },
+
+    { id: "tx-dec-02-expensas", date: atDay(-5, 2, 10), amount: 74800, type: "expense", detail: "Expensas diciembre", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-transfer" },
+    { id: "tx-dec-05-spotify", date: atDay(-5, 5, 9), amount: 3490, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+    { id: "tx-dec-07-edenor", date: atDay(-5, 7, 11), amount: 21400, type: "expense", detail: "Edenor", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-dec-08-salary", date: atDay(-5, 8, 9), amount: 500000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-dec-10-internet", date: atDay(-5, 10, 10), amount: 24800, type: "expense", detail: "Internet Fibertel", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-dec-14-personal", date: atDay(-5, 14, 12), amount: 14200, type: "expense", detail: "Personal", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-dec-17-metrogas", date: atDay(-5, 17, 12), amount: 15800, type: "expense", detail: "Metrogas", accountId: "account-main", categoryId: "cat-home", paymentMethodId: "method-auto-debit" },
+    { id: "tx-dec-18-swiss", date: atDay(-5, 18, 12), amount: 118000, type: "expense", detail: "Prepaga Swiss", accountId: "account-main", categoryId: "cat-health", paymentMethodId: "method-transfer" },
+    { id: "tx-dec-21-aguinaldo", date: atDay(-5, 21, 10), amount: 310000, type: "income", detail: "Aguinaldo", accountId: "account-savings", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-dec-21-mama", date: atDay(-5, 21, 15), amount: 30000, type: "income", detail: "Cobro Mamá", accountId: "account-main", categoryId: "cat-transfer", paymentMethodId: "method-transfer" },
+    { id: "tx-dec-22-super", date: atDay(-5, 22, 13), amount: 61200, type: "expense", detail: "Compra fiestas", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
+
+    { id: "tx-nov-05-spotify", date: atDay(-6, 5, 9), amount: 3290, type: "expense", detail: "Spotify Familiar", accountId: "account-main", categoryId: "cat-fun", paymentMethodId: "method-credit-visa" },
+    { id: "tx-nov-08-salary", date: atDay(-6, 8, 9), amount: 490000, type: "income", detail: "Sueldo Mariana", accountId: "account-main", categoryId: "cat-salary", paymentMethodId: "method-transfer" },
+    { id: "tx-nov-10-internet", date: atDay(-6, 10, 10), amount: 23200, type: "expense", detail: "Internet Fibertel", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-nov-14-personal", date: atDay(-6, 14, 12), amount: 13800, type: "expense", detail: "Personal", accountId: "account-main", categoryId: "cat-service", paymentMethodId: "method-auto-debit" },
+    { id: "tx-nov-16-super", date: atDay(-6, 16, 13), amount: 54400, type: "expense", detail: "Compra mensual", accountId: "account-main", categoryId: "cat-food", paymentMethodId: "method-credit-visa" },
+    { id: "tx-nov-22-freelance", date: atDay(-6, 22, 17), amount: 110000, type: "income", detail: "Freelance UX", accountId: "account-savings", categoryId: "cat-work", paymentMethodId: "method-transfer" },
   ];
 }
 
@@ -191,9 +256,12 @@ function baseBillsFull(): PreviewBill[] {
       paymentMethodId: "method-auto-debit",
       defaultCategoryId: "cat-service",
       payments: [
-        { id: "billp-internet-may", amount: 30000, issuedAt: atDay(0, 5), dueDate: atDay(0, 10), paidAt: null, notes: null, paymentMethodId: "method-auto-debit", transactionId: null },
-        { id: "billp-internet-apr", amount: 28500, issuedAt: atDay(-1, 4), dueDate: atDay(-1, 9), paidAt: atDay(-1, 9), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-apr-9-internet" },
-        { id: "billp-internet-mar", amount: 28500, issuedAt: atDay(-2, 7), dueDate: atDay(-2, 12), paidAt: atDay(-2, 12), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-mar-12-internet" },
+        { id: "billp-internet-may", amount: 30000, issuedAt: atDay(0, 5), dueDate: atDay(0, 10), paidAt: null, notes: "Todavía no debitó", paymentMethodId: "method-auto-debit", transactionId: null },
+        { id: "billp-internet-apr", amount: 29700, issuedAt: atDay(-1, 4), dueDate: atDay(-1, 10), paidAt: atDay(-1, 10), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-apr-10-internet" },
+        { id: "billp-internet-mar", amount: 28900, issuedAt: atDay(-2, 4), dueDate: atDay(-2, 10), paidAt: atDay(-2, 10), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-mar-10-internet" },
+        { id: "billp-internet-feb", amount: 27400, issuedAt: atDay(-3, 4), dueDate: atDay(-3, 10), paidAt: atDay(-3, 10), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-feb-10-internet" },
+        { id: "billp-internet-jan", amount: 26100, issuedAt: atDay(-4, 4), dueDate: atDay(-4, 10), paidAt: atDay(-4, 10), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-jan-10-internet" },
+        { id: "billp-internet-dec", amount: 24800, issuedAt: atDay(-5, 4), dueDate: atDay(-5, 10), paidAt: atDay(-5, 10), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-dec-10-internet" },
       ],
     },
     {
@@ -206,8 +274,12 @@ function baseBillsFull(): PreviewBill[] {
       paymentMethodId: "method-transfer",
       defaultCategoryId: "cat-health",
       payments: [
-        { id: "billp-swiss-may", amount: 142000, issuedAt: atDay(0, 7), dueDate: atDay(0, 21), paidAt: null, notes: null, paymentMethodId: "method-transfer", transactionId: null },
+        { id: "billp-swiss-may", amount: 142000, issuedAt: atDay(0, 7), dueDate: atDay(0, 21), paidAt: null, notes: "Factura mayo", paymentMethodId: "method-transfer", transactionId: null },
         { id: "billp-swiss-apr", amount: 138000, issuedAt: atDay(-1, 8), dueDate: atDay(-1, 20), paidAt: atDay(-1, 18), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-apr-18-swiss" },
+        { id: "billp-swiss-mar", amount: 135000, issuedAt: atDay(-2, 7), dueDate: atDay(-2, 20), paidAt: atDay(-2, 20), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-mar-20-swiss" },
+        { id: "billp-swiss-feb", amount: 129000, issuedAt: atDay(-3, 7), dueDate: atDay(-3, 19), paidAt: atDay(-3, 19), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-feb-19-swiss" },
+        { id: "billp-swiss-jan", amount: 122000, issuedAt: atDay(-4, 7), dueDate: atDay(-4, 20), paidAt: atDay(-4, 20), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-jan-20-swiss" },
+        { id: "billp-swiss-dec", amount: 118000, issuedAt: atDay(-5, 7), dueDate: atDay(-5, 18), paidAt: atDay(-5, 18), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-dec-18-swiss" },
       ],
     },
     {
@@ -220,7 +292,12 @@ function baseBillsFull(): PreviewBill[] {
       paymentMethodId: "method-auto-debit",
       defaultCategoryId: "cat-home",
       payments: [
-        { id: "billp-edenor-may", amount: 34000, issuedAt: atDay(0, 1), dueDate: atDay(0, 6), paidAt: atDay(0, 6), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-may-6-edenor" },
+        { id: "billp-edenor-may", amount: 34000, issuedAt: atDay(0, 1), dueDate: atDay(0, 6), paidAt: atDay(0, 6), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-may-06-edenor" },
+        { id: "billp-edenor-apr", amount: 29800, issuedAt: atDay(-1, 1), dueDate: atDay(-1, 6), paidAt: atDay(-1, 6), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-apr-06-edenor" },
+        { id: "billp-edenor-mar", amount: 27400, issuedAt: atDay(-2, 1), dueDate: atDay(-2, 6), paidAt: atDay(-2, 6), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-mar-06-edenor" },
+        { id: "billp-edenor-feb", amount: 25100, issuedAt: atDay(-3, 1), dueDate: atDay(-3, 7), paidAt: atDay(-3, 7), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-feb-07-edenor" },
+        { id: "billp-edenor-jan", amount: 22800, issuedAt: atDay(-4, 1), dueDate: atDay(-4, 6), paidAt: atDay(-4, 6), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-jan-06-edenor" },
+        { id: "billp-edenor-dec", amount: 21400, issuedAt: atDay(-5, 1), dueDate: atDay(-5, 7), paidAt: atDay(-5, 7), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-dec-07-edenor" },
       ],
     },
     {
@@ -233,7 +310,66 @@ function baseBillsFull(): PreviewBill[] {
       paymentMethodId: "method-credit-visa",
       defaultCategoryId: "cat-fun",
       payments: [
-        { id: "billp-spotify-may", amount: 3990, issuedAt: atDay(0, 2), dueDate: atDay(0, 6), paidAt: atDay(0, 6), notes: null, paymentMethodId: "method-credit-visa", transactionId: "tx-may-5-spotify" },
+        { id: "billp-spotify-may", amount: 3990, issuedAt: atDay(0, 2), dueDate: atDay(0, 5), paidAt: atDay(0, 5), notes: null, paymentMethodId: "method-credit-visa", transactionId: "tx-may-05-spotify" },
+        { id: "billp-spotify-apr", amount: 3990, issuedAt: atDay(-1, 2), dueDate: atDay(-1, 5), paidAt: atDay(-1, 5), notes: null, paymentMethodId: "method-credit-visa", transactionId: "tx-apr-05-spotify" },
+        { id: "billp-spotify-mar", amount: 3990, issuedAt: atDay(-2, 2), dueDate: atDay(-2, 5), paidAt: atDay(-2, 5), notes: null, paymentMethodId: "method-credit-visa", transactionId: "tx-mar-05-spotify" },
+        { id: "billp-spotify-feb", amount: 3690, issuedAt: atDay(-3, 2), dueDate: atDay(-3, 5), paidAt: atDay(-3, 5), notes: null, paymentMethodId: "method-credit-visa", transactionId: "tx-feb-05-spotify" },
+        { id: "billp-spotify-jan", amount: 3490, issuedAt: atDay(-4, 2), dueDate: atDay(-4, 5), paidAt: atDay(-4, 5), notes: null, paymentMethodId: "method-credit-visa", transactionId: "tx-jan-05-spotify" },
+        { id: "billp-spotify-dec", amount: 3490, issuedAt: atDay(-5, 2), dueDate: atDay(-5, 5), paidAt: atDay(-5, 5), notes: null, paymentMethodId: "method-credit-visa", transactionId: "tx-dec-05-spotify" },
+      ],
+    },
+    {
+      id: "bill-personal",
+      name: "Personal",
+      icon: "wifi",
+      amount: 19200,
+      dueDay: 14,
+      notes: "Plan familiar 4 lineas",
+      paymentMethodId: "method-auto-debit",
+      defaultCategoryId: "cat-service",
+      payments: [
+        { id: "billp-personal-may", amount: 19200, issuedAt: atDay(0, 8), dueDate: atDay(0, 14), paidAt: null, notes: "Todavía sin débito", paymentMethodId: "method-auto-debit", transactionId: null },
+        { id: "billp-personal-apr", amount: 18600, issuedAt: atDay(-1, 8), dueDate: atDay(-1, 14), paidAt: atDay(-1, 14), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-apr-06-personal" },
+        { id: "billp-personal-mar", amount: 17900, issuedAt: atDay(-2, 8), dueDate: atDay(-2, 14), paidAt: atDay(-2, 14), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-mar-14-personal" },
+        { id: "billp-personal-feb", amount: 16800, issuedAt: atDay(-3, 8), dueDate: atDay(-3, 14), paidAt: atDay(-3, 14), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-feb-14-personal" },
+        { id: "billp-personal-jan", amount: 15400, issuedAt: atDay(-4, 8), dueDate: atDay(-4, 14), paidAt: atDay(-4, 14), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-jan-14-personal" },
+        { id: "billp-personal-dec", amount: 14200, issuedAt: atDay(-5, 8), dueDate: atDay(-5, 14), paidAt: atDay(-5, 14), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-dec-14-personal" },
+      ],
+    },
+    {
+      id: "bill-metrogas",
+      name: "Metrogas",
+      icon: "file",
+      amount: 24600,
+      dueDay: 17,
+      notes: "Gas de red",
+      paymentMethodId: "method-auto-debit",
+      defaultCategoryId: "cat-home",
+      payments: [
+        { id: "billp-metrogas-may", amount: 24600, issuedAt: atDay(0, 10), dueDate: atDay(0, 17), paidAt: null, notes: null, paymentMethodId: "method-auto-debit", transactionId: null },
+        { id: "billp-metrogas-apr", amount: 22100, issuedAt: atDay(-1, 10), dueDate: atDay(-1, 22), paidAt: atDay(-1, 22), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-apr-22-metrogas" },
+        { id: "billp-metrogas-mar", amount: 19800, issuedAt: atDay(-2, 10), dueDate: atDay(-2, 17), paidAt: atDay(-2, 17), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-mar-17-metrogas" },
+        { id: "billp-metrogas-feb", amount: 18400, issuedAt: atDay(-3, 10), dueDate: atDay(-3, 17), paidAt: atDay(-3, 17), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-feb-17-metrogas" },
+        { id: "billp-metrogas-jan", amount: 16200, issuedAt: atDay(-4, 10), dueDate: atDay(-4, 17), paidAt: atDay(-4, 17), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-jan-17-metrogas" },
+        { id: "billp-metrogas-dec", amount: 15800, issuedAt: atDay(-5, 10), dueDate: atDay(-5, 17), paidAt: atDay(-5, 17), notes: null, paymentMethodId: "method-auto-debit", transactionId: "tx-dec-17-metrogas" },
+      ],
+    },
+    {
+      id: "bill-expensas",
+      name: "Expensas",
+      icon: "file",
+      amount: 92000,
+      dueDay: 1,
+      notes: "Consorcio edificio",
+      paymentMethodId: "method-transfer",
+      defaultCategoryId: "cat-home",
+      payments: [
+        { id: "billp-expensas-may", amount: 92000, issuedAt: atDay(0, 1), dueDate: atDay(0, 1), paidAt: atDay(0, 1), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-may-01-expensas" },
+        { id: "billp-expensas-apr", amount: 88000, issuedAt: atDay(-1, 1), dueDate: atDay(-1, 1), paidAt: atDay(-1, 1), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-apr-01-expensas" },
+        { id: "billp-expensas-mar", amount: 84500, issuedAt: atDay(-2, 1), dueDate: atDay(-2, 1), paidAt: atDay(-2, 1), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-mar-01-expensas" },
+        { id: "billp-expensas-feb", amount: 81200, issuedAt: atDay(-3, 1), dueDate: atDay(-3, 1), paidAt: atDay(-3, 1), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-feb-01-expensas" },
+        { id: "billp-expensas-jan", amount: 78400, issuedAt: atDay(-4, 2), dueDate: atDay(-4, 2), paidAt: atDay(-4, 2), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-jan-02-expensas" },
+        { id: "billp-expensas-dec", amount: 74800, issuedAt: atDay(-5, 2), dueDate: atDay(-5, 2), paidAt: atDay(-5, 2), notes: null, paymentMethodId: "method-transfer", transactionId: "tx-dec-02-expensas" },
       ],
     },
   ];
@@ -245,35 +381,42 @@ function baseDebtsFull(): PreviewDebt[] {
       id: "debt-juan",
       entityName: "Juan",
       direction: "we_owe",
-      originalAmount: 100000,
-      remainingBalance: 50000,
+      originalAmount: 120000,
+      remainingBalance: 25000,
       notes: "Préstamo para arreglo del auto",
-      createdAt: atDay(-1, 2),
+      createdAt: atDay(-2, 27),
       payments: [
-        { id: "debtp-juan-1", date: atDay(-1, 25), amount: 30000, notes: "Primer pago", transactionId: "tx-apr-25-juan" },
-        { id: "debtp-juan-2", date: atDay(0, 2), amount: 20000, notes: "Segundo pago", transactionId: "tx-may-2-juan" },
+        { id: "debtp-juan-1", date: atDay(-2, 28), amount: 20000, notes: "Primer pago", transactionId: "tx-mar-28-juan" },
+        { id: "debtp-juan-2", date: atDay(-1, 25), amount: 35000, notes: "Segundo pago", transactionId: "tx-apr-25-juan" },
+        { id: "debtp-juan-3", date: atDay(0, 9), amount: 40000, notes: "Tercer pago", transactionId: "tx-may-09-juan" },
       ],
     },
     {
       id: "debt-lucia",
       entityName: "Lucía",
       direction: "they_owe_us",
-      originalAmount: 45000,
-      remainingBalance: 45000,
-      notes: "Cena de cumpleaños",
-      createdAt: atDay(0, 1),
-      payments: [],
+      originalAmount: 150000,
+      remainingBalance: 60000,
+      notes: "Compra compartida + vacaciones",
+      createdAt: atDay(-4, 15),
+      payments: [
+        { id: "debtp-lucia-1", date: atDay(-4, 27), amount: 30000, notes: "Primer reintegro", transactionId: "tx-jan-27-lucia" },
+        { id: "debtp-lucia-2", date: atDay(-2, 25), amount: 25000, notes: "Segundo reintegro", transactionId: "tx-mar-25-lucia" },
+        { id: "debtp-lucia-3", date: atDay(0, 5), amount: 35000, notes: "Tercer reintegro", transactionId: "tx-may-05-lucia" },
+      ],
     },
     {
-      id: "debt-mateo",
-      entityName: "Mateo",
+      id: "debt-mama",
+      entityName: "Mamá",
       direction: "they_owe_us",
-      originalAmount: 20000,
+      originalAmount: 90000,
       remainingBalance: 0,
-      notes: "Uber compartido",
-      createdAt: atDay(-2, 11),
+      notes: "Préstamo puente para obra",
+      createdAt: atDay(-5, 9),
       payments: [
-        { id: "debtp-mateo-1", date: atDay(-1, 14), amount: 20000, notes: "Pago completo", transactionId: "tx-apr-14-mateo" },
+        { id: "debtp-mama-1", date: atDay(-5, 21), amount: 30000, notes: "Primer cobro", transactionId: "tx-dec-21-mama" },
+        { id: "debtp-mama-2", date: atDay(-3, 26), amount: 30000, notes: "Segundo cobro", transactionId: "tx-feb-26-mama" },
+        { id: "debtp-mama-3", date: atDay(-1, 30), amount: 30000, notes: "Saldo final", transactionId: "tx-apr-30-mama" },
       ],
     },
   ];
@@ -281,7 +424,7 @@ function baseDebtsFull(): PreviewDebt[] {
 
 function datasetFull(): PreviewDataset {
   return {
-    memberCount: 2,
+    memberCount: 4,
     categories,
     methods,
     accounts,
@@ -413,6 +556,18 @@ export function buildPreviewDashboardSnapshot(dataset: PreviewDataset, monthKey 
   const daysInMonth = new Date(range.end.getFullYear(), range.end.getMonth(), 0).getDate();
   const elapsedDays = Math.max(1, Math.min(new Date().getDate(), daysInMonth));
   const projectedExpenses = Math.round((expenses / elapsedDays) * daysInMonth);
+  const pendingBillPayments = dataset.bills.flatMap((bill) =>
+    bill.payments
+      .filter((payment) => !payment.paidAt && keyForMonth(payment.dueDate) === monthKey)
+      .map((payment) => ({ bill, payment })),
+  );
+  const recurringTotal = pendingBillPayments.reduce((sum, entry) => sum + entry.payment.amount, 0);
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const overdueBillsCount = pendingBillPayments.filter((entry) => entry.payment.dueDate < todayStart).length;
+  const activeDebts = dataset.debts.filter((debt) => debt.remainingBalance > 0);
+  const weOweTotal = activeDebts.reduce((sum, debt) => sum + (debt.direction === "we_owe" ? debt.remainingBalance : 0), 0);
+  const theyOweTotal = activeDebts.reduce((sum, debt) => sum + (debt.direction === "they_owe_us" ? debt.remainingBalance : 0), 0);
   const trendMonths = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(range.start.getFullYear(), range.start.getMonth() + index - 6, 1);
     const key = keyForMonth(date);
@@ -445,6 +600,7 @@ export function buildPreviewDashboardSnapshot(dataset: PreviewDataset, monthKey 
         })),
     )
     .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+    .filter((bill) => bill.dueDate >= todayStart)
     .slice(0, 2);
 
   return {
@@ -456,7 +612,10 @@ export function buildPreviewDashboardSnapshot(dataset: PreviewDataset, monthKey 
     projectedExpenses,
     expenseDelta: expenses - previousExpenses,
     savings: incomes - expenses,
-    recurringTotal: upcomingBills.reduce((sum, bill) => sum + bill.amount, 0),
+    recurringTotal,
+    overdueBillsCount,
+    weOweTotal,
+    theyOweTotal,
     upcomingBills,
     recentTransactions: currentTransactions.slice(0, 8).map((row) => ({
       id: row.id,

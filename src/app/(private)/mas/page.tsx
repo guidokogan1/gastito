@@ -8,6 +8,7 @@ import {
 
 import { logoutAction } from "@/app/actions/auth";
 import { MetricStrip } from "@/components/app/metric-strip";
+import { PreviewModeSwitcher } from "@/components/app/preview-mode-switcher";
 import { SettingsGroup, SettingsRow } from "@/components/app/settings-list";
 import { FlashMessage } from "@/components/flash-message";
 import { KineticPage } from "@/components/app/kinetic";
@@ -15,6 +16,8 @@ import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset, isPreviewModeAvailable } from "@/lib/preview-mode";
 import { toTitleCase } from "@/lib/text";
 
 function initials(name: string) {
@@ -32,13 +35,23 @@ export default async function MorePage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const [memberCount, categoryCount, paymentMethodCount, bankCount, accountCount] = await Promise.all([
-    prisma.membership.count({ where: { householdId: household.id } }),
-    prisma.category.count({ where: { householdId: household.id, deletedAt: null } }),
-    prisma.paymentMethod.count({ where: { householdId: household.id, deletedAt: null } }),
-    prisma.bank.count({ where: { householdId: household.id, deletedAt: null } }),
-    prisma.account.count({ where: { householdId: household.id, deletedAt: null } }),
-  ]);
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const [memberCount, categoryCount, paymentMethodCount, bankCount, accountCount] = previewDataset
+    ? [
+        previewDataset.memberCount,
+        previewDataset.categories.length,
+        previewDataset.methods.length,
+        previewDataset.banks.length,
+        previewDataset.accounts.length,
+      ]
+    : await Promise.all([
+        prisma.membership.count({ where: { householdId: household.id } }),
+        prisma.category.count({ where: { householdId: household.id, deletedAt: null } }),
+        prisma.paymentMethod.count({ where: { householdId: household.id, deletedAt: null } }),
+        prisma.bank.count({ where: { householdId: household.id, deletedAt: null } }),
+        prisma.account.count({ where: { householdId: household.id, deletedAt: null } }),
+      ]);
 
   const householdName = toTitleCase(household.name);
   const memberLabel = memberCount === 1 ? "1 miembro" : `${memberCount} miembros`;
@@ -70,6 +83,8 @@ export default async function MorePage({
           />
         </div>
       </section>
+
+      {isPreviewModeAvailable() ? <PreviewModeSwitcher activePreset={previewPreset} /> : null}
 
       <section className="space-y-2">
         <h2 className="section-title">Configuración del hogar</h2>

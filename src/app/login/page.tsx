@@ -25,6 +25,7 @@ export default async function LoginPage({
       eyebrow="Gastito"
       title="Entrá a tu hogar"
       description="Una forma calma y compartible de mirar gastos, ingresos y organización familiar."
+      highlights={["Tus datos quedan en tu hogar", "Cargás en segundos", "Podés compartirlo con tu familia"]}
     >
           <CardContent className="space-y-4 p-4 sm:p-5">
             <div className="space-y-3">
@@ -44,6 +45,9 @@ export default async function LoginPage({
                 Iniciar sesión
               </SubmitButton>
             </form>
+            <p className="text-center text-[0.84rem] leading-relaxed text-muted-foreground">
+              Si ya tenés un hogar creado, entrás directo. Si no, después te guiamos para dejarlo listo.
+            </p>
 
             <div className="flex flex-col gap-2 pt-1">
               <Button asChild variant="secondary">

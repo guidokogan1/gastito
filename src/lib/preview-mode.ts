@@ -8,7 +8,7 @@ export const PREVIEW_PRESETS = ["empty", "lite", "full"] as const;
 export type PreviewPreset = (typeof PREVIEW_PRESETS)[number];
 
 export function isPreviewModeAvailable() {
-  return process.env.NODE_ENV !== "production";
+  return process.env.NODE_ENV !== "production" || process.env.VERCEL !== "1";
 }
 
 export function isPreviewPreset(value: string | null | undefined): value is PreviewPreset {

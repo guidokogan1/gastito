@@ -11,6 +11,24 @@ import { Button } from "@/components/ui/button";
 let bodyLockCount = 0;
 let previousBodyOverflow = "";
 
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) return [];
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      [
+        "[data-autofocus='true']",
+        "[autofocus]",
+        "input:not([disabled])",
+        "textarea:not([disabled])",
+        "select:not([disabled])",
+        "button:not([disabled])",
+        "a[href]",
+        "[tabindex]:not([tabindex='-1'])",
+      ].join(","),
+    ),
+  );
+}
+
 export function Slideout({
   open,
   title,
@@ -62,18 +80,7 @@ export function Slideout({
       }
       if (event.key !== "Tab") return;
 
-      const panel = panelRef.current;
-      if (!panel) return;
-      const focusable = panel.querySelectorAll<HTMLElement>(
-        [
-          "a[href]",
-          "button:not([disabled])",
-          "textarea:not([disabled])",
-          "input:not([disabled])",
-          "select:not([disabled])",
-          "[tabindex]:not([tabindex='-1'])",
-        ].join(","),
-      );
+      const focusable = getFocusableElements(panelRef.current);
       if (focusable.length === 0) return;
 
       const first = focusable[0];
@@ -96,10 +103,12 @@ export function Slideout({
     bodyLockCount += 1;
     window.setTimeout(() => {
       const panel = panelRef.current;
-      const firstFocusable = panel?.querySelector<HTMLElement>(
-        "input:not([disabled]), button:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])",
-      );
-      firstFocusable?.focus();
+      const focusable = getFocusableElements(panel);
+      if (focusable[0]) {
+        focusable[0].focus();
+      } else {
+        panel?.focus();
+      }
     }, 0);
 
     return () => {
@@ -134,6 +143,7 @@ export function Slideout({
             aria-modal="true"
             aria-labelledby={titleId}
             aria-describedby={description ? descriptionId : undefined}
+            tabIndex={-1}
             className={cn("sheet-panel flex flex-col overflow-hidden", className)}
             initial={{ opacity: 0, y: isDesktop ? 0 : "10%", x: isDesktop ? 18 : 0 }}
             animate={{ opacity: 1, y: 0, x: 0 }}

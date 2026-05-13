@@ -38,6 +38,7 @@ export function PaymentMethodField({
       <div className="flex flex-wrap gap-2.5">
         <Button
           type="button"
+          aria-pressed={value === ""}
           variant={value === "" ? "default" : "outline"}
           className={cn("h-11 rounded-full px-4 text-[0.98rem]", value !== "" && "bg-background")}
           onClick={() => setValue("")}
@@ -48,6 +49,7 @@ export function PaymentMethodField({
           <Button
             key={method.id}
             type="button"
+            aria-pressed={value === method.id}
             variant={value === method.id ? "default" : "outline"}
             className={cn("h-11 rounded-full px-4 text-[0.98rem]", value !== method.id && "bg-background")}
             onClick={() => setValue(method.id)}

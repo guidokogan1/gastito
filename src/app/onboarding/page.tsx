@@ -28,6 +28,7 @@ export default async function OnboardingPage({
       eyebrow="Onboarding guiado"
       title="Armemos tu hogar"
       description="Dejamos todo listo con moneda ARS, categorías sugeridas, medios de pago comunes y cuentas iniciales."
+      highlights={["Paso final", "Base lista para empezar", "Todo se puede editar después"]}
       className="max-w-[520px]"
     >
           <CardContent className="space-y-4 p-4 sm:p-5">
@@ -40,6 +41,12 @@ export default async function OnboardingPage({
             </div>
 
             <form action={completeOnboardingAction} className="space-y-3">
+              <div className="rounded-[1.15rem] border border-border/70 bg-card px-4 py-3">
+                <p className="text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">Paso 1 de 1</p>
+                <p className="mt-1 text-[0.94rem] leading-relaxed text-muted-foreground">
+                  Elegí un nombre fácil de reconocer. Después ya podés entrar y empezar a cargar movimientos.
+                </p>
+              </div>
               <div className="space-y-1.5">
                 <label htmlFor="householdName" className="text-sm font-medium">
                   Nombre del hogar

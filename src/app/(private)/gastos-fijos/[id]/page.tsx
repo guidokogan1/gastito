@@ -27,8 +27,6 @@ import { DayOfMonthField } from "@/components/app/day-of-month-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, formatDate, moneyInputValue } from "@/lib/format";
-import { findPreviewBill, getPreviewDataset } from "@/lib/preview-data";
-import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -37,6 +35,13 @@ function todayIso() {
 function dueDateForDay(day: number) {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), Math.max(1, Math.min(28, day))).toISOString().slice(0, 10);
+}
+
+function daysUntil(date: Date) {
+  const today = new Date();
+  const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  return Math.ceil((startDate - startToday) / 86_400_000);
 }
 
 export default async function FixedDetailPage({
@@ -49,87 +54,48 @@ export default async function FixedDetailPage({
   const { household } = await requireHousehold();
   const { id } = await params;
   const query = await searchParams;
-  const previewPreset = await getPreviewPreset();
-  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
-  const [bill, paymentMethods, categories] = previewDataset
-    ? [
-        (() => {
-          const previewBill = findPreviewBill(previewDataset, id);
-          if (!previewBill) return null;
-          return {
-            id: previewBill.id,
-            name: previewBill.name,
-            icon: previewBill.icon,
-            amount: previewBill.amount,
-            dueDay: previewBill.dueDay,
-            notes: previewBill.notes,
-            paymentMethodId: previewBill.paymentMethodId,
-            defaultCategoryId: previewBill.defaultCategoryId,
-            paymentMethod: previewBill.paymentMethodId
-              ? { name: previewDataset.methods.find((method) => method.id === previewBill.paymentMethodId)?.name ?? "Sin medio" }
-              : null,
-            payments: previewBill.payments
-              .map((payment) => ({
-                id: payment.id,
-                amount: payment.amount,
-                issuedAt: payment.issuedAt,
-                dueDate: payment.dueDate,
-                paidAt: payment.paidAt,
-                notes: payment.notes,
-                paymentMethodId: payment.paymentMethodId,
-                paymentMethod: payment.paymentMethodId
-                  ? { name: previewDataset.methods.find((method) => method.id === payment.paymentMethodId)?.name ?? "Sin medio" }
-                  : null,
-                transactionId: payment.transactionId,
-              }))
-              .sort((a, b) => b.dueDate.getTime() - a.dueDate.getTime()),
-          };
-        })(),
-        previewDataset.methods,
-        previewDataset.categories.filter((category) => category.kind === "expense"),
-      ]
-    : await Promise.all([
-        prisma.recurringBill.findFirst({
-          where: { id, householdId: household.id, deletedAt: null },
+  const [bill, paymentMethods, categories] = await Promise.all([
+    prisma.recurringBill.findFirst({
+      where: { id, householdId: household.id, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        icon: true,
+        amount: true,
+        dueDay: true,
+        notes: true,
+        paymentMethodId: true,
+        defaultCategoryId: true,
+        paymentMethod: { select: { name: true } },
+        payments: {
+          where: { deletedAt: null },
           select: {
             id: true,
-            name: true,
-            icon: true,
             amount: true,
-            dueDay: true,
+            issuedAt: true,
+            dueDate: true,
+            paidAt: true,
             notes: true,
             paymentMethodId: true,
-            defaultCategoryId: true,
             paymentMethod: { select: { name: true } },
-            payments: {
-              where: { deletedAt: null },
-              select: {
-                id: true,
-                amount: true,
-                issuedAt: true,
-                dueDate: true,
-                paidAt: true,
-                notes: true,
-                paymentMethodId: true,
-                paymentMethod: { select: { name: true } },
-                transactionId: true,
-              },
-              orderBy: { dueDate: "desc" },
-              take: 24,
-            },
+            transactionId: true,
           },
-        }),
-        prisma.paymentMethod.findMany({
-          where: { householdId: household.id, isActive: true, deletedAt: null },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        }),
-        prisma.category.findMany({
-          where: { householdId: household.id, deletedAt: null, kind: "expense" },
-          select: { id: true, name: true },
-          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-        }),
-      ]);
+          orderBy: { dueDate: "desc" },
+          take: 24,
+        },
+      },
+    }),
+    prisma.paymentMethod.findMany({
+      where: { householdId: household.id, isActive: true, deletedAt: null },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.category.findMany({
+      where: { householdId: household.id, deletedAt: null, kind: "expense" },
+      select: { id: true, name: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    }),
+  ]);
   if (!bill) notFound();
 
   const pendingInvoice = bill.payments.find((payment) => !payment.paidAt) ?? null;
@@ -137,6 +103,22 @@ export default async function FixedDetailPage({
     bill.payments.length > 0
       ? bill.payments.reduce((total, payment) => total + Number(payment.amount), 0) / bill.payments.length
       : Number(bill.amount);
+  const pendingInvoiceDays = pendingInvoice ? daysUntil(pendingInvoice.dueDate) : null;
+  const pendingInvoiceBadge = pendingInvoiceDays === null
+    ? null
+    : pendingInvoiceDays < 0
+      ? `Vencida hace ${Math.abs(pendingInvoiceDays)} día${Math.abs(pendingInvoiceDays) === 1 ? "" : "s"}`
+      : pendingInvoiceDays === 0
+        ? "Vence hoy"
+        : pendingInvoiceDays === 1
+          ? "Vence mañana"
+          : `Vence en ${pendingInvoiceDays} días`;
+  const pendingInvoiceToneClass =
+    pendingInvoiceDays === null
+      ? ""
+      : pendingInvoiceDays < 0
+        ? "text-red-700"
+        : "text-amber-700";
 
   const editSheet = (
     <ResourceSheet title="Editar servicio" triggerAsChild trigger={<Button variant="secondary">Editar servicio</Button>}>
@@ -211,14 +193,12 @@ export default async function FixedDetailPage({
           <Button asChild variant="secondary" size="icon" aria-label="Volver a gastos fijos">
             <Link href="/gastos-fijos"><ArrowLeft className="size-5" /></Link>
           </Button>
-          {!previewPreset ? (
-            <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”?`}>
-              <input type="hidden" name="id" value={bill.id} />
-              <Button type="submit" variant="secondary" size="icon" className="text-destructive" aria-label="Borrar gasto fijo">
-                <Trash2 className="size-4" />
-              </Button>
-            </ConfirmForm>
-          ) : null}
+          <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”?`}>
+            <input type="hidden" name="id" value={bill.id} />
+            <Button type="submit" variant="secondary" size="icon" className="text-destructive" aria-label="Borrar gasto fijo">
+              <Trash2 className="size-4" />
+            </Button>
+          </ConfirmForm>
         </div>
         <div className="flex items-center gap-4">
           <div className="grid size-16 place-items-center rounded-[1.2rem] bg-muted">
@@ -238,25 +218,31 @@ export default async function FixedDetailPage({
 
       <FlashMessage message={query.error} tone="error" />
       <FlashMessage message={query.message} tone="success" />
-      {previewPreset ? <FlashMessage message={`Preview ${previewLabel(previewPreset)} activo en modo solo lectura.`} tone="warning" /> : null}
 
       {pendingInvoice ? (
         <section className="space-y-3 border-b border-border/70 pb-5">
-          <p className="section-eyebrow text-amber-700">Factura pendiente</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="section-eyebrow text-amber-700">Factura pendiente</p>
+            {pendingInvoiceBadge ? (
+              <span className={`rounded-full px-2.5 py-1 text-[0.74rem] font-medium ${pendingInvoiceDays !== null && pendingInvoiceDays < 0 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}>
+                {pendingInvoiceBadge}
+              </span>
+            ) : null}
+          </div>
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="row-title">Vence {formatDate(pendingInvoice.dueDate)}</p>
               <p className="row-meta">{pendingInvoice.paymentMethod?.name ?? bill.paymentMethod?.name ?? "Sin medio"}</p>
             </div>
-            <p className="stat-value">{formatArs(pendingInvoice.amount)}</p>
+            <p className={`stat-value ${pendingInvoiceToneClass}`}>{formatArs(pendingInvoice.amount)}</p>
           </div>
-          {!previewPreset ? paymentSheet : null}
+          {paymentSheet}
         </section>
       ) : (
         <section className="space-y-3 border-b border-border/70 pb-5">
           <p className="section-eyebrow">Factura pendiente</p>
           <p className="row-meta">No hay factura pendiente para este servicio.</p>
-          {!previewPreset ? paymentSheet : null}
+          {paymentSheet}
         </section>
       )}
 
@@ -273,85 +259,72 @@ export default async function FixedDetailPage({
           <div className="space-y-2">
             {bill.payments.map((payment) => (
               <div key={payment.id} className="flex items-center gap-2 border-b border-border/70 last:border-b-0">
-                {previewPreset ? (
-                  <div className="min-w-0 flex-1">
-                    <ResourceRowShell
-                      icon={payment.paidAt ? <CalendarCheck2 className="size-4" /> : <Clock3 className="size-4" />}
-                      title={formatArs(payment.amount)}
-                      meta={`${payment.paidAt ? `Pagado ${formatDate(payment.paidAt)}` : `Vence ${formatDate(payment.dueDate)}`} · ${payment.transactionId ? "Con movimiento" : "Sin movimiento"}`}
-                      className="border-b-0"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <ResourceSheet
-                      title={payment.paidAt ? "Editar pago" : "Editar factura"}
-                      triggerAsChild
-                      trigger={
-                        <button type="button" className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18">
-                          <ResourceRowShell
-                            icon={payment.paidAt ? <CalendarCheck2 className="size-4" /> : <Clock3 className="size-4" />}
-                            title={formatArs(payment.amount)}
-                            meta={`${payment.paidAt ? `Pagado ${formatDate(payment.paidAt)}` : `Vence ${formatDate(payment.dueDate)}`} · ${payment.transactionId ? "Con movimiento" : "Sin movimiento"}`}
-                            interactive
-                            className="border-b-0"
-                          />
-                        </button>
-                      }
-                    >
-                      <form action={saveRecurringBillPaymentAction} className="space-y-4">
-                        <input type="hidden" name="id" value={payment.id} />
-                        <input type="hidden" name="recurringBillId" value={bill.id} />
-                        <section className="grouped-form-section space-y-4">
-                          <MoneyField
-                            id={`payment-amount-${payment.id}`}
-                            name="amount"
-                            label="Monto"
-                            defaultValue={moneyInputValue(payment.amount)}
-                            showPreview={false}
-                          />
-                          <div className="space-y-1.5">
-                            <Label>Emitida el</Label>
-                            <DateField name="issuedAt" defaultValue={payment.issuedAt?.toISOString().slice(0, 10) ?? ""} />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label>Vence</Label>
-                            <DateField name="dueDate" defaultValue={payment.dueDate.toISOString().slice(0, 10)} required />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label>Pagado el</Label>
-                            <DateField name="paidAt" defaultValue={payment.paidAt?.toISOString().slice(0, 10) ?? ""} />
-                          </div>
-                          <PaymentMethodField
-                            name="paymentMethodId"
-                            defaultValue={payment.paymentMethodId ?? bill.paymentMethodId ?? ""}
-                            methods={paymentMethods}
-                            quickMethods={paymentMethods}
-                          />
-                          <input type="hidden" name="categoryId" value={bill.defaultCategoryId ?? ""} />
-                          <div className="space-y-1.5">
-                            <Label htmlFor={`payment-notes-${payment.id}`}>Notas</Label>
-                            <Textarea id={`payment-notes-${payment.id}`} name="notes" defaultValue={payment.notes ?? ""} placeholder="Ej. Ajuste, débito, pago parcial" />
-                          </div>
-                          <CheckboxLine name="createTransaction" defaultChecked={Boolean(payment.transactionId)}>
-                            Registrar también como movimiento
-                          </CheckboxLine>
-                        </section>
-                        <div className="sheet-action-bar">
-                          <SubmitButton type="submit" className="w-full" pendingText="Guardando...">
-                            Guardar cambios
-                          </SubmitButton>
-                        </div>
-                      </form>
-                    </ResourceSheet>
-                    <ConfirmForm action={deleteRecurringBillPaymentAction} confirm="¿Borrar esta factura?">
-                      <input type="hidden" name="id" value={payment.id} />
-                      <Button type="submit" variant="ghost" size="icon-sm" className="shrink-0 text-destructive" aria-label={`Borrar ${payment.paidAt ? "pago" : "factura"}`}>
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </ConfirmForm>
-                  </>
-                )}
+                <ResourceSheet
+                  title={payment.paidAt ? "Editar pago" : "Editar factura"}
+                  triggerAsChild
+                  trigger={
+                    <button type="button" className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18">
+                      <ResourceRowShell
+                        icon={payment.paidAt ? <CalendarCheck2 className="size-4" /> : <Clock3 className="size-4" />}
+                        title={formatArs(payment.amount)}
+                        meta={`${payment.paidAt ? `Pagado ${formatDate(payment.paidAt)}` : `Vence ${formatDate(payment.dueDate)}`} · ${payment.transactionId ? "Con movimiento" : "Sin movimiento"}`}
+                        interactive
+                        className="border-b-0"
+                      />
+                    </button>
+                  }
+                >
+                  <form action={saveRecurringBillPaymentAction} className="space-y-4">
+                    <input type="hidden" name="id" value={payment.id} />
+                    <input type="hidden" name="recurringBillId" value={bill.id} />
+                    <section className="grouped-form-section space-y-4">
+                      <MoneyField
+                        id={`payment-amount-${payment.id}`}
+                        name="amount"
+                        label="Monto"
+                        defaultValue={moneyInputValue(payment.amount)}
+                        showPreview={false}
+                      />
+                      <div className="space-y-1.5">
+                        <Label>Emitida el</Label>
+                        <DateField name="issuedAt" defaultValue={payment.issuedAt?.toISOString().slice(0, 10) ?? ""} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Vence</Label>
+                        <DateField name="dueDate" defaultValue={payment.dueDate.toISOString().slice(0, 10)} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Pagado el</Label>
+                        <DateField name="paidAt" defaultValue={payment.paidAt?.toISOString().slice(0, 10) ?? ""} />
+                      </div>
+                      <PaymentMethodField
+                        name="paymentMethodId"
+                        defaultValue={payment.paymentMethodId ?? bill.paymentMethodId ?? ""}
+                        methods={paymentMethods}
+                        quickMethods={paymentMethods}
+                      />
+                      <input type="hidden" name="categoryId" value={bill.defaultCategoryId ?? ""} />
+                      <div className="space-y-1.5">
+                        <Label htmlFor={`payment-notes-${payment.id}`}>Notas</Label>
+                        <Textarea id={`payment-notes-${payment.id}`} name="notes" defaultValue={payment.notes ?? ""} placeholder="Ej. Ajuste, débito, pago parcial" />
+                      </div>
+                      <CheckboxLine name="createTransaction" defaultChecked={Boolean(payment.transactionId)}>
+                        Registrar también como movimiento
+                      </CheckboxLine>
+                    </section>
+                    <div className="sheet-action-bar">
+                      <SubmitButton type="submit" className="w-full" pendingText="Guardando...">
+                        Guardar cambios
+                      </SubmitButton>
+                    </div>
+                  </form>
+                </ResourceSheet>
+                <ConfirmForm action={deleteRecurringBillPaymentAction} confirm="¿Borrar esta factura?">
+                  <input type="hidden" name="id" value={payment.id} />
+                  <Button type="submit" variant="ghost" size="icon-sm" className="shrink-0 text-destructive" aria-label={`Borrar ${payment.paidAt ? "pago" : "factura"}`}>
+                    <Trash2 className="size-4" />
+                  </Button>
+                </ConfirmForm>
               </div>
             ))}
           </div>
@@ -359,7 +332,7 @@ export default async function FixedDetailPage({
       </GroupedSection>
 
       <div className="grid gap-2 pb-4">
-        {!previewPreset ? editSheet : null}
+        {editSheet}
       </div>
     </KineticPage>
   );

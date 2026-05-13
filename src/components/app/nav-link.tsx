@@ -5,6 +5,11 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
+export function isPathActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function NavLink({
   href,
   className,
@@ -14,7 +19,7 @@ export function NavLink({
   activeClassName?: string;
 }) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive = isPathActive(pathname, href.toString());
 
   return (
     <Link
@@ -25,4 +30,3 @@ export function NavLink({
     />
   );
 }
-

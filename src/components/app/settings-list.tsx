@@ -32,7 +32,7 @@ export function SettingsRow({
   className?: string;
 }) {
   const content = (
-    <div className={cn("grouped-row", className)}>
+    <div className={cn("grouped-row", className)} data-interactive={href ? "true" : undefined}>
       <div className="app-icon-tile rounded-[0.85rem]">
         <Icon className="size-4" aria-hidden />
       </div>
@@ -40,7 +40,7 @@ export function SettingsRow({
         <p className="row-title truncate">{title}</p>
         {subtitle ? <p className="row-meta mt-0.5 truncate">{subtitle}</p> : null}
       </div>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden />
+      {href ? <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden /> : null}
     </div>
   );
 

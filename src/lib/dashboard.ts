@@ -62,6 +62,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       expenseTotals,
       previousExpenseTotals,
       pendingBillPayments,
+      activeDebts,
       trendTotals,
     ] = await Promise.all([
       prisma.transaction.findMany({
@@ -107,6 +108,10 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         orderBy: { dueDate: "asc" },
         take: 6,
       }),
+      prisma.debt.findMany({
+        where: { householdId, deletedAt: null, remainingBalance: { gt: 0 } },
+        select: { direction: true, remainingBalance: true },
+      }),
       prisma.$queryRaw<{ month: string; type: "expense" | "income"; total: unknown }[]>`
         SELECT
           to_char(date_trunc('month', "date"), 'YYYY-MM') AS month,
@@ -132,6 +137,7 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
     const projectedExpenses = isCurrentMonth ? Math.round((expenses / elapsedDays) * daysInMonth) : expenses;
     const recurringTotal = pendingBillPayments.reduce((acc, payment) => acc + toNumber(payment.amount), 0);
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const overdueBillsCount = pendingBillPayments.filter((payment) => payment.dueDate < todayStart).length;
     const upcomingBills = pendingBillPayments
       .filter((payment) => !isCurrentMonth || payment.dueDate >= todayStart)
       .slice(0, 2)
@@ -145,6 +151,14 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
         dueDay: payment.recurringBill.dueDay,
         paymentMethod: payment.paymentMethod ?? payment.recurringBill.paymentMethod,
       }));
+    const weOweTotal = activeDebts.reduce((acc, debt) => {
+      if (debt.direction !== "we_owe") return acc;
+      return acc + toNumber(debt.remainingBalance);
+    }, 0);
+    const theyOweTotal = activeDebts.reduce((acc, debt) => {
+      if (debt.direction !== "they_owe_us") return acc;
+      return acc + toNumber(debt.remainingBalance);
+    }, 0);
     const trendMonths = buildEmptyTrendMonths(range.start);
     const trendByKey = new Map(trendMonths.map((row) => [row.key, row]));
     for (const row of trendTotals) {
@@ -164,6 +178,9 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       expenseDelta: expenses - previousExpenses,
       savings: incomes - expenses,
       recurringTotal,
+      overdueBillsCount,
+      weOweTotal,
+      theyOweTotal,
       upcomingBills,
       recentTransactions,
       updatedAt: new Date(),
@@ -179,6 +196,9 @@ export async function getDashboardSnapshot(householdId: string, monthKey?: strin
       expenseDelta: 0,
       savings: 0,
       recurringTotal: 0,
+      overdueBillsCount: 0,
+      weOweTotal: 0,
+      theyOweTotal: 0,
       trendMonths: buildEmptyTrendMonths(range.start),
       upcomingBills: [],
       recentTransactions: [],

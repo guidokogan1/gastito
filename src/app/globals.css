@@ -331,6 +331,12 @@
   .auth-description {
     @apply mt-3 max-w-[22rem] text-[0.96rem] font-medium leading-relaxed text-muted-foreground;
   }
+  .auth-highlights {
+    @apply mt-4 flex flex-wrap gap-2;
+  }
+  .auth-highlight-pill {
+    @apply inline-flex items-center rounded-full bg-[var(--surface-pill)] px-3 py-1.5 text-[0.82rem] font-medium text-foreground;
+  }
   .auth-form-card {
     @apply gap-0 rounded-[1.5rem] border border-border bg-transparent p-0;
     box-shadow: var(--shadow-card);
@@ -602,11 +608,11 @@
     }
     .interactive-row:hover,
     .selectable-row:hover,
-    .grouped-row:hover {
+    .grouped-row[data-interactive="true"]:hover {
       background: color-mix(in oklch, var(--surface-pill) 58%, transparent);
     }
     .pressable:hover,
-    .app-list-row:hover {
+    .app-list-row[data-interactive="true"]:hover {
       background: transparent;
     }
   }

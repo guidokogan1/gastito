@@ -4,6 +4,7 @@ import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
+import { MetricStrip } from "@/components/app/metric-strip";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -37,6 +38,7 @@ export default async function AccountsPage({
     select: { id: true, name: true, type: true, isActive: true },
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
   });
+  const totalAccounts = accounts.length;
   const ACCOUNT_TYPE_ICON = {
     cash: Banknote,
     bank: Landmark,
@@ -46,7 +48,11 @@ export default async function AccountsPage({
   const usedAccountIcons = new Set<LucideIcon>();
 
   const createAccount = (
-    <ResourceSheet title="Nueva cuenta" trigger={<ResourceCreateButton />}>
+    <ResourceSheet
+      title="Nueva cuenta"
+      description="Usá cuentas para separar dónde entra o sale la plata: banco, billetera o efectivo."
+      trigger={<ResourceCreateButton />}
+    >
       <form action={saveAccountAction} className="space-y-4">
         <section className="grouped-form-section space-y-3">
           <input type="hidden" name="isActive" value="on" />
@@ -70,15 +76,27 @@ export default async function AccountsPage({
 
   return (
     <KineticPage className="space-y-5">
-        <ScreenHeader title="Bancos" action={createAccount} />
+        <ScreenHeader title="Cuentas" action={createAccount} />
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
+        <section className="space-y-3 border-b border-border/70 pb-5">
+          <MetricStrip
+            columns={2}
+            items={[
+              { label: "Cuentas", value: totalAccounts.toString() },
+              { label: "Objetivo", value: "Separar origen" },
+            ]}
+          />
+          <p className="text-[0.92rem] leading-relaxed text-muted-foreground">
+            Cuanto mejor separemos banco, billetera y efectivo, más fácil va a ser entender por dónde se mueve tu plata.
+          </p>
+        </section>
         <GroupedSection>
             {accounts.length === 0 ? (
               <EmptyState
                 icon={PiggyBank}
                 title="Todavía no hay cuentas"
-                description="Creá la primera cuenta a la derecha."
+                description="Creá la primera para separar efectivo, banco y billeteras."
                 compact
                 className="m-4"
               />
@@ -94,6 +112,7 @@ export default async function AccountsPage({
                   <ResourceSheet
                     key={account.id}
                     title={account.name}
+                    description="Ajustá el nombre o el tipo si cambió cómo usás esta cuenta en la operación diaria."
                     headerAction={
                       <ConfirmForm action={deleteAccountAction} confirm={`¿Borrar la cuenta “${account.name}”? Esta acción no se puede deshacer.`}>
                         <input type="hidden" name="id" value={account.id} />
@@ -107,6 +126,7 @@ export default async function AccountsPage({
                         icon={<Icon className="size-4" aria-hidden />}
                         title={account.name}
                         meta={ACCOUNT_TYPE_LABEL[account.type] ?? account.type}
+                        interactive
                       />
                     }
                   >

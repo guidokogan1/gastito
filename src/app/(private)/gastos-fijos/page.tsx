@@ -17,8 +17,6 @@ import { DayOfMonthField } from "@/components/app/day-of-month-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, formatDate } from "@/lib/format";
-import { currentPreviewMonthKey, getPreviewDataset } from "@/lib/preview-data";
-import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 
 function isSameMonth(date: Date, reference = new Date()) {
   return date.getFullYear() === reference.getFullYear() && date.getMonth() === reference.getMonth();
@@ -31,6 +29,34 @@ function daysUntil(date: Date) {
   return Math.ceil((startDate - startToday) / 86_400_000);
 }
 
+function billStateMeta(hasInvoice: boolean, remainingDays: number) {
+  if (!hasInvoice) {
+    return {
+      tone: "muted" as const,
+      badge: "Sin factura",
+    };
+  }
+
+  if (remainingDays < 0) {
+    return {
+      tone: "danger" as const,
+      badge: "Vencida",
+    };
+  }
+
+  if (remainingDays === 0) {
+    return {
+      tone: "warning" as const,
+      badge: "Vence hoy",
+    };
+  }
+
+  return {
+    tone: "warning" as const,
+      badge: remainingDays === 1 ? "Vence mañana" : `En ${remainingDays} días`,
+  };
+}
+
 export default async function BillsPage({
   searchParams,
 }: {
@@ -38,70 +64,38 @@ export default async function BillsPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const previewPreset = await getPreviewPreset();
-  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
-  const previewMonthKey = currentPreviewMonthKey();
-  const [bills, paymentMethods, categories] = previewDataset
-    ? [
-        previewDataset.bills.map((bill) => ({
-          id: bill.id,
-          name: bill.name,
-          icon: bill.icon,
-          amount: bill.amount,
-          dueDay: bill.dueDay,
-          notes: bill.notes,
-          paymentMethodId: bill.paymentMethodId,
-          paymentMethod: bill.paymentMethodId
-            ? { name: previewDataset.methods.find((method) => method.id === bill.paymentMethodId)?.name ?? "Sin medio" }
-            : null,
-          payments: bill.payments
-            .filter((payment) => {
-              const paymentMonth = `${payment.dueDate.getFullYear()}-${String(payment.dueDate.getMonth() + 1).padStart(2, "0")}`;
-              return paymentMonth === previewMonthKey;
-            })
-            .map((payment) => ({
-              id: payment.id,
-              amount: payment.amount,
-              dueDate: payment.dueDate,
-              paidAt: payment.paidAt,
-            }))
-            .sort((a, b) => b.dueDate.getTime() - a.dueDate.getTime()),
-        })),
-        previewDataset.methods,
-        previewDataset.categories.filter((category) => category.kind === "expense"),
-      ]
-    : await Promise.all([
-        prisma.recurringBill.findMany({
-          where: { householdId: household.id, deletedAt: null },
-          select: {
-            id: true,
-            name: true,
-            icon: true,
-            amount: true,
-            dueDay: true,
-            notes: true,
-            paymentMethodId: true,
-            paymentMethod: { select: { name: true } },
-            payments: {
-              where: { deletedAt: null },
-              select: { id: true, amount: true, dueDate: true, paidAt: true },
-              orderBy: { dueDate: "desc" },
-              take: 12,
-            },
-          },
-          orderBy: [{ dueDay: "asc" }, { name: "asc" }],
-        }),
-        prisma.paymentMethod.findMany({
-          where: { householdId: household.id, isActive: true, deletedAt: null },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        }),
-        prisma.category.findMany({
-          where: { householdId: household.id, deletedAt: null, kind: "expense" },
-          select: { id: true, name: true },
-          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-        }),
-      ]);
+  const [bills, paymentMethods, categories] = await Promise.all([
+    prisma.recurringBill.findMany({
+      where: { householdId: household.id, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        icon: true,
+        amount: true,
+        dueDay: true,
+        notes: true,
+        paymentMethodId: true,
+        paymentMethod: { select: { name: true } },
+        payments: {
+          where: { deletedAt: null },
+          select: { id: true, amount: true, dueDate: true, paidAt: true },
+          orderBy: { dueDate: "desc" },
+          take: 12,
+        },
+      },
+      orderBy: [{ dueDay: "asc" }, { name: "asc" }],
+    }),
+    prisma.paymentMethod.findMany({
+      where: { householdId: household.id, isActive: true, deletedAt: null },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.category.findMany({
+      where: { householdId: household.id, deletedAt: null, kind: "expense" },
+      select: { id: true, name: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    }),
+  ]);
 
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -124,6 +118,7 @@ export default async function BillsPage({
   const paidItems = billItems.filter((item) => item.paid);
   const pendingTotal = pendingItems.reduce((total, item) => total + item.amount, 0);
   const paidTotal = paidItems.reduce((total, item) => total + item.amount, 0);
+  const overdueCount = pendingItems.filter((item) => item.hasInvoice && daysUntil(item.dueDate) < 0).length;
   const dueDays = new Map(billItems.map((item) => [item.dueDate.getDate(), item.paid ? "paid" : "pending"]));
 
   const createBill = (
@@ -171,10 +166,9 @@ export default async function BillsPage({
 
   return (
     <KineticPage className="space-y-5">
-      <ScreenHeader title="Gastos fijos" action={previewPreset ? undefined : createBill} />
+      <ScreenHeader title="Gastos fijos" action={createBill} />
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
-      {previewPreset ? <FlashMessage message={`Preview ${previewLabel(previewPreset)} activo en modo solo lectura.`} tone="warning" /> : null}
 
       {bills.length === 0 ? (
         <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero para seguir facturas y pagos mensuales." compact />
@@ -186,6 +180,22 @@ export default async function BillsPage({
             <p className="row-meta">
               {pendingItems.length} servicios sin pagar · {paidItems.length} pagados · {formatArs(paidTotal)}
             </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-[0.8rem] font-medium text-amber-800">
+                Pendiente
+              </span>
+              <span className="rounded-full bg-[var(--income-soft)] px-3 py-1 text-[0.8rem] font-medium text-[var(--income)]">
+                Pagado
+              </span>
+              <span className="rounded-full bg-muted px-3 py-1 text-[0.8rem] font-medium text-muted-foreground">
+                Sin factura
+              </span>
+              {overdueCount > 0 ? (
+                <span className="rounded-full bg-red-100 px-3 py-1 text-[0.8rem] font-medium text-red-700">
+                  {overdueCount} vencid{overdueCount === 1 ? "a" : "as"}
+                </span>
+              ) : null}
+            </div>
             <div className="flex items-end justify-between gap-4 pt-2">
               <p className="section-eyebrow">{monthLabel}</p>
               <p className="row-meta">Hoy {now.getDate()}</p>
@@ -248,11 +258,18 @@ function BillList({
       <div>
         {items.map(({ bill, dueDate, amount, hasInvoice }) => {
           const remainingDays = daysUntil(dueDate);
+          const state = billStateMeta(hasInvoice, remainingDays);
           const dateMeta = paid
             ? `~día ${bill.dueDay} · ${bill.paymentMethod?.name ?? "Sin medio"}`
             : hasInvoice
-              ? `Vence ${formatDate(dueDate)} · ${remainingDays >= 0 ? `en ${remainingDays} días` : "vencido"}`
+              ? `Vence ${formatDate(dueDate)} · ${state.badge.toLowerCase()}`
               : `Sin factura cargada · vence ~día ${bill.dueDay}`;
+          const badgeClassName =
+            state.tone === "danger"
+              ? "bg-red-100 text-red-700"
+              : state.tone === "warning"
+                ? "bg-amber-100 text-amber-800"
+                : "bg-muted text-muted-foreground";
           return (
             <Link key={bill.id} href={`/gastos-fijos/${bill.id}`} className="grouped-row" data-interactive="true">
               <div className="app-icon-tile rounded-[0.85rem]">
@@ -261,6 +278,13 @@ function BillList({
               <div className="min-w-0 flex-1">
                 <p className="row-title truncate">{bill.name}</p>
                 <p className="row-meta mt-1 truncate">{dateMeta}</p>
+                {!paid ? (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-[0.74rem] font-medium ${badgeClassName}`}>
+                      {state.badge}
+                    </span>
+                  </div>
+                ) : null}
               </div>
               <div className="shrink-0 text-right">
                 {paid ? <CalendarCheck2 className="ml-auto size-4 text-[var(--income)]" aria-hidden /> : null}

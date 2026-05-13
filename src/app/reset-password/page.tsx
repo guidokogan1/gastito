@@ -25,6 +25,7 @@ export default async function ResetPasswordPage({
       eyebrow="Contraseña nueva"
       title="Elegí una contraseña nueva"
       description="Usá al menos 8 caracteres para que tu acceso quede bien protegido."
+      highlights={["Más segura", "La podés cambiar en minutos", "Vas a poder entrar enseguida"]}
     >
           <CardContent className="space-y-4 p-4 sm:p-5">
             <FlashMessage message={params.error} tone="error" />
@@ -36,6 +37,9 @@ export default async function ResetPasswordPage({
                 Actualizar contraseña
               </SubmitButton>
             </form>
+            <p className="text-center text-[0.84rem] leading-relaxed text-muted-foreground">
+              Elegí una clave que recuerdes bien y que no uses en otros servicios.
+            </p>
           </CardContent>
     </AuthScreen>
   );

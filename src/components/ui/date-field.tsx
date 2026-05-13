@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   addDays,
+  addMonths,
   endOfMonth,
   endOfWeek,
   format,
@@ -138,7 +139,7 @@ export function DateField({
             size="icon-sm"
             variant="secondary"
             className="rounded-full"
-            onClick={() => setMonth((prev) => addDays(startOfMonth(prev), -1))}
+            onClick={() => setMonth((prev) => startOfMonth(addMonths(prev, -1)))}
           >
             <ChevronLeft className="size-4" />
             <span className="sr-only">Mes anterior</span>
@@ -148,7 +149,7 @@ export function DateField({
             size="icon-sm"
             variant="secondary"
             className="rounded-full"
-            onClick={() => setMonth((prev) => addDays(endOfMonth(prev), 1))}
+            onClick={() => setMonth((prev) => startOfMonth(addMonths(prev, 1)))}
           >
             <ChevronRight className="size-4" />
             <span className="sr-only">Mes siguiente</span>
@@ -175,6 +176,9 @@ export function DateField({
               key={day.toISOString()}
               type="button"
               disabled={disabledDay}
+              aria-pressed={selected}
+              aria-current={today ? "date" : undefined}
+              aria-label={format(day, "EEEE d 'de' MMMM yyyy", { locale: es })}
               onClick={() => selectDay(day)}
               className={cn(
                 "pressed-scale focus-hairline h-11 rounded-full text-base font-semibold transition-colors",
@@ -218,6 +222,8 @@ export function DateField({
         id={id}
         type="button"
         disabled={disabled}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         data-invalid={ariaInvalid ? "true" : undefined}
         className={cn(
           "focus-hairline flex h-[2.875rem] w-full min-w-0 items-center justify-between gap-3 rounded-[1rem] border border-input bg-[var(--surface-control)] px-4 py-2 text-left text-sm font-medium transition-[color,border-color,background] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",

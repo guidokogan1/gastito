@@ -20,6 +20,7 @@ export default async function ForgotPasswordPage({
       eyebrow="Recuperar acceso"
       title="Recuperá tu contraseña"
       description="Te mandamos un link seguro por email para elegir una contraseña nueva."
+      highlights={["Link seguro", "Sin perder tus datos", "Te lleva directo a crear una nueva clave"]}
     >
           <CardContent className="space-y-4 p-4 sm:p-5">
             <div className="space-y-3">
@@ -38,6 +39,9 @@ export default async function ForgotPasswordPage({
                 Enviar link
               </SubmitButton>
             </form>
+            <p className="text-center text-[0.84rem] leading-relaxed text-muted-foreground">
+              Revisá también spam o promociones si el mail tarda unos minutos en llegar.
+            </p>
 
             <Button asChild variant="secondary" className="w-full">
               <Link href="/login">Volver al login</Link>

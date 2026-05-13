@@ -17,6 +17,7 @@ export function FinanceRow({
   active,
   children,
   className,
+  interactive = false,
 }: {
   icon?: LucideIcon;
   title: React.ReactNode;
@@ -27,12 +28,13 @@ export function FinanceRow({
   active?: boolean;
   children?: React.ReactNode;
   className?: string;
+  interactive?: boolean;
 }) {
   const FallbackIcon = direction === "income" ? ArrowDownLeft : ArrowUpRight;
   const RowIcon = Icon ?? FallbackIcon;
 
   return (
-    <div className={cn("app-list-row", active && "bg-[var(--surface-selected)]/55", className)}>
+    <div className={cn("app-list-row", active && "bg-[var(--surface-selected)]/55", className)} data-interactive={interactive ? "true" : undefined}>
       <div
         className={cn(
           "app-icon-tile",

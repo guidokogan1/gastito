@@ -74,6 +74,7 @@ export function TransactionListRow({
   type,
   active,
   className,
+  interactive = false,
 }: {
   title: React.ReactNode;
   categoryName?: string | null;
@@ -82,6 +83,7 @@ export function TransactionListRow({
   type: TransactionPresentationType;
   active?: boolean;
   className?: string;
+  interactive?: boolean;
 }) {
   const Icon = getTransactionCategoryIcon(categoryName, type);
   const categoryLabel = categoryName ?? (type === "income" ? "Ingreso" : "Sin categoría");
@@ -94,7 +96,7 @@ export function TransactionListRow({
   );
 
   return (
-    <div className={cn("app-list-row", active && "bg-[var(--surface-selected)]/55", className)}>
+    <div className={cn("app-list-row", active && "bg-[var(--surface-selected)]/55", className)} data-interactive={interactive ? "true" : undefined}>
       <div className={cn("app-icon-tile", getTransactionCategoryTone(categoryName, type))}>
         <Icon className="size-4" aria-hidden />
       </div>

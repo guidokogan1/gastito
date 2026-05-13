@@ -104,6 +104,7 @@ export default async function BanksPage({
                     }
                     title={bank.name}
                     meta={`${bank.paymentMethods.length} medios asociados`}
+                    interactive
                   />
                 }
               >

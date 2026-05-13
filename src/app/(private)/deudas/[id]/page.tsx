@@ -8,6 +8,7 @@ import {
   saveDebtAction,
   saveDebtPaymentAction,
 } from "@/app/actions/resources";
+import { ConfirmForm } from "@/components/app/confirm-form";
 import { DebtPaymentSheet } from "@/components/app/debt-payment-sheet";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
@@ -21,8 +22,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs } from "@/lib/format";
-import { findPreviewDebt, getPreviewDataset } from "@/lib/preview-data";
-import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -41,46 +40,22 @@ export default async function DebtDetailPage({
 }) {
   const { household } = await requireHousehold();
   const [{ id }, messages] = await Promise.all([params, searchParams]);
-  const previewPreset = await getPreviewPreset();
-  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
-  const debt = previewDataset
-    ? (() => {
-        const previewDebt = findPreviewDebt(previewDataset, id);
-        if (!previewDebt) return null;
-        return {
-          id: previewDebt.id,
-          entityName: previewDebt.entityName,
-          direction: previewDebt.direction,
-          originalAmount: previewDebt.originalAmount,
-          remainingBalance: previewDebt.remainingBalance,
-          notes: previewDebt.notes,
-          payments: previewDebt.payments
-            .map((payment) => ({
-              id: payment.id,
-              date: payment.date,
-              amount: payment.amount,
-              notes: payment.notes,
-              transactionId: payment.transactionId,
-            }))
-            .sort((a, b) => b.date.getTime() - a.date.getTime()),
-        };
-      })()
-    : await prisma.debt.findFirst({
-        where: { id, householdId: household.id, deletedAt: null },
-        select: {
-          id: true,
-          entityName: true,
-          direction: true,
-          originalAmount: true,
-          remainingBalance: true,
-          notes: true,
-          payments: {
-            where: { deletedAt: null },
-            select: { id: true, date: true, amount: true, notes: true, transactionId: true },
-            orderBy: { date: "desc" },
-          },
-        },
-      });
+  const debt = await prisma.debt.findFirst({
+    where: { id, householdId: household.id, deletedAt: null },
+    select: {
+      id: true,
+      entityName: true,
+      direction: true,
+      originalAmount: true,
+      remainingBalance: true,
+      notes: true,
+      payments: {
+        where: { deletedAt: null },
+        select: { id: true, date: true, amount: true, notes: true, transactionId: true },
+        orderBy: { date: "desc" },
+      },
+    },
+  });
 
   if (!debt) notFound();
 
@@ -93,6 +68,11 @@ export default async function DebtDetailPage({
   const initials = debt.entityName.slice(0, 1).toLocaleUpperCase("es-AR");
   const directionLabel = isWeOwe ? "Le debemos a" : "Nos debe";
   const amountClassName = isWeOwe ? "text-red-700" : "text-[var(--income)]";
+  const progressLabel = isWeOwe ? "abonado" : "cobrado";
+  const outstandingLabel = isWeOwe ? "Saldo pendiente de pago" : "Saldo pendiente de cobro";
+  const paymentItemLabel = isWeOwe ? "Abono registrado" : "Cobro registrado";
+  const paymentAmountClassName = isWeOwe ? "text-red-700" : "text-[var(--income)]";
+  const paymentAmountPrefix = isWeOwe ? "-" : "+";
 
   const editSheet = (
     <ResourceSheet
@@ -103,12 +83,15 @@ export default async function DebtDetailPage({
         </span>
       }
       headerAction={
-        <form action={deleteDebtAction}>
+        <ConfirmForm
+          action={deleteDebtAction}
+          confirm={`¿Borrar la deuda con “${debt.entityName}”? Esta acción elimina el seguimiento y no se puede deshacer.`}
+        >
           <input type="hidden" name="id" value={debt.id} />
           <Button type="submit" size="icon-sm" variant="ghost" aria-label="Eliminar deuda">
             <Trash2 className="size-4" aria-hidden />
           </Button>
-        </form>
+        </ConfirmForm>
       }
     >
       <form action={saveDebtAction} className="space-y-4">
@@ -156,12 +139,11 @@ export default async function DebtDetailPage({
             <ArrowLeft className="size-5" aria-hidden />
           </Link>
         </Button>
-        {!previewPreset ? editSheet : null}
+        {editSheet}
       </div>
 
       <FlashMessage message={messages.error} tone="error" />
       <FlashMessage message={messages.message} tone="success" />
-      {previewPreset ? <FlashMessage message={`Preview ${previewLabel(previewPreset)} activo en modo solo lectura.`} tone="warning" /> : null}
 
       <section className="space-y-5 border-b border-border/70 pb-6">
         <div className="flex items-center gap-4">
@@ -175,9 +157,9 @@ export default async function DebtDetailPage({
         </div>
 
         <div>
-          <p className="section-eyebrow">Saldo restante</p>
+          <p className="section-eyebrow">{outstandingLabel}</p>
           <p className={`money-hero ${amountClassName}`}>{formatArs(remaining)}</p>
-          <p className="row-meta mt-1">{formatArs(paid)} pagado de {formatArs(original)}</p>
+          <p className="row-meta mt-1">{formatArs(paid)} {progressLabel} de {formatArs(original)}</p>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
             <div className={`h-full rounded-full ${isWeOwe ? "bg-red-600" : "bg-[var(--income)]"}`} style={{ width: `${progress}%` }} />
           </div>
@@ -191,7 +173,15 @@ export default async function DebtDetailPage({
         </section>
       ) : null}
 
-      {!settled && !previewPreset ? <DebtPaymentSheet debtId={debt.id} entityName={debt.entityName} remaining={remaining} action={saveDebtPaymentAction} /> : null}
+      {!settled ? (
+        <DebtPaymentSheet
+          debtId={debt.id}
+          entityName={debt.entityName}
+          remaining={remaining}
+          direction={debt.direction}
+          action={saveDebtPaymentAction}
+        />
+      ) : null}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -208,21 +198,23 @@ export default async function DebtDetailPage({
                   <Check className="size-5" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="row-title truncate">{payment.notes || "Pago registrado"}</p>
+                  <p className="row-title truncate">{payment.notes || paymentItemLabel}</p>
                   <p className="row-meta mt-1">{formatDate(payment.date)}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="money-row text-[var(--income)]">+{formatArs(Number(payment.amount))}</p>
+                  <p className={`money-row ${paymentAmountClassName}`}>{paymentAmountPrefix}{formatArs(Number(payment.amount))}</p>
                   {payment.transactionId ? <p className="row-meta">Movimiento</p> : null}
                 </div>
-                {!previewPreset ? (
-                  <form action={deleteDebtPaymentAction}>
-                    <input type="hidden" name="id" value={payment.id} />
-                    <Button type="submit" variant="ghost" size="icon-sm" aria-label="Eliminar pago">
-                      <Trash2 className="size-4" aria-hidden />
-                    </Button>
-                  </form>
-                ) : null}
+                <ConfirmForm
+                  action={deleteDebtPaymentAction}
+                  confirm={`¿Borrar este ${isWeOwe ? "abono" : "cobro"}? Esta acción no se puede deshacer.`}
+                  confirmLabel="Borrar registro"
+                >
+                  <input type="hidden" name="id" value={payment.id} />
+                  <Button type="submit" variant="ghost" size="icon-sm" aria-label="Eliminar pago">
+                    <Trash2 className="size-4" aria-hidden />
+                  </Button>
+                </ConfirmForm>
               </div>
             ))}
           </div>

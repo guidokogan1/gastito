@@ -210,6 +210,30 @@ function SettingPickerRow({
   );
 }
 
+function ActiveFilterPill({
+  label,
+  onClear,
+}: {
+  label: string;
+  onClear?: () => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-[var(--surface-pill)] px-3 py-1.5 text-[0.8rem] font-medium text-foreground">
+      {label}
+      {onClear ? (
+        <button
+          type="button"
+          className="text-muted-foreground transition-colors hover:text-foreground"
+          onClick={onClear}
+          aria-label={`Limpiar filtro ${label}`}
+        >
+          ×
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
 export function TransactionsPanel({
   monthKey,
   monthControl,
@@ -221,7 +245,6 @@ export function TransactionsPanel({
   deleteAction,
   initialComposeOpen = false,
   initialTransactionType = "expense",
-  readOnly = false,
 }: {
   monthKey: string;
   monthControl: ReactNode;
@@ -233,7 +256,6 @@ export function TransactionsPanel({
   deleteAction: (formData: FormData) => Promise<void>;
   initialComposeOpen?: boolean;
   initialTransactionType?: "expense" | "income";
-  readOnly?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -252,13 +274,20 @@ export function TransactionsPanel({
   const [formCategoryId, setFormCategoryId] = useState<string>("");
   const [formPaymentMethodId, setFormPaymentMethodId] = useState<string>("");
   const [formAccountId, setFormAccountId] = useState<string>("");
+  const resetFilters = () => {
+    setQuery("");
+    setTypeFilter("all");
+    setCategoryFilterId("all");
+    setMethodFilterId("all");
+    setDateFilter("all");
+  };
 
   useEffect(() => {
-    if (!initialComposeOpen || readOnly) return;
+    if (!initialComposeOpen) return;
     setSelectedId(null);
     setFormType(initialTransactionType);
     setDrawerOpen(true);
-  }, [initialComposeOpen, initialTransactionType, readOnly]);
+  }, [initialComposeOpen, initialTransactionType]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("gastito.transactionFilters");
@@ -450,6 +479,40 @@ export function TransactionsPanel({
     (categoryFilterId !== "all" ? 1 : 0) +
     (methodFilterId !== "all" ? 1 : 0) +
     (dateFilter !== "all" ? 1 : 0);
+  const activeFilterLabels = [
+    typeFilter !== "all" ? { label: typeFilter === "expense" ? "Solo gastos" : "Solo ingresos", onClear: () => setTypeFilter("all") } : null,
+    dateFilter !== "all"
+      ? {
+          label:
+            dateFilter === "today"
+              ? "Hoy"
+              : dateFilter === "7d"
+                ? "7 dias"
+                : dateFilter === "14d"
+                  ? "14 dias"
+                  : "30 dias",
+          onClear: () => setDateFilter("all"),
+        }
+      : null,
+    categoryFilterId !== "all"
+      ? {
+          label: categoryFilterId === "none" ? "Sin categoria" : `Categoria: ${filterCategoryOptions.find((category) => category.id === categoryFilterId)?.name ?? "Filtrada"}`,
+          onClear: () => setCategoryFilterId("all"),
+        }
+      : null,
+    methodFilterId !== "all"
+      ? {
+          label: methodFilterId === "none" ? "Sin medio" : `Medio: ${methods.find((method) => method.id === methodFilterId)?.name ?? "Filtrado"}`,
+          onClear: () => setMethodFilterId("all"),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ label: string; onClear: () => void }>;
+  const formContextSummary = [
+    { label: formType === "income" ? "Tipo: ingreso" : "Tipo: gasto" },
+    { label: selectedCategoryName ? `Categoria: ${selectedCategoryName}` : "Sin categoria" },
+    { label: selectedMethodName ? `${paymentMethodLabel}: ${selectedMethodName}` : paymentMethodEmptyLabel },
+    { label: selectedAccountName ? `${accountLabel}: ${selectedAccountName}` : "Sin cuenta" },
+  ];
 
   return (
     <KineticPage className="space-y-5">
@@ -472,20 +535,18 @@ export function TransactionsPanel({
                 </span>
               ) : null}
             </Button>
-            {!readOnly ? (
-              <Button
-                type="button"
-                size="icon"
-                aria-label="Nuevo movimiento"
-                className="icon-action size-10 bg-[var(--finance-green)] text-white"
-                onClick={() => {
-                  setSelectedId(null);
-                  setDrawerOpen(true);
-                }}
-              >
-                <Plus className="size-5" aria-hidden />
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              size="icon"
+              aria-label="Nuevo movimiento"
+              className="icon-action size-10 bg-[var(--finance-green)] text-white"
+              onClick={() => {
+                setSelectedId(null);
+                setDrawerOpen(true);
+              }}
+            >
+              <Plus className="size-5" aria-hidden />
+            </Button>
           </div>
         </div>
 
@@ -495,11 +556,6 @@ export function TransactionsPanel({
       </section>
 
       <section className="space-y-7">
-        {readOnly ? (
-          <p className="text-[0.9rem] font-medium text-muted-foreground">
-            Preview activo. Podés recorrer la pantalla, buscar y filtrar en modo solo lectura.
-          </p>
-        ) : null}
         {transactions.length === 0 ? (
           <EmptyState
             icon={ArrowUpRight}
@@ -507,18 +563,16 @@ export function TransactionsPanel({
             description="Empezá cargando el primero."
             compact
           >
-            {!readOnly ? (
-              <Button
-                type="button"
-                onClick={() => {
-                  setSelectedId(null);
-                  setDrawerOpen(true);
-                }}
-              >
-                <Plus className="size-4" aria-hidden />
-                Cargar el primero
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              onClick={() => {
+                setSelectedId(null);
+                setDrawerOpen(true);
+              }}
+            >
+              <Plus className="size-4" aria-hidden />
+              Cargar el primero
+            </Button>
           </EmptyState>
         ) : (
           <>
@@ -559,7 +613,27 @@ export function TransactionsPanel({
                 <button type="button" className="pressable" aria-pressed={dateFilter === "30d"} onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
                   <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
                 </button>
+                <button type="button" className="pressable" aria-pressed={categoryFilterId === "none"} onClick={() => setCategoryFilterId(categoryFilterId === "none" ? "all" : "none")}>
+                  <PillChip active={categoryFilterId === "none"} className="whitespace-nowrap">Sin categoría</PillChip>
+                </button>
+                <button type="button" className="pressable" aria-pressed={methodFilterId === "none"} onClick={() => setMethodFilterId(methodFilterId === "none" ? "all" : "none")}>
+                  <PillChip active={methodFilterId === "none"} className="whitespace-nowrap">Sin medio</PillChip>
+                </button>
               </div>
+              {activeFilterLabels.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {activeFilterLabels.map((item) => (
+                    <ActiveFilterPill key={item.label} label={item.label} onClear={item.onClear} />
+                  ))}
+                  <button
+                    type="button"
+                    className="text-[0.82rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={resetFilters}
+                  >
+                    Limpiar todo
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             {filteredTransactions.length === 0 ? (
@@ -572,13 +646,7 @@ export function TransactionsPanel({
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => {
-                    setQuery("");
-                    setTypeFilter("all");
-                    setCategoryFilterId("all");
-                    setMethodFilterId("all");
-                    setDateFilter("all");
-                  }}
+                  onClick={resetFilters}
                 >
                   Limpiar filtros
                 </Button>
@@ -601,9 +669,8 @@ export function TransactionsPanel({
                               key={row.id}
                               type="button"
                               className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18"
-                              aria-label={readOnly ? String(toDetail(row)) : `Editar ${toDetail(row)}`}
+                              aria-label={`Editar ${toDetail(row)}`}
                               onClick={() => {
-                                if (readOnly) return;
                                 setSelectedId(row.id);
                                 setDrawerOpen(true);
                               }}
@@ -614,7 +681,7 @@ export function TransactionsPanel({
                                 amount={row.amount}
                                 type={row.type}
                                 active={active}
-                                interactive={!readOnly}
+                                interactive
                               />
                             </button>
                           );
@@ -730,13 +797,7 @@ export function TransactionsPanel({
                   type="button"
                   variant="ghost"
                   className="w-full"
-                  onClick={() => {
-                    setQuery("");
-                    setTypeFilter("all");
-                    setCategoryFilterId("all");
-                    setMethodFilterId("all");
-                    setDateFilter("all");
-                  }}
+                  onClick={resetFilters}
                 >
                   Limpiar filtros ({activeFilterCount})
                 </Button>
@@ -749,7 +810,7 @@ export function TransactionsPanel({
       <Slideout
         open={drawerOpen}
         title={panelTitle}
-        description={undefined}
+        description={selected ? "Ajustá el movimiento sin perder el contexto del mes y los filtros actuales." : "Cargá el movimiento con el menor esfuerzo posible. Lo demás lo podés completar después."}
         titleSize="small"
         headerAction={
           selected ? (
@@ -779,6 +840,14 @@ export function TransactionsPanel({
           <input type="hidden" name="accountId" value={formAccountId} />
 
           <section className="grouped-form-section space-y-5">
+            <div className="rounded-[1.15rem] border border-border/70 bg-card px-4 py-3">
+              <p className="text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">Contexto del movimiento</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {formContextSummary.map((item) => (
+                  <ActiveFilterPill key={item.label} label={item.label} />
+                ))}
+              </div>
+            </div>
             <div className="space-y-2 text-center">
               <MoneyField
                 id="amount"
@@ -869,13 +938,16 @@ export function TransactionsPanel({
                 placeholder={formType === "income" ? "Ej. Sueldo abril" : "Ej. Compra semanal"}
                 defaultValue={selected?.detail ?? ""}
               />
+              <p className="text-[0.82rem] text-muted-foreground">
+                Usá un detalle que después puedas reconocer rápido en la lista y en búsquedas.
+              </p>
             </div>
           </section>
 
           <section className="grouped-form-section space-y-1">
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-medium">Etiquetas</p>
-              <p className="text-xs text-muted-foreground">Opcional</p>
+              <p className="text-xs text-muted-foreground">Mejoran filtros y reportes</p>
             </div>
             <div className="divide-y divide-border/60">
               <SettingPickerRow
@@ -958,7 +1030,7 @@ export function TransactionsPanel({
               ? paymentMethodLabel
               : accountLabel
         }
-        description="Elegí una opción para el movimiento."
+        description="Elegí una opción para mejorar la lectura del movimiento y tus filtros futuros."
         onClose={() => setPickerOpen(null)}
       >
         {pickerOpen === "category" ? (

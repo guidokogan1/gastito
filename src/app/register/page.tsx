@@ -5,7 +5,6 @@ import { FlashMessage } from "@/components/flash-message";
 import { AuthScreen } from "@/components/app/auth-screen";
 import { SubmitButton } from "@/components/app/submit-button";
 import { redirectIfAuthenticated } from "@/lib/auth";
-import { getPublicAppEnv } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardContent } from "@/components/ui/card";
@@ -20,7 +19,6 @@ export default async function RegisterPage({
 }) {
   await redirectIfAuthenticated();
   const params = await searchParams;
-  const { authProvider } = getPublicAppEnv();
 
   return (
     <AuthScreen
@@ -28,9 +26,10 @@ export default async function RegisterPage({
       title="Creá tu cuenta"
       description={
         <>
-          Te registrás por email usando {authProvider === "supabase" ? "Supabase Auth" : "Neon Auth"} y después armás tu hogar en un minuto.
+          Te registrás con tu email y después armás tu hogar en un minuto. Más adelante podés editar categorías, medios y cuentas sin fricción.
         </>
       }
+      highlights={["Solo necesitás tu email", "Después configurás tu hogar", "Todo queda editable"]}
     >
           <CardContent className="space-y-4 p-4 sm:p-5">
             <FlashMessage message={params.error} tone="error" />
@@ -47,6 +46,9 @@ export default async function RegisterPage({
                 Crear cuenta
               </SubmitButton>
             </form>
+            <p className="text-center text-[0.84rem] leading-relaxed text-muted-foreground">
+              En el siguiente paso vas a elegir el nombre del hogar y te dejamos una base lista para empezar.
+            </p>
 
             <Button asChild variant="secondary" className="w-full">
               <Link href="/login">Volver al login</Link>

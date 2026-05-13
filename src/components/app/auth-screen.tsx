@@ -5,12 +5,14 @@ export function AuthScreen({
   eyebrow,
   title,
   description,
+  highlights,
   children,
   className,
 }: {
   eyebrow: string;
   title: string;
   description: React.ReactNode;
+  highlights?: string[];
   children: React.ReactNode;
   className?: string;
 }) {
@@ -21,6 +23,15 @@ export function AuthScreen({
           <p className="stat-label text-primary">{eyebrow}</p>
           <h1 className="auth-title">{title}</h1>
           <p className="auth-description">{description}</p>
+          {highlights?.length ? (
+            <div className="auth-highlights">
+              {highlights.map((item) => (
+                <span key={item} className="auth-highlight-pill">
+                  {item}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </header>
         <Card className="auth-form-card">{children}</Card>
       </div>

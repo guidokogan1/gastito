@@ -82,6 +82,8 @@ export function MonthSelector({
         <button
           id={id}
           type="button"
+          aria-haspopup="dialog"
+          aria-expanded={open}
           className="pressed-scale focus-hairline inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-border/55 bg-[var(--surface-pill)] px-3.5 py-2 text-left transition-colors"
           onClick={() => setOpen(true)}
         >
@@ -98,6 +100,8 @@ export function MonthSelector({
           <button
             id={id}
             type="button"
+            aria-haspopup="dialog"
+            aria-expanded={open}
             className="pressed-scale focus-hairline flex min-h-14 w-full items-center justify-between gap-3 rounded-[var(--radius-control)] border border-border/70 bg-[var(--surface-control)] px-4 text-left transition-colors"
             onClick={() => setOpen(true)}
           >
@@ -124,6 +128,7 @@ export function MonthSelector({
                 <button
                   key={key}
                   type="button"
+                  aria-pressed={active}
                   className={cn(
                     "pressed-scale focus-hairline flex min-h-[4.2rem] w-full items-center justify-between gap-3 py-3 text-left transition-colors",
                     active ? "text-foreground" : "text-muted-foreground",

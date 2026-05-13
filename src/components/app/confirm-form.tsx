@@ -41,6 +41,7 @@ export function ConfirmForm({
           props.onSubmit?.(event);
           if (event.defaultPrevented) return;
           if (confirmed) {
+            setConfirmed(false);
             onConfirm?.();
             return;
           }
@@ -57,6 +58,7 @@ export function ConfirmForm({
         cancelLabel={cancelLabel}
         onCancel={() => {
           setOpen(false);
+          setConfirmed(false);
           onCancel?.();
         }}
         onConfirm={() => {

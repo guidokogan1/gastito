@@ -1,10 +1,14 @@
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowDownLeft,
   ArrowUpRight,
   ChevronRight,
   FileText,
+  HandCoins,
+  PiggyBank,
   Repeat2,
+  Sparkles,
   Wifi,
   type LucideIcon,
 } from "lucide-react";
@@ -19,8 +23,6 @@ import { TransactionListRow } from "@/components/app/transaction-list-row";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
 import { formatArs, formatDate } from "@/lib/format";
-import { buildPreviewDashboardSnapshot, getPreviewDataset } from "@/lib/preview-data";
-import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 import { toTitleCase } from "@/lib/text";
 import { cn } from "@/lib/utils";
 
@@ -87,6 +89,49 @@ function DashboardAction({
   );
 }
 
+function InsightCard({
+  icon: Icon,
+  title,
+  value,
+  description,
+  href,
+  tone = "default",
+}: {
+  icon: LucideIcon;
+  title: string;
+  value: string;
+  description: string;
+  href: string;
+  tone?: "default" | "warning" | "income" | "danger";
+}) {
+  const toneClass =
+    tone === "warning"
+      ? "text-amber-800 bg-amber-100"
+      : tone === "income"
+        ? "text-[var(--income)] bg-[var(--income-soft)]"
+        : tone === "danger"
+          ? "text-red-700 bg-red-100"
+          : "text-foreground bg-[var(--surface-pill)]";
+
+  return (
+    <Link
+      href={href}
+      className="block rounded-[1.2rem] border border-border/70 bg-card px-4 py-4 transition-colors duration-150 hover:bg-muted/35"
+    >
+      <div className="flex items-start gap-3">
+        <div className={cn("grid size-10 shrink-0 place-items-center rounded-full", toneClass)}>
+          <Icon className="size-4" aria-hidden />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">{title}</p>
+          <p className="mt-1 text-[1.15rem] font-semibold tracking-[-0.02em] text-foreground">{value}</p>
+          <p className="mt-1 text-[0.9rem] leading-relaxed text-muted-foreground">{description}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -94,15 +139,61 @@ export default async function DashboardPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const previewPreset = await getPreviewPreset();
-  const snapshot = previewPreset
-    ? buildPreviewDashboardSnapshot(getPreviewDataset(previewPreset), params.month)
-    : await getDashboardSnapshot(household.id, params.month);
+  const snapshot = await getDashboardSnapshot(household.id, params.month);
   const displayHouseholdName = toTitleCase(household.name);
   const previousMonthLabel = dashboardMonthLabel(previousDashboardMonthKey(snapshot.monthKey), "short");
   const trendTone = snapshot.previousExpenses <= 0 ? "neutral" : snapshot.expenseDelta <= 0 ? "positive" : "warning";
-  const expenseHref = previewPreset ? `/movimientos?month=${snapshot.monthKey}` : `/movimientos?month=${snapshot.monthKey}&compose=1&type=expense`;
-  const incomeHref = previewPreset ? `/movimientos?month=${snapshot.monthKey}` : `/movimientos?month=${snapshot.monthKey}&compose=1&type=income`;
+  const expenseHref = `/movimientos?month=${snapshot.monthKey}&compose=1&type=expense`;
+  const incomeHref = `/movimientos?month=${snapshot.monthKey}&compose=1&type=income`;
+  const availableThisMonth = snapshot.savings - snapshot.recurringTotal;
+  const projectionDelta = snapshot.projectedExpenses - snapshot.expenses;
+  const signals = [
+    {
+      icon: snapshot.overdueBillsCount > 0 ? AlertTriangle : Repeat2,
+      title: snapshot.overdueBillsCount > 0 ? "Vencimientos atrasados" : "Por pagar",
+      value:
+        snapshot.recurringTotal > 0
+          ? `${formatArs(snapshot.recurringTotal)}`
+          : "Sin pendientes",
+      description:
+        snapshot.overdueBillsCount > 0
+          ? `${snapshot.overdueBillsCount} factura${snapshot.overdueBillsCount === 1 ? "" : "s"} ya vencida${snapshot.overdueBillsCount === 1 ? "" : "s"}.`
+          : snapshot.upcomingBills.length > 0
+            ? `${snapshot.upcomingBills.length} servicio${snapshot.upcomingBills.length === 1 ? "" : "s"} por resolver este mes.`
+            : "No tenés servicios pendientes cargados este mes.",
+      href: "/gastos-fijos",
+      tone: snapshot.overdueBillsCount > 0 ? "warning" : "default",
+    },
+    {
+      icon: HandCoins,
+      title: "Deudas activas",
+      value:
+        snapshot.weOweTotal > 0
+          ? formatArs(snapshot.weOweTotal)
+          : snapshot.theyOweTotal > 0
+            ? formatArs(snapshot.theyOweTotal)
+            : "Sin deudas",
+      description:
+        snapshot.weOweTotal > 0
+          ? `Tenés ${formatArs(snapshot.weOweTotal)} pendientes de pago.`
+          : snapshot.theyOweTotal > 0
+            ? `Tenés ${formatArs(snapshot.theyOweTotal)} pendientes de cobro.`
+            : "No hay saldos activos para seguir este mes.",
+      href: "/deudas",
+      tone: snapshot.weOweTotal > 0 ? "danger" : snapshot.theyOweTotal > 0 ? "income" : "default",
+    },
+    {
+      icon: PiggyBank,
+      title: "Proyección",
+      value: formatArs(snapshot.projectedExpenses),
+      description:
+        projectionDelta > 0
+          ? `Si seguís a este ritmo, gastarías ${formatArs(projectionDelta)} más que hoy.`
+          : "Con lo cargado hasta ahora, no se proyecta gasto extra sobre el total actual.",
+      href: `/movimientos?month=${snapshot.monthKey}`,
+      tone: projectionDelta > 0 ? "warning" : "default",
+    },
+  ] as const;
 
   return (
     <KineticPage className="space-y-7 pb-8">
@@ -112,12 +203,6 @@ export default async function DashboardPage({
       </header>
 
       <FlashMessage message={params.message} tone="success" />
-      {previewPreset ? (
-        <FlashMessage
-          tone="warning"
-          message={`Preview ${previewLabel(previewPreset)} activo. Esta vista es solo para revisar diseño y contenido.`}
-        />
-      ) : null}
       {snapshot.degraded ? (
         <FlashMessage
           tone="warning"
@@ -127,18 +212,22 @@ export default async function DashboardPage({
 
       <section className="space-y-6">
         <div>
-          <p className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Balance del mes</p>
+          <p className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Disponible del mes</p>
           <p className="money-hero mt-3">
-            <FinancialAmount value={snapshot.savings} direction={snapshot.savings >= 0 ? "income" : "expense"} />
+            <FinancialAmount value={availableThisMonth} direction={availableThisMonth >= 0 ? "income" : "expense"} />
+          </p>
+          <p className="mt-2 max-w-[34rem] text-[0.95rem] leading-relaxed text-muted-foreground">
+            Ingresos menos gastos cargados y vencimientos pendientes del mes. Te ayuda a ver cuánto margen real te queda hoy.
           </p>
         </div>
 
         <MetricStrip
-          columns={2}
+          columns={3}
           className="[&_p:last-child]:text-[1.42rem]"
           items={[
             { label: "Ingresos", value: <FinancialAmount value={snapshot.incomes} direction="income" showSign />, tone: "income" },
             { label: "Gastos", value: <FinancialAmount value={snapshot.expenses} direction="expense" showSign /> },
+            { label: "Comprometido", value: formatArs(snapshot.recurringTotal), tone: snapshot.recurringTotal > 0 ? "danger" : "default" },
           ]}
         />
 
@@ -153,6 +242,18 @@ export default async function DashboardPage({
         deltaLabel={trendDeltaLabel(snapshot.expenseDelta, snapshot.previousExpenses, previousMonthLabel)}
         trendTone={trendTone}
       />
+
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 text-[var(--finance-green)]" aria-hidden />
+          <h2 className="section-title">Señales del mes</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {signals.map((signal) => (
+            <InsightCard key={signal.title} {...signal} />
+          ))}
+        </div>
+      </section>
 
       <section className="space-y-4">
         <SectionHeaderLink title="Próximos vencimientos" href="/gastos-fijos" />

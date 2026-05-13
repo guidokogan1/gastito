@@ -44,6 +44,7 @@ export function SearchPicker({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const listId = React.useId();
 
   const selected = React.useMemo(() => {
     if (!showSelectedLabel) return null;
@@ -75,6 +76,9 @@ export function SearchPicker({
         <Button
           type="button"
           variant="outline"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={listId}
           className={cn(
             "h-9 justify-between gap-2 rounded-full bg-background px-3 font-normal text-muted-foreground hover:bg-muted/40",
             value && "text-foreground",
@@ -99,6 +103,11 @@ export function SearchPicker({
             placeholder={inputPlaceholder}
             className="h-10 rounded-full border-border/45 bg-[var(--surface-inset)] focus-visible:border-[var(--finance-green)]/40 focus-visible:ring-0"
             onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setOpen(false);
+                return;
+              }
               if (event.key !== "Enter") return;
               const first = filtered[0];
               if (!first) return;
@@ -109,7 +118,7 @@ export function SearchPicker({
           />
         </div>
 
-        <div className="max-h-72 overflow-auto rounded-xl p-1">
+        <div id={listId} role="listbox" className="max-h-72 overflow-auto rounded-xl p-1">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
               <SearchX className="h-5 w-5 text-muted-foreground" />
@@ -123,6 +132,8 @@ export function SearchPicker({
                   <button
                     key={option.value || option.label}
                     type="button"
+                    role="option"
+                    aria-selected={active}
                     onClick={() => {
                       onValueChange(option.value);
                       setOpen(false);

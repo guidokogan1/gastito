@@ -44,6 +44,7 @@ export function GroupedRow({
   tone = "default",
   children,
   className,
+  interactive = false,
 }: {
   icon?: LucideIcon;
   title: React.ReactNode;
@@ -52,9 +53,10 @@ export function GroupedRow({
   tone?: "default" | "positive" | "negative" | "muted";
   children?: React.ReactNode;
   className?: string;
+  interactive?: boolean;
 }) {
   return (
-    <div className={cn("grouped-row", className)}>
+    <div className={cn("grouped-row", className)} data-interactive={interactive ? "true" : undefined}>
       {Icon ? (
         <div className="app-icon-tile">
           <Icon className="size-3.5" aria-hidden />

@@ -15,8 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs } from "@/lib/format";
-import { getPreviewDataset } from "@/lib/preview-data";
-import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 
 const DEBT_DIRECTIONS = [
   { value: "we_owe", label: "Debemos" },
@@ -30,33 +28,19 @@ export default async function DebtsPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const previewPreset = await getPreviewPreset();
-  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
-  const debts = previewDataset
-    ? previewDataset.debts
-        .map((debt) => ({
-          id: debt.id,
-          entityName: debt.entityName,
-          direction: debt.direction,
-          originalAmount: debt.originalAmount,
-          remainingBalance: debt.remainingBalance,
-          notes: debt.notes,
-          createdAt: debt.createdAt,
-        }))
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    : await prisma.debt.findMany({
-        where: { householdId: household.id, deletedAt: null },
-        select: {
-          id: true,
-          entityName: true,
-          direction: true,
-          originalAmount: true,
-          remainingBalance: true,
-          notes: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
+  const debts = await prisma.debt.findMany({
+    where: { householdId: household.id, deletedAt: null },
+    select: {
+      id: true,
+      entityName: true,
+      direction: true,
+      originalAmount: true,
+      remainingBalance: true,
+      notes: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
   const items = debts.map((debt) => {
     const total = Number(debt.originalAmount);
@@ -108,10 +92,9 @@ export default async function DebtsPage({
 
   return (
     <KineticPage className="space-y-5">
-      <ScreenHeader title="Deudas" action={previewPreset ? undefined : createDebt} />
+      <ScreenHeader title="Deudas" action={createDebt} />
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
-      {previewPreset ? <FlashMessage message={`Preview ${previewLabel(previewPreset)} activo en modo solo lectura.`} tone="warning" /> : null}
 
       {debts.length === 0 ? (
         <EmptyState icon={HandCoins} title="Todavía no hay deudas" description="Agregá la primera para seguir pagos y saldos sin planillas." compact />
@@ -160,6 +143,20 @@ function DebtList({
           const isWeOwe = debt.direction === "we_owe";
           const colorClass = isWeOwe ? "text-red-700" : "text-[var(--income)]";
           const progressClass = isWeOwe ? "bg-red-600" : "bg-[var(--income)]";
+          const statusLabel = settled
+            ? isWeOwe
+              ? "Saldada"
+              : "Cobrada"
+            : isWeOwe
+              ? "Pendiente de pago"
+              : "Pendiente de cobro";
+          const amountMeta = settled
+            ? isWeOwe
+              ? "Pago completado"
+              : "Cobro completado"
+            : isWeOwe
+              ? `de ${formatArs(total)}`
+              : `de ${formatArs(total)} por cobrar`;
           return (
             <Link key={debt.id} href={`/deudas/${debt.id}`} className="block border-b border-border/70 py-3 last:border-b-0">
               <div className="flex items-center gap-3.5">
@@ -167,12 +164,12 @@ function DebtList({
                 <div className="min-w-0 flex-1">
                   <p className="row-title truncate">{debt.entityName}</p>
                   <p className="row-meta mt-1 truncate">
-                    {settled ? "Saldada" : isWeOwe ? "Le debemos" : "Nos debe"} · {debt.notes ?? "Sin motivo"}
+                    {statusLabel} · {debt.notes ?? "Sin motivo"}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className={`money-row ${settled ? "text-muted-foreground" : colorClass}`}>{settled ? "Saldada" : formatArs(remaining)}</p>
-                  {!settled ? <p className="row-meta">de {formatArs(total)}</p> : null}
+                  <p className={`money-row ${settled ? "text-muted-foreground" : colorClass}`}>{settled ? statusLabel : formatArs(remaining)}</p>
+                  <p className="row-meta">{amountMeta}</p>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" />
               </div>

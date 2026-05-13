@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronRight, Plus } from "lucide-react";
+import { Slot } from "radix-ui";
 
 import { Slideout } from "@/components/app/slideout";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ export function ResourceSheet({
   description,
   trigger,
   triggerClassName,
+  triggerAsChild = false,
   children,
   headerAction,
 }: {
@@ -18,20 +20,22 @@ export function ResourceSheet({
   description?: string;
   trigger: React.ReactNode;
   triggerClassName?: string;
+  triggerAsChild?: boolean;
   children: React.ReactNode;
   headerAction?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const TriggerComp = triggerAsChild ? Slot.Root : "button";
 
   return (
     <>
-      <button
-        type="button"
+      <TriggerComp
+        {...(!triggerAsChild ? { type: "button" as const } : {})}
         className={cn("block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18", triggerClassName)}
         onClick={() => setOpen(true)}
       >
         {trigger}
-      </button>
+      </TriggerComp>
       <Slideout open={open} title={title} description={description} headerAction={headerAction} onClose={() => setOpen(false)}>
         {children}
       </Slideout>
@@ -53,21 +57,27 @@ export function ResourceRowShell({
   title,
   meta,
   trailing,
+  showChevron = true,
+  interactive = false,
+  className,
 }: {
   icon: React.ReactNode;
   title: React.ReactNode;
   meta?: React.ReactNode;
   trailing?: React.ReactNode;
+  showChevron?: boolean;
+  interactive?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="grouped-row">
+    <div className={cn("grouped-row", className)} data-interactive={interactive ? "true" : undefined}>
       <div className="app-icon-tile">{icon}</div>
       <div className="min-w-0 flex-1">
         <p className="row-title truncate">{title}</p>
         {meta ? <div className="row-meta mt-1">{meta}</div> : null}
       </div>
       {trailing ? <div className="shrink-0">{trailing}</div> : null}
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden />
+      {showChevron ? <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden /> : null}
     </div>
   );
 }

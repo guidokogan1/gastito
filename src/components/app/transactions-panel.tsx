@@ -242,7 +242,6 @@ export function TransactionsPanel({
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "7d" | "14d" | "30d">("all");
   const [sortBy, setSortBy] = useState<"date-desc" | "amount-desc" | "amount-asc">("date-desc");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [formType, setFormType] = useState<"expense" | "income">("expense");
   const [formDate, setFormDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [formCategoryId, setFormCategoryId] = useState<string>("");
@@ -488,7 +487,7 @@ export function TransactionsPanel({
         </h1>
       </section>
 
-      <section className="space-y-6">
+      <section className="space-y-7">
         {transactions.length === 0 ? (
           <EmptyState
             icon={ArrowUpRight}
@@ -515,41 +514,36 @@ export function TransactionsPanel({
                 { label: "Ingresos", value: formatArs(metrics.incomes), tone: "income" },
                 { label: "Balance", value: formatArs(metrics.balance), tone: metrics.balance >= 0 ? "income" : "default" },
               ]}
+              className="gap-5"
             />
 
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-4">
               <SearchPill
                 id="tx-search"
-                open={searchOpen}
                 value={query}
                 placeholder="Buscar movimiento, categoría..."
-                onOpen={() => setSearchOpen(true)}
                 onValueChange={setQuery}
               />
-              <div className="mobile-scroll-row gap-2.5 pb-0.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
-                  <PillChip active={typeFilter === "all"}>Todos</PillChip>
+                  <PillChip variant="scope" active={typeFilter === "all"}>Todos</PillChip>
                 </button>
                 <button type="button" className="pressable" onClick={() => setTypeFilter("expense")}>
-                  <PillChip active={typeFilter === "expense"}>Gastos</PillChip>
+                  <PillChip variant="scope" active={typeFilter === "expense"}>Gastos</PillChip>
                 </button>
                 <button type="button" className="pressable" onClick={() => setTypeFilter("income")}>
-                  <PillChip active={typeFilter === "income"}>Ingresos</PillChip>
+                  <PillChip variant="scope" active={typeFilter === "income"}>Ingresos</PillChip>
                 </button>
+              </div>
+              <div className="mobile-scroll-row gap-2.5 pb-0.5">
                 <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
                   <PillChip active={dateFilter === "today"}>Hoy</PillChip>
                 </button>
                 <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "7d" ? "all" : "7d")}>
                   <PillChip active={dateFilter === "7d"} className="whitespace-nowrap">7 días</PillChip>
                 </button>
-                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "14d" ? "all" : "14d")}>
-                  <PillChip active={dateFilter === "14d"} className="whitespace-nowrap">14 días</PillChip>
-                </button>
                 <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
                   <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
-                </button>
-                <button type="button" className="pressable" onClick={() => setCategoryFilterId(categoryFilterId === "none" ? "all" : "none")}>
-                  <PillChip active={categoryFilterId === "none"}>Sin categoría</PillChip>
                 </button>
               </div>
             </div>
@@ -576,14 +570,14 @@ export function TransactionsPanel({
                 </Button>
               </EmptyState>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {groupedTransactions.map(([dateLabel, rows]) => {
                   const dayTotal = rows.reduce((acc, row) => acc + (row.type === "income" ? toNumber(row.amount) : -toNumber(row.amount)), 0);
                   return (
-                    <section key={dateLabel} className="space-y-2">
-                      <div className="flex items-center justify-between px-1 text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                    <section key={dateLabel} className="space-y-2.5">
+                      <div className="flex items-center justify-between px-1 text-[0.75rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                         <h3>{dateLabel}</h3>
-                        <p className="normal-case tracking-normal">{formatArs(dayTotal)}</p>
+                        <p className="normal-case text-[0.82rem] font-normal tracking-normal text-muted-foreground">{formatArs(dayTotal)}</p>
                       </div>
                       <div className="app-list">
                         {rows.map((row) => {
@@ -658,6 +652,30 @@ export function TransactionsPanel({
               </button>
               <button type="button" className="pressable" onClick={() => setSortBy("amount-asc")}>
                 <PillChip active={sortBy === "amount-asc"}>Menor valor</PillChip>
+              </button>
+            </div>
+          </section>
+
+          <section className="grouped-form-section space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-medium">Fecha</p>
+              {dateFilter !== "all" ? <p className="text-xs text-muted-foreground">1 activo</p> : null}
+            </div>
+            <div className="mobile-scroll-row">
+              <button type="button" className="pressable" onClick={() => setDateFilter("all")}>
+                <PillChip active={dateFilter === "all"}>Todas</PillChip>
+              </button>
+              <button type="button" className="pressable" onClick={() => setDateFilter("today")}>
+                <PillChip active={dateFilter === "today"}>Hoy</PillChip>
+              </button>
+              <button type="button" className="pressable" onClick={() => setDateFilter("7d")}>
+                <PillChip active={dateFilter === "7d"}>7 días</PillChip>
+              </button>
+              <button type="button" className="pressable" onClick={() => setDateFilter("14d")}>
+                <PillChip active={dateFilter === "14d"}>14 días</PillChip>
+              </button>
+              <button type="button" className="pressable" onClick={() => setDateFilter("30d")}>
+                <PillChip active={dateFilter === "30d"}>30 días</PillChip>
               </button>
             </div>
           </section>

@@ -6,19 +6,23 @@ export function PillChip({
   icon: Icon,
   active,
   count,
+  variant = "default",
   children,
   className,
 }: {
   icon?: LucideIcon;
   active?: boolean;
   count?: number;
+  variant?: "default" | "scope";
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-transparent bg-[var(--surface-pill)] px-3.5 text-[0.875rem] font-normal text-foreground transition-colors hover:bg-[var(--surface-selected)]",
+        "inline-flex shrink-0 items-center gap-2 rounded-full border border-transparent text-foreground transition-colors hover:bg-[var(--surface-selected)]",
+        variant === "default" && "h-8 bg-[var(--surface-pill)] px-3.5 text-[0.875rem] font-normal",
+        variant === "scope" && "h-9 bg-[var(--surface-pill)] px-4 text-[0.9rem] font-medium",
         active && "bg-foreground text-background hover:bg-foreground",
         className,
       )}

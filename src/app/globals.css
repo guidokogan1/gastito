@@ -83,10 +83,10 @@
   --shadow-card: none;
   --shadow-control: none;
   --shadow-nav: 0 10px 32px -24px oklch(0.18 0.012 255 / 38%);
-  --surface-glass-nav: rgb(255 255 255 / 72%);
-  --border-glass-nav: rgb(255 255 255 / 62%);
-  --shadow-glass-nav: 0 18px 44px -28px oklch(0.16 0.012 255 / 48%);
-  --blur-glass-nav: 22px;
+  --surface-glass-nav: rgb(255 255 255 / 78%);
+  --border-glass-nav: rgb(255 255 255 / 66%);
+  --shadow-glass-nav: 0 18px 46px -27px oklch(0.16 0.012 255 / 50%);
+  --blur-glass-nav: 28px;
   --shadow-sheet: 0 22px 70px -44px oklch(0.16 0.012 255 / 44%);
   --shadow-soft: var(--shadow-card);
   --shadow-float: var(--shadow-sheet);
@@ -135,8 +135,8 @@
   --shadow-card: none;
   --shadow-control: none;
   --shadow-nav: 0 18px 60px -38px oklch(0 0 0 / 92%);
-  --surface-glass-nav: oklch(0.18 0.01 255 / 72%);
-  --border-glass-nav: oklch(1 0 0 / 13%);
+  --surface-glass-nav: oklch(0.18 0.01 255 / 78%);
+  --border-glass-nav: oklch(1 0 0 / 16%);
   --shadow-glass-nav: 0 18px 54px -30px oklch(0 0 0 / 88%);
   --shadow-sheet: 0 28px 90px -42px oklch(0 0 0 / 94%);
   --shadow-soft: var(--shadow-card);
@@ -362,7 +362,7 @@
     @apply bg-[var(--finance-green-soft)] text-[var(--finance-green)] hover:bg-[var(--finance-green-soft)] hover:text-[var(--finance-green)];
   }
   .bottom-nav {
-    @apply fixed z-40 grid grid-cols-5 gap-0 px-3 pb-2 pt-2 lg:hidden;
+    @apply fixed z-40 grid grid-cols-5 gap-0 overflow-hidden px-3 pb-2 pt-2 lg:hidden;
     left: 50%;
     width: min(calc(100% - 2rem), 30rem);
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
@@ -375,6 +375,17 @@
     -webkit-backdrop-filter: blur(var(--blur-glass-nav)) saturate(1.45);
     isolation: isolate;
     pointer-events: auto;
+  }
+  .bottom-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(to bottom, rgb(255 255 255 / 24%), rgb(255 255 255 / 10%)),
+      var(--surface-glass-nav);
+    pointer-events: none;
   }
   .bottom-nav-item {
     @apply relative z-[1] flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[1rem] px-1 py-1 text-[0.66rem] font-semibold text-muted-foreground transition-all duration-200 active:scale-[0.96] [&_svg]:size-[1.28rem];

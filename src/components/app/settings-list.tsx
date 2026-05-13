@@ -5,14 +5,17 @@ import { cn } from "@/lib/utils";
 
 export function SettingsGroup({
   label,
+  description,
   children,
 }: {
   label: string;
+  description?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section>
       <h2 className="section-eyebrow px-0 pb-2 pt-4">{label}</h2>
+      {description ? <p className="mb-2 text-[0.9rem] leading-relaxed text-muted-foreground">{description}</p> : null}
       <div>{children}</div>
     </section>
   );

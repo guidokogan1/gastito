@@ -1,7 +1,6 @@
 import {
   Building2,
   CreditCard,
-  Landmark,
   LogOut,
   Tags,
   Wallet,
@@ -79,12 +78,18 @@ export default async function MorePage({
         </p>
       </section>
 
-      <SettingsGroup label="Estructura">
+      <SettingsGroup
+        label="Estructura"
+        description="Define dónde vive la plata y con qué entidades o contenedores la querés organizar."
+      >
         <SettingsRow href="/cuentas" icon={Wallet} title="Cuentas" subtitle={`${accountCount} cuentas para separar banco, billetera y efectivo`} />
         <SettingsRow href="/mas/bancos" icon={Building2} title="Bancos y billeteras" subtitle={`${bankCount} entidades para asociar medios`} />
       </SettingsGroup>
 
-      <SettingsGroup label="Catálogos">
+      <SettingsGroup
+        label="Catálogos"
+        description="Estas piezas mejoran cómo cargás, filtrás y entendés movimientos todos los días."
+      >
         <SettingsRow href="/mas/categorias" icon={Tags} title="Categorías" subtitle={`${categoryCount} categorías`} />
         <SettingsRow href="/mas/medios" icon={CreditCard} title="Medios de pago" subtitle={`${paymentMethodCount} medios`} />
       </SettingsGroup>

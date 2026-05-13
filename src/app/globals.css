@@ -475,7 +475,7 @@
   }
 
   .confirm-dialog {
-    @apply fixed inset-0 z-[70] grid place-items-center bg-black/28 px-5 backdrop-blur-[10px];
+    @apply fixed inset-0 z-[90] grid place-items-center bg-black/28 px-5 backdrop-blur-[10px];
   }
 
   .confirm-dialog-panel {

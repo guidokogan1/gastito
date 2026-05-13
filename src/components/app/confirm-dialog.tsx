@@ -6,6 +6,9 @@ import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
+let bodyLockCount = 0;
+let previousBodyOverflow = "";
+
 function getFocusableElements(container: HTMLElement | null) {
   if (!container) return [];
   return Array.from(
@@ -46,6 +49,12 @@ export function ConfirmDialog({
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
+  const descriptionId = useId();
+
+  const handleCancel = () => {
+    if (busy) return;
+    onCancel();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +63,7 @@ export function ConfirmDialog({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onCancel();
+        handleCancel();
         return;
       }
       if (event.key !== "Tab") return;
@@ -78,6 +87,11 @@ export function ConfirmDialog({
     }
 
     document.addEventListener("keydown", onKeyDown);
+    if (bodyLockCount === 0) {
+      previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    bodyLockCount += 1;
     window.setTimeout(() => {
       const focusable = getFocusableElements(panelRef.current);
       focusable[0]?.focus();
@@ -85,15 +99,29 @@ export function ConfirmDialog({
 
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      bodyLockCount = Math.max(0, bodyLockCount - 1);
+      if (bodyLockCount === 0) {
+        document.body.style.overflow = previousBodyOverflow;
+      }
       previouslyFocusedRef.current?.focus();
     };
-  }, [open, onCancel]);
+  }, [handleCancel, open]);
 
   if (!open) return null;
 
   return createPortal(
-    <div className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId}>
-      <div ref={panelRef} className="confirm-dialog-panel">
+    <div
+      className="confirm-dialog"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        handleCancel();
+      }}
+    >
+      <div ref={panelRef} tabIndex={-1} className="confirm-dialog-panel" onClick={(event) => event.stopPropagation()}>
         <div className="grid size-11 place-items-center rounded-full bg-destructive/10 text-destructive">
           <AlertTriangle className="size-5" aria-hidden />
         </div>
@@ -101,10 +129,10 @@ export function ConfirmDialog({
           <p id={titleId} className="text-[1.1rem] font-semibold tracking-[-0.02em]">
             {title}
           </p>
-          <div className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground">{description}</div>
+          <div id={descriptionId} className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground">{description}</div>
         </div>
         <div className="mt-1 grid grid-cols-2 gap-2">
-          <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>
+          <Button type="button" variant="secondary" onClick={handleCancel} disabled={busy}>
             {cancelLabel}
           </Button>
           <Button type="button" variant={destructive ? "destructive" : "default"} onClick={onConfirm} disabled={busy}>

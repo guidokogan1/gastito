@@ -52,6 +52,8 @@ export function QueryToast({
       {visible ? (
         <motion.div
           role={tone === "error" ? "alert" : "status"}
+          aria-live={tone === "error" ? "assertive" : "polite"}
+          aria-atomic="true"
           className="pointer-events-none fixed inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-[70] flex justify-center px-4"
           initial={{ opacity: 0, y: -10, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -70,7 +72,7 @@ export function QueryToast({
             <button
               type="button"
               aria-label="Cerrar aviso"
-              className="pressed-scale -mr-1 grid size-7 place-items-center rounded-full text-foreground/60"
+              className="pressed-scale focus-hairline -mr-1 grid size-7 place-items-center rounded-full text-foreground/60"
               onClick={() => {
                 setVisible(false);
                 router.replace(cleanUrl, { scroll: false });

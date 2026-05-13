@@ -50,10 +50,10 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex h-7 items-center rounded-full px-2.5 text-[0.74rem] font-semibold",
-        tone === "neutral" && "bg-muted text-muted-foreground",
-        tone === "success" && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-        tone === "warning" && "bg-amber-500/12 text-amber-800 dark:text-amber-200",
+        "inline-flex h-8 shrink-0 items-center rounded-full border border-transparent px-3.5 text-[0.84rem] font-medium transition-colors",
+        tone === "neutral" && "bg-[var(--surface-pill)] text-muted-foreground",
+        tone === "success" && "bg-[var(--income-soft)] text-[var(--income)]",
+        tone === "warning" && "bg-amber-100 text-amber-800 dark:bg-amber-500/12 dark:text-amber-200",
         tone === "danger" && "bg-destructive/10 text-destructive",
         tone === "info" && "bg-[var(--finance-blue)]/10 text-[var(--finance-blue)]",
         className,

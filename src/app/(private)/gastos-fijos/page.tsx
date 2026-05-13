@@ -5,6 +5,7 @@ import { saveRecurringBillAction } from "@/app/actions/resources";
 import { EmptyState } from "@/components/app/empty-state";
 import { KineticPage } from "@/components/app/kinetic";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
+import { StatusPill } from "@/components/app/pill-chip";
 import { ResourceCreateButton, ResourceSheet } from "@/components/app/resource-sheet";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -213,19 +214,13 @@ export default async function BillsPage({
               {pendingItems.length} servicios sin pagar · {paidItems.length} pagados · {formatArs(paidTotal)}
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-[0.8rem] font-medium text-amber-800">
-                Pendiente
-              </span>
-              <span className="rounded-full bg-[var(--income-soft)] px-3 py-1 text-[0.8rem] font-medium text-[var(--income)]">
-                Pagado
-              </span>
-              <span className="rounded-full bg-muted px-3 py-1 text-[0.8rem] font-medium text-muted-foreground">
-                Sin factura
-              </span>
+              <StatusPill tone="warning">Pendiente</StatusPill>
+              <StatusPill tone="success">Pagado</StatusPill>
+              <StatusPill tone="neutral">Sin factura</StatusPill>
               {overdueCount > 0 ? (
-                <span className="rounded-full bg-red-100 px-3 py-1 text-[0.8rem] font-medium text-red-700">
+                <StatusPill tone="danger">
                   {overdueCount} vencid{overdueCount === 1 ? "a" : "as"}
-                </span>
+                </StatusPill>
               ) : null}
             </div>
             <div className="flex items-end justify-between gap-4 pt-2">

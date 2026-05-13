@@ -8,24 +8,21 @@ import {
   saveDebtAction,
   saveDebtPaymentAction,
 } from "@/app/actions/resources";
+import { DebtPaymentSheet } from "@/components/app/debt-payment-sheet";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { ResourceSheet } from "@/components/app/resource-sheet";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
 import { Button } from "@/components/ui/button";
-import { CheckboxLine } from "@/components/ui/checkbox-line";
-import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs } from "@/lib/format";
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { findPreviewDebt, getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -44,22 +41,46 @@ export default async function DebtDetailPage({
 }) {
   const { household } = await requireHousehold();
   const [{ id }, messages] = await Promise.all([params, searchParams]);
-  const debt = await prisma.debt.findFirst({
-    where: { id, householdId: household.id, deletedAt: null },
-    select: {
-      id: true,
-      entityName: true,
-      direction: true,
-      originalAmount: true,
-      remainingBalance: true,
-      notes: true,
-      payments: {
-        where: { deletedAt: null },
-        select: { id: true, date: true, amount: true, notes: true, transactionId: true },
-        orderBy: { date: "desc" },
-      },
-    },
-  });
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const debt = previewDataset
+    ? (() => {
+        const previewDebt = findPreviewDebt(previewDataset, id);
+        if (!previewDebt) return null;
+        return {
+          id: previewDebt.id,
+          entityName: previewDebt.entityName,
+          direction: previewDebt.direction,
+          originalAmount: previewDebt.originalAmount,
+          remainingBalance: previewDebt.remainingBalance,
+          notes: previewDebt.notes,
+          payments: previewDebt.payments
+            .map((payment) => ({
+              id: payment.id,
+              date: payment.date,
+              amount: payment.amount,
+              notes: payment.notes,
+              transactionId: payment.transactionId,
+            }))
+            .sort((a, b) => b.date.getTime() - a.date.getTime()),
+        };
+      })()
+    : await prisma.debt.findFirst({
+        where: { id, householdId: household.id, deletedAt: null },
+        select: {
+          id: true,
+          entityName: true,
+          direction: true,
+          originalAmount: true,
+          remainingBalance: true,
+          notes: true,
+          payments: {
+            where: { deletedAt: null },
+            select: { id: true, date: true, amount: true, notes: true, transactionId: true },
+            orderBy: { date: "desc" },
+          },
+        },
+      });
 
   if (!debt) notFound();
 
@@ -127,43 +148,6 @@ export default async function DebtDetailPage({
     </ResourceSheet>
   );
 
-  const registerPaymentSheet = (
-    <ResourceSheet title="Registrar pago" trigger={<Button className="w-full">Registrar pago</Button>}>
-      <form action={saveDebtPaymentAction} className="space-y-4">
-        <input type="hidden" name="debtId" value={debt.id} />
-        <section className="grouped-form-section space-y-4">
-          <p className="section-eyebrow text-center">Nuevo pago</p>
-          <h2 className="text-center text-[1.6rem] font-semibold tracking-[-0.02em]">{debt.entityName}</h2>
-          <MoneyField id="amount" name="amount" label="Monto pagado" showPreview={false} />
-          <div className="grid grid-cols-2 gap-2">
-            <Button type="button" variant="secondary" className="pointer-events-none h-12">
-              Mitad · {formatArs(Math.round(remaining / 2))}
-            </Button>
-            <Button type="button" variant="secondary" className="pointer-events-none h-12">
-              Saldar · {formatArs(remaining)}
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Fecha</Label>
-            <DateField name="date" defaultValue={todayIso()} required />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="paymentNotes">Motivo</Label>
-            <Textarea id="paymentNotes" name="notes" placeholder="Ej. Primer pago" />
-          </div>
-          <CheckboxLine name="createTransaction" defaultChecked className="flex rounded-[1rem] bg-[var(--surface-pill)] p-4 text-[0.98rem]">
-            Registrar también como movimiento
-          </CheckboxLine>
-        </section>
-        <div className="sheet-action-bar">
-          <SubmitButton type="submit" className="w-full" pendingText="Confirmando...">
-            Confirmar pago
-          </SubmitButton>
-        </div>
-      </form>
-    </ResourceSheet>
-  );
-
   return (
     <KineticPage className="space-y-6">
       <div className="flex items-center justify-between">
@@ -172,11 +156,12 @@ export default async function DebtDetailPage({
             <ArrowLeft className="size-5" aria-hidden />
           </Link>
         </Button>
-        {editSheet}
+        {!previewPreset ? editSheet : null}
       </div>
 
       <FlashMessage message={messages.error} tone="error" />
       <FlashMessage message={messages.message} tone="success" />
+      {previewPreset ? <FlashMessage message={`Preview ${previewLabel(previewPreset)} activo en modo solo lectura.`} tone="warning" /> : null}
 
       <section className="space-y-5 border-b border-border/70 pb-6">
         <div className="flex items-center gap-4">
@@ -206,7 +191,7 @@ export default async function DebtDetailPage({
         </section>
       ) : null}
 
-      {!settled ? registerPaymentSheet : null}
+      {!settled && !previewPreset ? <DebtPaymentSheet debtId={debt.id} entityName={debt.entityName} remaining={remaining} action={saveDebtPaymentAction} /> : null}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -230,12 +215,14 @@ export default async function DebtDetailPage({
                   <p className="money-row text-[var(--income)]">+{formatArs(Number(payment.amount))}</p>
                   {payment.transactionId ? <p className="row-meta">Movimiento</p> : null}
                 </div>
-                <form action={deleteDebtPaymentAction}>
-                  <input type="hidden" name="id" value={payment.id} />
-                  <Button type="submit" variant="ghost" size="icon-sm" aria-label="Eliminar pago">
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </form>
+                {!previewPreset ? (
+                  <form action={deleteDebtPaymentAction}>
+                    <input type="hidden" name="id" value={payment.id} />
+                    <Button type="submit" variant="ghost" size="icon-sm" aria-label="Eliminar pago">
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  </form>
+                ) : null}
               </div>
             ))}
           </div>

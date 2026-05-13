@@ -104,6 +104,7 @@ function SelectableSection({
             <button
               key={`${title}-${option.value || option.label}`}
               type="button"
+              aria-pressed={active}
               className={cn(
                 "pressed-scale focus-hairline flex min-h-13 w-full items-center justify-between gap-3 py-3 text-left text-[1.02rem] font-medium transition-colors",
                 active ? "text-foreground" : "text-muted-foreground",
@@ -155,6 +156,7 @@ function PickerOptionList({
             <button
               key={`picker-${option.value || option.label}`}
               type="button"
+              aria-pressed={active}
               className={cn(
                 "selectable-row rounded-[1.05rem] px-3",
                 active ? "bg-[var(--surface-pill)] text-foreground" : "text-muted-foreground",
@@ -190,7 +192,8 @@ function SettingPickerRow({
   return (
     <button
       type="button"
-      className="pressed-scale focus-hairline flex min-h-[4.6rem] w-full items-center justify-between gap-3 py-3 text-left"
+      aria-haspopup="dialog"
+      className="pressed-scale selectable-row focus-hairline flex min-h-[4.6rem] w-full items-center justify-between gap-3 rounded-[1rem] py-3 text-left"
       onClick={onClick}
     >
       <span className="flex min-w-0 flex-1 items-center gap-3">
@@ -218,6 +221,7 @@ export function TransactionsPanel({
   deleteAction,
   initialComposeOpen = false,
   initialTransactionType = "expense",
+  readOnly = false,
 }: {
   monthKey: string;
   monthControl: ReactNode;
@@ -229,6 +233,7 @@ export function TransactionsPanel({
   deleteAction: (formData: FormData) => Promise<void>;
   initialComposeOpen?: boolean;
   initialTransactionType?: "expense" | "income";
+  readOnly?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -249,11 +254,11 @@ export function TransactionsPanel({
   const [formAccountId, setFormAccountId] = useState<string>("");
 
   useEffect(() => {
-    if (!initialComposeOpen) return;
+    if (!initialComposeOpen || readOnly) return;
     setSelectedId(null);
     setFormType(initialTransactionType);
     setDrawerOpen(true);
-  }, [initialComposeOpen, initialTransactionType]);
+  }, [initialComposeOpen, initialTransactionType, readOnly]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("gastito.transactionFilters");
@@ -467,18 +472,20 @@ export function TransactionsPanel({
                 </span>
               ) : null}
             </Button>
-            <Button
-              type="button"
-              size="icon"
-              aria-label="Nuevo movimiento"
-              className="icon-action size-10 bg-[var(--finance-green)] text-white"
-              onClick={() => {
-                setSelectedId(null);
-                setDrawerOpen(true);
-              }}
-            >
-              <Plus className="size-5" aria-hidden />
-            </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                size="icon"
+                aria-label="Nuevo movimiento"
+                className="icon-action size-10 bg-[var(--finance-green)] text-white"
+                onClick={() => {
+                  setSelectedId(null);
+                  setDrawerOpen(true);
+                }}
+              >
+                <Plus className="size-5" aria-hidden />
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -488,6 +495,11 @@ export function TransactionsPanel({
       </section>
 
       <section className="space-y-7">
+        {readOnly ? (
+          <p className="text-[0.9rem] font-medium text-muted-foreground">
+            Preview activo. Podés recorrer la pantalla, buscar y filtrar en modo solo lectura.
+          </p>
+        ) : null}
         {transactions.length === 0 ? (
           <EmptyState
             icon={ArrowUpRight}
@@ -495,16 +507,18 @@ export function TransactionsPanel({
             description="Empezá cargando el primero."
             compact
           >
-            <Button
-              type="button"
-              onClick={() => {
-                setSelectedId(null);
-                setDrawerOpen(true);
-              }}
-            >
-              <Plus className="size-4" aria-hidden />
-              Cargar el primero
-            </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setSelectedId(null);
+                  setDrawerOpen(true);
+                }}
+              >
+                <Plus className="size-4" aria-hidden />
+                Cargar el primero
+              </Button>
+            ) : null}
           </EmptyState>
         ) : (
           <>
@@ -525,24 +539,24 @@ export function TransactionsPanel({
                 onValueChange={setQuery}
               />
               <div className="flex flex-wrap items-center gap-2">
-                <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
+                <button type="button" className="pressable" aria-pressed={typeFilter === "all"} onClick={() => setTypeFilter("all")}>
                   <PillChip variant="scope" active={typeFilter === "all"}>Todos</PillChip>
                 </button>
-                <button type="button" className="pressable" onClick={() => setTypeFilter("expense")}>
+                <button type="button" className="pressable" aria-pressed={typeFilter === "expense"} onClick={() => setTypeFilter("expense")}>
                   <PillChip variant="scope" active={typeFilter === "expense"}>Gastos</PillChip>
                 </button>
-                <button type="button" className="pressable" onClick={() => setTypeFilter("income")}>
+                <button type="button" className="pressable" aria-pressed={typeFilter === "income"} onClick={() => setTypeFilter("income")}>
                   <PillChip variant="scope" active={typeFilter === "income"}>Ingresos</PillChip>
                 </button>
               </div>
               <div className="mobile-scroll-row gap-2.5 pb-0.5">
-                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
+                <button type="button" className="pressable" aria-pressed={dateFilter === "today"} onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
                   <PillChip active={dateFilter === "today"}>Hoy</PillChip>
                 </button>
-                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "7d" ? "all" : "7d")}>
+                <button type="button" className="pressable" aria-pressed={dateFilter === "7d"} onClick={() => setDateFilter(dateFilter === "7d" ? "all" : "7d")}>
                   <PillChip active={dateFilter === "7d"} className="whitespace-nowrap">7 días</PillChip>
                 </button>
-                <button type="button" className="pressable" onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
+                <button type="button" className="pressable" aria-pressed={dateFilter === "30d"} onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
                   <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
                 </button>
               </div>
@@ -586,9 +600,10 @@ export function TransactionsPanel({
                             <button
                               key={row.id}
                               type="button"
-                              className="block w-full text-left"
-                              aria-label={`Editar ${toDetail(row)}`}
+                              className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18"
+                              aria-label={readOnly ? String(toDetail(row)) : `Editar ${toDetail(row)}`}
                               onClick={() => {
+                                if (readOnly) return;
                                 setSelectedId(row.id);
                                 setDrawerOpen(true);
                               }}
@@ -599,6 +614,7 @@ export function TransactionsPanel({
                                 amount={row.amount}
                                 type={row.type}
                                 active={active}
+                                interactive={!readOnly}
                               />
                             </button>
                           );
@@ -626,13 +642,13 @@ export function TransactionsPanel({
               {typeFilter !== "all" ? <p className="text-xs text-muted-foreground">1 activo</p> : null}
             </div>
             <div className="mobile-scroll-row">
-              <button type="button" className="pressable" onClick={() => setTypeFilter("all")}>
+              <button type="button" className="pressable" aria-pressed={typeFilter === "all"} onClick={() => setTypeFilter("all")}>
                 <PillChip active={typeFilter === "all"}>Todos</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setTypeFilter("expense")}>
+              <button type="button" className="pressable" aria-pressed={typeFilter === "expense"} onClick={() => setTypeFilter("expense")}>
                 <PillChip active={typeFilter === "expense"}>Gastos</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setTypeFilter("income")}>
+              <button type="button" className="pressable" aria-pressed={typeFilter === "income"} onClick={() => setTypeFilter("income")}>
                 <PillChip active={typeFilter === "income"}>Ingresos</PillChip>
               </button>
             </div>
@@ -644,13 +660,13 @@ export function TransactionsPanel({
               <SortAsc className="size-4 text-muted-foreground" aria-hidden />
             </div>
             <div className="mobile-scroll-row">
-              <button type="button" className="pressable" onClick={() => setSortBy("date-desc")}>
+              <button type="button" className="pressable" aria-pressed={sortBy === "date-desc"} onClick={() => setSortBy("date-desc")}>
                 <PillChip active={sortBy === "date-desc"}>Recientes</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setSortBy("amount-desc")}>
+              <button type="button" className="pressable" aria-pressed={sortBy === "amount-desc"} onClick={() => setSortBy("amount-desc")}>
                 <PillChip active={sortBy === "amount-desc"}>Mayor valor</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setSortBy("amount-asc")}>
+              <button type="button" className="pressable" aria-pressed={sortBy === "amount-asc"} onClick={() => setSortBy("amount-asc")}>
                 <PillChip active={sortBy === "amount-asc"}>Menor valor</PillChip>
               </button>
             </div>
@@ -662,19 +678,19 @@ export function TransactionsPanel({
               {dateFilter !== "all" ? <p className="text-xs text-muted-foreground">1 activo</p> : null}
             </div>
             <div className="mobile-scroll-row">
-              <button type="button" className="pressable" onClick={() => setDateFilter("all")}>
+              <button type="button" className="pressable" aria-pressed={dateFilter === "all"} onClick={() => setDateFilter("all")}>
                 <PillChip active={dateFilter === "all"}>Todas</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setDateFilter("today")}>
+              <button type="button" className="pressable" aria-pressed={dateFilter === "today"} onClick={() => setDateFilter("today")}>
                 <PillChip active={dateFilter === "today"}>Hoy</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setDateFilter("7d")}>
+              <button type="button" className="pressable" aria-pressed={dateFilter === "7d"} onClick={() => setDateFilter("7d")}>
                 <PillChip active={dateFilter === "7d"}>7 días</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setDateFilter("14d")}>
+              <button type="button" className="pressable" aria-pressed={dateFilter === "14d"} onClick={() => setDateFilter("14d")}>
                 <PillChip active={dateFilter === "14d"}>14 días</PillChip>
               </button>
-              <button type="button" className="pressable" onClick={() => setDateFilter("30d")}>
+              <button type="button" className="pressable" aria-pressed={dateFilter === "30d"} onClick={() => setDateFilter("30d")}>
                 <PillChip active={dateFilter === "30d"}>30 días</PillChip>
               </button>
             </div>

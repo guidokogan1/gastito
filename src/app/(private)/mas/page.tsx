@@ -1,22 +1,21 @@
 import {
-  Bell,
-  ChevronRight,
   CreditCard,
-  Download,
-  Eye,
   Landmark,
   LogOut,
-  ShieldCheck,
   Tags,
 } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth";
+import { PreviewModeSwitcher } from "@/components/app/preview-mode-switcher";
 import { SettingsGroup, SettingsRow } from "@/components/app/settings-list";
+import { FlashMessage } from "@/components/flash-message";
 import { KineticPage } from "@/components/app/kinetic";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset, isPreviewModeAvailable } from "@/lib/preview-mode";
 import { toTitleCase } from "@/lib/text";
 
 function initials(name: string) {
@@ -27,14 +26,28 @@ function initials(name: string) {
     .join("");
 }
 
-export default async function MorePage() {
+export default async function MorePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ message?: string; error?: string }>;
+}) {
   const { household } = await requireHousehold();
-  const [memberCount, categoryCount, paymentMethodCount, bankCount] = await Promise.all([
-    prisma.membership.count({ where: { householdId: household.id } }),
-    prisma.category.count({ where: { householdId: household.id, deletedAt: null } }),
-    prisma.paymentMethod.count({ where: { householdId: household.id, deletedAt: null } }),
-    prisma.bank.count({ where: { householdId: household.id, deletedAt: null } }),
-  ]);
+  const params = await searchParams;
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const [memberCount, categoryCount, paymentMethodCount, bankCount] = previewDataset
+    ? [
+        previewDataset.memberCount,
+        previewDataset.categories.length,
+        previewDataset.methods.length,
+        previewDataset.banks.length,
+      ]
+    : await Promise.all([
+        prisma.membership.count({ where: { householdId: household.id } }),
+        prisma.category.count({ where: { householdId: household.id, deletedAt: null } }),
+        prisma.paymentMethod.count({ where: { householdId: household.id, deletedAt: null } }),
+        prisma.bank.count({ where: { householdId: household.id, deletedAt: null } }),
+      ]);
 
   const householdName = toTitleCase(household.name);
   const memberLabel = memberCount === 1 ? "1 miembro" : `${memberCount} miembros`;
@@ -42,6 +55,8 @@ export default async function MorePage() {
   return (
     <KineticPage className="space-y-6">
       <ScreenHeader title="Más" />
+      <FlashMessage message={params.error} tone="error" />
+      <FlashMessage message={params.message} tone="success" />
 
       <section className="rounded-[1.2rem] border border-border/80 px-4 py-4">
         <div className="flex items-center gap-4">
@@ -52,9 +67,10 @@ export default async function MorePage() {
             <h2 className="row-title truncate text-[1.25rem]">{householdName}</h2>
             <p className="row-meta mt-0.5">Grupo familiar · {memberLabel}</p>
           </div>
-          <ChevronRight className="size-5 shrink-0 text-muted-foreground/70" aria-hidden />
         </div>
       </section>
+
+      {isPreviewModeAvailable() ? <PreviewModeSwitcher activePreset={previewPreset} /> : null}
 
       <SettingsGroup label="Catálogos">
         <SettingsRow href="/mas/categorias" icon={Tags} title="Categorías" subtitle={`${categoryCount} categorías`} />
@@ -62,28 +78,19 @@ export default async function MorePage() {
         <SettingsRow href="/mas/bancos" icon={Landmark} title="Bancos y billeteras" subtitle={`${bankCount} bancos`} />
       </SettingsGroup>
 
-      <SettingsGroup label="Preferencias">
-        <SettingsRow icon={Bell} title="Notificaciones" subtitle="Recordatorios de vencimientos" />
-        <SettingsRow icon={Eye} title="Privacidad y datos" />
-        <SettingsRow icon={Download} title="Exportar datos" subtitle="CSV · PDF" />
-      </SettingsGroup>
-
-      <SettingsGroup label="Sobre">
-        <SettingsRow icon={ShieldCheck} title="Gastito" subtitle="Finanzas del hogar" />
-        <form action={logoutAction}>
-          <div className="grouped-row">
-            <div className="app-icon-tile rounded-[0.85rem]">
-              <LogOut className="size-4" aria-hidden />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="row-title truncate">Cerrar sesión</p>
-            </div>
-            <SubmitButton type="submit" variant="ghost" className="h-10 px-3 text-sm" pendingText="Saliendo...">
-              Salir
-            </SubmitButton>
+      <form action={logoutAction}>
+        <div className="grouped-row">
+          <div className="app-icon-tile rounded-[0.85rem]">
+            <LogOut className="size-4" aria-hidden />
           </div>
-        </form>
-      </SettingsGroup>
+          <div className="min-w-0 flex-1">
+            <p className="row-title truncate">Cerrar sesión</p>
+          </div>
+          <SubmitButton type="submit" variant="ghost" className="h-10 px-3 text-sm" pendingText="Saliendo...">
+            Salir
+          </SubmitButton>
+        </div>
+      </form>
     </KineticPage>
   );
 }

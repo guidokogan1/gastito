@@ -19,6 +19,8 @@ import { TransactionListRow } from "@/components/app/transaction-list-row";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { requireHousehold } from "@/lib/auth";
 import { formatArs, formatDate } from "@/lib/format";
+import { buildPreviewDashboardSnapshot, getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 import { toTitleCase } from "@/lib/text";
 import { cn } from "@/lib/utils";
 
@@ -92,12 +94,15 @@ export default async function DashboardPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const snapshot = await getDashboardSnapshot(household.id, params.month);
+  const previewPreset = await getPreviewPreset();
+  const snapshot = previewPreset
+    ? buildPreviewDashboardSnapshot(getPreviewDataset(previewPreset), params.month)
+    : await getDashboardSnapshot(household.id, params.month);
   const displayHouseholdName = toTitleCase(household.name);
   const previousMonthLabel = dashboardMonthLabel(previousDashboardMonthKey(snapshot.monthKey), "short");
   const trendTone = snapshot.previousExpenses <= 0 ? "neutral" : snapshot.expenseDelta <= 0 ? "positive" : "warning";
-  const expenseHref = `/movimientos?month=${snapshot.monthKey}&compose=1&type=expense`;
-  const incomeHref = `/movimientos?month=${snapshot.monthKey}&compose=1&type=income`;
+  const expenseHref = previewPreset ? `/movimientos?month=${snapshot.monthKey}` : `/movimientos?month=${snapshot.monthKey}&compose=1&type=expense`;
+  const incomeHref = previewPreset ? `/movimientos?month=${snapshot.monthKey}` : `/movimientos?month=${snapshot.monthKey}&compose=1&type=income`;
 
   return (
     <KineticPage className="space-y-7 pb-8">
@@ -107,6 +112,12 @@ export default async function DashboardPage({
       </header>
 
       <FlashMessage message={params.message} tone="success" />
+      {previewPreset ? (
+        <FlashMessage
+          tone="warning"
+          message={`Preview ${previewLabel(previewPreset)} activo. Esta vista es solo para revisar diseño y contenido.`}
+        />
+      ) : null}
       {snapshot.degraded ? (
         <FlashMessage
           tone="warning"
@@ -161,7 +172,7 @@ export default async function DashboardPage({
             {snapshot.upcomingBills.map((bill) => {
               const Icon = billIcon(bill.icon);
               return (
-                <Link key={bill.id} href={`/gastos-fijos/${bill.recurringBillId}`} className="app-list-row">
+                <Link key={bill.id} href={`/gastos-fijos/${bill.recurringBillId}`} className="app-list-row" data-interactive="true">
                   <div className="app-icon-tile rounded-[0.85rem] text-amber-700">
                     <Icon className="size-4" aria-hidden />
                   </div>
@@ -203,6 +214,7 @@ export default async function DashboardPage({
                     metaPrefix={formatDate(transaction.date)}
                     amount={transaction.amount}
                     type={transaction.type}
+                    interactive
                     className="min-h-0 border-b-0 py-0 active:scale-100"
                   />
                 </Link>

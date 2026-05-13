@@ -17,6 +17,8 @@ import { DayOfMonthField } from "@/components/app/day-of-month-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatArs, formatDate } from "@/lib/format";
+import { currentPreviewMonthKey, getPreviewDataset } from "@/lib/preview-data";
+import { getPreviewPreset, previewLabel } from "@/lib/preview-mode";
 
 function isSameMonth(date: Date, reference = new Date()) {
   return date.getFullYear() === reference.getFullYear() && date.getMonth() === reference.getMonth();
@@ -36,38 +38,70 @@ export default async function BillsPage({
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
-  const [bills, paymentMethods, categories] = await Promise.all([
-    prisma.recurringBill.findMany({
-      where: { householdId: household.id, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        icon: true,
-        amount: true,
-        dueDay: true,
-        notes: true,
-        paymentMethodId: true,
-        paymentMethod: { select: { name: true } },
-        payments: {
-          where: { deletedAt: null },
-          select: { id: true, amount: true, dueDate: true, paidAt: true },
-          orderBy: { dueDate: "desc" },
-          take: 12,
-        },
-      },
-      orderBy: [{ dueDay: "asc" }, { name: "asc" }],
-    }),
-    prisma.paymentMethod.findMany({
-      where: { householdId: household.id, isActive: true, deletedAt: null },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.category.findMany({
-      where: { householdId: household.id, deletedAt: null, kind: "expense" },
-      select: { id: true, name: true },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    }),
-  ]);
+  const previewPreset = await getPreviewPreset();
+  const previewDataset = previewPreset ? getPreviewDataset(previewPreset) : null;
+  const previewMonthKey = currentPreviewMonthKey();
+  const [bills, paymentMethods, categories] = previewDataset
+    ? [
+        previewDataset.bills.map((bill) => ({
+          id: bill.id,
+          name: bill.name,
+          icon: bill.icon,
+          amount: bill.amount,
+          dueDay: bill.dueDay,
+          notes: bill.notes,
+          paymentMethodId: bill.paymentMethodId,
+          paymentMethod: bill.paymentMethodId
+            ? { name: previewDataset.methods.find((method) => method.id === bill.paymentMethodId)?.name ?? "Sin medio" }
+            : null,
+          payments: bill.payments
+            .filter((payment) => {
+              const paymentMonth = `${payment.dueDate.getFullYear()}-${String(payment.dueDate.getMonth() + 1).padStart(2, "0")}`;
+              return paymentMonth === previewMonthKey;
+            })
+            .map((payment) => ({
+              id: payment.id,
+              amount: payment.amount,
+              dueDate: payment.dueDate,
+              paidAt: payment.paidAt,
+            }))
+            .sort((a, b) => b.dueDate.getTime() - a.dueDate.getTime()),
+        })),
+        previewDataset.methods,
+        previewDataset.categories.filter((category) => category.kind === "expense"),
+      ]
+    : await Promise.all([
+        prisma.recurringBill.findMany({
+          where: { householdId: household.id, deletedAt: null },
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+            amount: true,
+            dueDay: true,
+            notes: true,
+            paymentMethodId: true,
+            paymentMethod: { select: { name: true } },
+            payments: {
+              where: { deletedAt: null },
+              select: { id: true, amount: true, dueDate: true, paidAt: true },
+              orderBy: { dueDate: "desc" },
+              take: 12,
+            },
+          },
+          orderBy: [{ dueDay: "asc" }, { name: "asc" }],
+        }),
+        prisma.paymentMethod.findMany({
+          where: { householdId: household.id, isActive: true, deletedAt: null },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+        prisma.category.findMany({
+          where: { householdId: household.id, deletedAt: null, kind: "expense" },
+          select: { id: true, name: true },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        }),
+      ]);
 
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -137,9 +171,10 @@ export default async function BillsPage({
 
   return (
     <KineticPage className="space-y-5">
-      <ScreenHeader title="Gastos fijos" action={createBill} />
+      <ScreenHeader title="Gastos fijos" action={previewPreset ? undefined : createBill} />
       <FlashMessage message={params.error} tone="error" />
       <FlashMessage message={params.message} tone="success" />
+      {previewPreset ? <FlashMessage message={`Preview ${previewLabel(previewPreset)} activo en modo solo lectura.`} tone="warning" /> : null}
 
       {bills.length === 0 ? (
         <EmptyState icon={Repeat2} title="Todavía no hay gastos fijos" description="Creá el primero para seguir facturas y pagos mensuales." compact />
@@ -219,7 +254,7 @@ function BillList({
               ? `Vence ${formatDate(dueDate)} · ${remainingDays >= 0 ? `en ${remainingDays} días` : "vencido"}`
               : `Sin factura cargada · vence ~día ${bill.dueDay}`;
           return (
-            <Link key={bill.id} href={`/gastos-fijos/${bill.id}`} className="grouped-row">
+            <Link key={bill.id} href={`/gastos-fijos/${bill.id}`} className="grouped-row" data-interactive="true">
               <div className="app-icon-tile rounded-[0.85rem]">
                 <Repeat2 className="size-4" aria-hidden />
               </div>

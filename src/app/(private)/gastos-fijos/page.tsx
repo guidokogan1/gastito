@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DayOfMonthField } from "@/components/app/day-of-month-field";
 import { requireHousehold } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { formatArs, formatDate } from "@/lib/format";
+import { formatArs } from "@/lib/format";
 import { getPreviewDataset } from "@/lib/preview-data";
 import { getPreviewPreset } from "@/lib/preview-mode";
 
@@ -34,32 +34,41 @@ function daysUntil(date: Date) {
   return Math.ceil((startDate - startToday) / 86_400_000);
 }
 
-function billStateMeta(hasInvoice: boolean, remainingDays: number) {
+function billStateMeta(hasInvoice: boolean, remainingDays: number, shortDate: string) {
   if (!hasInvoice) {
     return {
       tone: "muted" as const,
-      badge: "Sin factura",
+      summary: "Sin factura",
     };
   }
 
   if (remainingDays < 0) {
     return {
       tone: "danger" as const,
-      badge: "Vencida",
+      summary: `Venció ${shortDate}`,
     };
   }
 
   if (remainingDays === 0) {
     return {
       tone: "warning" as const,
-      badge: "Vence hoy",
+      summary: "Vence hoy",
     };
   }
 
   return {
     tone: "warning" as const,
-      badge: remainingDays === 1 ? "Vence mañana" : `En ${remainingDays} días`,
+    summary: remainingDays === 1 ? "Vence mañana" : `Vence ${shortDate} · en ${remainingDays} días`,
   };
+}
+
+function formatShortDate(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "short",
+  })
+    .format(date)
+    .replace(".", "");
 }
 
 export default async function BillsPage({
@@ -146,6 +155,7 @@ export default async function BillsPage({
       dueDate,
       amount,
       paid: Boolean(currentPayment?.paidAt),
+      paidAt: currentPayment?.paidAt ?? null,
       hasInvoice: Boolean(currentPayment),
     };
   });
@@ -154,7 +164,19 @@ export default async function BillsPage({
   const pendingTotal = pendingItems.reduce((total, item) => total + item.amount, 0);
   const paidTotal = paidItems.reduce((total, item) => total + item.amount, 0);
   const overdueCount = pendingItems.filter((item) => item.hasInvoice && daysUntil(item.dueDate) < 0).length;
-  const dueDays = new Map(billItems.map((item) => [item.dueDate.getDate(), item.paid ? "paid" : "pending"]));
+  const dueDays = billItems.reduce<Map<number, "pending" | "paid" | "mixed">>((map, item) => {
+    const day = item.dueDate.getDate();
+    const nextState = item.paid ? "paid" : "pending";
+    const currentState = map.get(day);
+    if (!currentState) {
+      map.set(day, nextState);
+      return map;
+    }
+    if (currentState !== nextState) {
+      map.set(day, "mixed");
+    }
+    return map;
+  }, new Map());
   const activeFilter = params.filter ?? "all";
   const noInvoiceItems = pendingItems.filter((item) => !item.hasInvoice);
   const overdueItems = pendingItems.filter((item) => item.hasInvoice && daysUntil(item.dueDate) < 0);
@@ -261,17 +283,33 @@ export default async function BillsPage({
               {calendarDays.map((day) => {
                 const state = dueDays.get(day);
                 const isToday = day === now.getDate();
+                const stateClass =
+                  state === "pending"
+                    ? "bg-amber-100 text-amber-900 shadow-[inset_0_0_0_1px_rgba(180,83,9,0.12)]"
+                    : state === "paid"
+                      ? "bg-[var(--income-soft)] text-[var(--income)] shadow-[inset_0_0_0_1px_rgba(12,95,70,0.12)]"
+                      : state === "mixed"
+                        ? "bg-[var(--surface-pill)] text-foreground shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)]"
+                        : "bg-muted/45 text-muted-foreground";
+                const dotClass =
+                  state === "pending"
+                    ? "bg-amber-700"
+                    : state === "paid"
+                      ? "bg-[var(--income)]"
+                      : state === "mixed"
+                        ? "bg-foreground"
+                        : "bg-transparent";
                 return (
                   <span
                     key={day}
                     className={[
-                      "grid h-10 w-6 place-items-center rounded-full text-[0.78rem] font-semibold",
-                      isToday ? "bg-[var(--finance-green)] text-white" : "bg-muted/45 text-muted-foreground",
-                      state === "pending" ? "bg-amber-100 text-amber-800" : "",
-                      state === "paid" ? "bg-[var(--income-soft)] text-[var(--income)]" : "",
+                      "flex h-11 w-7 shrink-0 flex-col items-center justify-center rounded-full text-[0.74rem] font-semibold transition-colors",
+                      isToday ? "ring-1 ring-[var(--finance-green)]/32 ring-offset-1 ring-offset-[var(--surface-page)]" : "",
+                      stateClass,
                     ].join(" ")}
                   >
-                    {day}
+                    <span>{day}</span>
+                    <span className={`mt-0.5 size-2 rounded-full ${dotClass}`} />
                   </span>
                 );
               })}
@@ -295,6 +333,7 @@ function BillList({
   items: Array<{
     bill: { id: string; name: string; icon: string; dueDay: number; paymentMethod: { name: string } | null };
     dueDate: Date;
+    paidAt?: Date | null;
     amount: number;
     hasInvoice: boolean;
   }>;
@@ -313,40 +352,24 @@ function BillList({
     <section className="space-y-2">
       <h2 className="section-eyebrow">{title}</h2>
       <div>
-        {items.map(({ bill, dueDate, amount, hasInvoice }) => {
+        {items.map(({ bill, dueDate, paidAt, amount, hasInvoice }) => {
           const remainingDays = daysUntil(dueDate);
-          const state = billStateMeta(hasInvoice, remainingDays);
-          const shortDate = new Intl.DateTimeFormat("es-AR", {
-            day: "numeric",
-            month: "short",
-          })
-            .format(dueDate)
-            .replace(".", "");
+          const shortDate = formatShortDate(dueDate);
+          const state = billStateMeta(hasInvoice, remainingDays, shortDate);
           const dateMeta = paid
-            ? `~día ${bill.dueDay} · ${bill.paymentMethod?.name ?? "Sin medio"}`
+            ? paidAt
+              ? `Pagado el ${formatShortDate(paidAt)}`
+              : "Pagado"
             : hasInvoice
-              ? `Vence ${shortDate}`
-              : `Vence ~día ${bill.dueDay}`;
-          const badgeClassName = [
-            state.tone === "danger" && "bg-red-100 text-red-700",
-            state.tone === "warning" && "bg-amber-100 text-amber-800",
-            state.tone === "muted" && "bg-[var(--surface-pill)] text-muted-foreground",
-          ]
-            .filter(Boolean)
-            .join(" ");
+              ? state.summary
+              : `Sin factura · día ${bill.dueDay}`;
           return (
             <Link key={bill.id} href={`/gastos-fijos/${bill.id}`}>
               <EntityListRow
                 icon={<Repeat2 className="size-4" aria-hidden />}
                 title={bill.name}
                 meta={dateMeta}
-                status={
-                  !paid ? (
-                    <PillChip className={badgeClassName}>{state.badge}</PillChip>
-                  ) : null
-                }
                 value={amount > 0 ? formatArs(amount) : "Sin monto"}
-                valueMeta={paid ? <CalendarCheck2 className="ml-auto size-4 text-[var(--income)]" aria-hidden /> : null}
               />
             </Link>
           );

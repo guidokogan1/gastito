@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronRight, Plus } from "lucide-react";
 import { Slot } from "radix-ui";
 
+import { AppIconAction } from "@/components/app/icon-action";
 import { Slideout } from "@/components/app/slideout";
 import { cn } from "@/lib/utils";
 
@@ -45,10 +46,12 @@ export function ResourceSheet({
 
 export function ResourceCreateButton({ children }: { children?: React.ReactNode }) {
   return (
-    <span className="inline-flex size-11 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-      <Plus className="size-4" aria-hidden />
-      {children ? <span className="ml-2">{children}</span> : null}
-    </span>
+    <AppIconAction asChild tone="primary">
+      <span>
+        <Plus className="size-4" aria-hidden />
+        {children ? <span className="ml-2">{children}</span> : null}
+      </span>
+    </AppIconAction>
   );
 }
 

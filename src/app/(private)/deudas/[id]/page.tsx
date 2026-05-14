@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/resources";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { DebtPaymentSheet } from "@/components/app/debt-payment-sheet";
+import { AppIconAction } from "@/components/app/icon-action";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { ResourceSheet } from "@/components/app/resource-sheet";
@@ -98,9 +99,11 @@ export default async function DebtDetailPage({
     <ResourceSheet
       title="Editar deuda"
       trigger={
-        <span className="inline-grid size-11 place-items-center rounded-full bg-[var(--surface-pill)] text-foreground">
-          <MoreHorizontal className="size-5" aria-hidden />
-        </span>
+        <AppIconAction asChild>
+          <span>
+            <MoreHorizontal className="size-5" aria-hidden />
+          </span>
+        </AppIconAction>
       }
       headerAction={
         <ConfirmForm
@@ -148,11 +151,11 @@ export default async function DebtDetailPage({
   return (
     <KineticPage className="space-y-6">
       <div className="flex items-center justify-between">
-        <Button asChild variant="secondary" size="icon-sm" aria-label="Volver a deudas">
+        <AppIconAction asChild size="sm" aria-label="Volver a deudas">
           <Link href="/deudas">
             <ArrowLeft className="size-5" aria-hidden />
           </Link>
-        </Button>
+        </AppIconAction>
         {editSheet}
       </div>
 

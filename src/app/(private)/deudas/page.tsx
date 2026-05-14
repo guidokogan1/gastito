@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ChevronRight, HandCoins } from "lucide-react";
+import { HandCoins } from "lucide-react";
 
 import { saveDebtAction } from "@/app/actions/resources";
+import { EntityListRow } from "@/components/app/entity-list-row";
 import { EmptyState } from "@/components/app/empty-state";
 import { FinanceHeroSplit } from "@/components/app/finance-hero";
 import { KineticPage } from "@/components/app/kinetic";
@@ -19,6 +20,7 @@ import { prisma } from "@/lib/db";
 import { formatArs } from "@/lib/format";
 import { getPreviewDataset } from "@/lib/preview-data";
 import { getPreviewPreset } from "@/lib/preview-mode";
+import { cn } from "@/lib/utils";
 
 const DEBT_DIRECTIONS = [
   { value: "we_owe", label: "Debemos" },
@@ -171,26 +173,16 @@ function DebtList({
               ? `de ${formatArs(total)}`
               : `de ${formatArs(total)} por cobrar`;
           return (
-            <Link key={debt.id} href={`/deudas/${debt.id}`} className="block border-b border-border/70 py-3 last:border-b-0">
-              <div className="flex items-center gap-3.5">
-                <div className="app-icon-tile font-semibold">{debt.entityName.slice(0, 1).toLocaleUpperCase("es-AR")}</div>
-                <div className="min-w-0 flex-1">
-                  <p className="row-title truncate">{debt.entityName}</p>
-                  <p className="row-meta mt-1 truncate">
-                    {statusLabel} · {debt.notes ?? "Sin motivo"}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className={`money-row ${settled ? "text-muted-foreground" : colorClass}`}>{settled ? statusLabel : formatArs(remaining)}</p>
-                  <p className="row-meta">{amountMeta}</p>
-                </div>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" />
-              </div>
-              {!settled ? (
-                <div className="ml-[3.35rem] mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div className={`h-full rounded-full ${progressClass}`} style={{ width: `${progress}%` }} />
-                </div>
-              ) : null}
+            <Link key={debt.id} href={`/deudas/${debt.id}`}>
+              <EntityListRow
+                icon={<span className="text-[0.98rem] font-semibold">{debt.entityName.slice(0, 1).toLocaleUpperCase("es-AR")}</span>}
+                title={debt.entityName}
+                meta={`${statusLabel} · ${debt.notes ?? "Sin motivo"}`}
+                value={<span className={cn(settled ? "text-muted-foreground" : colorClass)}>{settled ? statusLabel : formatArs(remaining)}</span>}
+                valueMeta={amountMeta}
+                progress={settled ? undefined : progress}
+                progressClassName={progressClass}
+              />
             </Link>
           );
         })}

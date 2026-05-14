@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { CalendarCheck2, ChevronRight, Plus, Repeat2, Trash2 } from "lucide-react";
+import { CalendarCheck2, Plus, Repeat2, Trash2 } from "lucide-react";
 
 import { saveRecurringBillAction } from "@/app/actions/resources";
+import { EntityListRow } from "@/components/app/entity-list-row";
 import { EmptyState } from "@/components/app/empty-state";
 import { FinanceHero } from "@/components/app/finance-hero";
 import { KineticPage } from "@/components/app/kinetic";
@@ -300,26 +301,21 @@ function BillList({
                 ? "bg-amber-100 text-amber-800"
                 : "bg-muted text-muted-foreground";
           return (
-            <Link key={bill.id} href={`/gastos-fijos/${bill.id}`} className="grouped-row" data-interactive="true">
-              <div className="app-icon-tile rounded-[0.85rem]">
-                <Repeat2 className="size-4" aria-hidden />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="row-title truncate">{bill.name}</p>
-                <p className="row-meta mt-1 truncate">{dateMeta}</p>
-                {!paid ? (
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Link key={bill.id} href={`/gastos-fijos/${bill.id}`}>
+              <EntityListRow
+                icon={<Repeat2 className="size-4" aria-hidden />}
+                title={bill.name}
+                meta={dateMeta}
+                status={
+                  !paid ? (
                     <span className={`rounded-full px-2.5 py-1 text-[0.74rem] font-medium ${badgeClassName}`}>
                       {state.badge}
                     </span>
-                  </div>
-                ) : null}
-              </div>
-              <div className="shrink-0 text-right">
-                {paid ? <CalendarCheck2 className="ml-auto size-4 text-[var(--income)]" aria-hidden /> : null}
-                <p className="money-row">{amount > 0 ? formatArs(amount) : "Sin monto"}</p>
-              </div>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground/70" aria-hidden />
+                  ) : null
+                }
+                value={amount > 0 ? formatArs(amount) : "Sin monto"}
+                valueMeta={paid ? <CalendarCheck2 className="ml-auto size-4 text-[var(--income)]" aria-hidden /> : null}
+              />
             </Link>
           );
         })}

@@ -19,6 +19,7 @@ import {
 import { formatArs, moneyInputValue, toNumber } from "@/lib/format";
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
 import { ConfirmForm } from "@/components/app/confirm-form";
+import { AppIconAction } from "@/components/app/icon-action";
 import { KineticPage } from "@/components/app/kinetic";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Slideout } from "@/components/app/slideout";
@@ -523,34 +524,26 @@ export function TransactionsPanel({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">{monthControl}</div>
           <div className="flex shrink-0 gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              aria-label="Abrir filtros"
-              className="icon-action size-10 text-muted-foreground"
-              onClick={() => setFiltersOpen(true)}
-            >
+            <AppIconAction aria-label="Abrir filtros" size="sm" onClick={() => setFiltersOpen(true)}>
               <Filter className="size-4.5" aria-hidden />
               {activeFilterCount > 0 ? (
                 <span className="absolute right-1 top-1 grid size-4 place-items-center rounded-full bg-[var(--finance-green)] text-[0.62rem] font-bold text-white">
                   {activeFilterCount}
                 </span>
               ) : null}
-            </Button>
+            </AppIconAction>
             {!readOnly ? (
-              <Button
-                type="button"
-                size="icon"
+              <AppIconAction
                 aria-label="Nuevo movimiento"
-                className="icon-action size-10 bg-[var(--finance-green)] text-white"
+                tone="primary"
+                size="sm"
                 onClick={() => {
                   setSelectedId(null);
                   setDrawerOpen(true);
                 }}
               >
                 <Plus className="size-5" aria-hidden />
-              </Button>
+              </AppIconAction>
             ) : null}
           </div>
         </div>

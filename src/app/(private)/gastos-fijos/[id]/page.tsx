@@ -9,12 +9,14 @@ import {
   saveRecurringBillPaymentAction,
 } from "@/app/actions/resources";
 import { ConfirmForm } from "@/components/app/confirm-form";
+import { AppIconAction } from "@/components/app/icon-action";
+import { EntityListRow } from "@/components/app/entity-list-row";
 import { EmptyState } from "@/components/app/empty-state";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
-import { ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
+import { ResourceSheet } from "@/components/app/resource-sheet";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
 import { Button } from "@/components/ui/button";
@@ -233,15 +235,15 @@ export default async function FixedDetailPage({
     <KineticPage className="space-y-6">
       <header className="space-y-6">
         <div className="flex items-center justify-between">
-          <Button asChild variant="secondary" size="icon" aria-label="Volver a gastos fijos">
+          <AppIconAction asChild aria-label="Volver a gastos fijos">
             <Link href="/gastos-fijos"><ArrowLeft className="size-5" /></Link>
-          </Button>
+          </AppIconAction>
           {!readOnly ? (
             <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”?`}>
               <input type="hidden" name="id" value={bill.id} />
-              <Button type="submit" variant="secondary" size="icon" className="text-destructive" aria-label="Borrar gasto fijo">
+              <AppIconAction type="submit" tone="danger" aria-label="Borrar gasto fijo">
                 <Trash2 className="size-4" />
-              </Button>
+              </AppIconAction>
             </ConfirmForm>
           ) : null}
         </div>
@@ -309,12 +311,12 @@ export default async function FixedDetailPage({
                   triggerAsChild
                   trigger={
                     <button type="button" disabled={readOnly} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18 disabled:cursor-default">
-                      <ResourceRowShell
+                      <EntityListRow
                         icon={payment.paidAt ? <CalendarCheck2 className="size-4" /> : <Clock3 className="size-4" />}
                         title={formatArs(payment.amount)}
                         meta={`${payment.paidAt ? `Pagado ${formatDate(payment.paidAt)}` : `Vence ${formatDate(payment.dueDate)}`} · ${payment.transactionId ? "Con movimiento" : "Sin movimiento"}`}
-                        interactive={!readOnly}
-                        className="border-b-0"
+                        chevron={false}
+                        className="border-b-0 py-0"
                       />
                     </button>
                   }

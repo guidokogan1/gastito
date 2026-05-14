@@ -72,7 +72,7 @@ export function DebtPaymentSheet({
             <Label htmlFor="paymentNotes">Motivo</Label>
             <Textarea id="paymentNotes" name="notes" placeholder={notePlaceholder} />
           </div>
-          <CheckboxLine name="createTransaction" defaultChecked className="flex rounded-[1rem] bg-[var(--surface-pill)] p-4 text-[0.98rem]">
+          <CheckboxLine name="createTransaction" defaultChecked>
             {transactionCopy}
           </CheckboxLine>
         </section>

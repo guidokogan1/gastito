@@ -17,6 +17,7 @@ import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
 import { ResourceSheet } from "@/components/app/resource-sheet";
+import { SearchPickerField } from "@/components/app/search-picker-field";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
 import { Button } from "@/components/ui/button";
@@ -186,10 +187,19 @@ export default async function FixedDetailPage({
           </div>
           <div className="space-y-2">
             <Label htmlFor="defaultCategoryId">Categoría default</Label>
-            <select id="defaultCategoryId" name="defaultCategoryId" defaultValue={bill.defaultCategoryId ?? ""} className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-semibold">
-              <option value="">Sin categoría</option>
-              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-            </select>
+            <SearchPickerField
+              id="defaultCategoryId"
+              name="defaultCategoryId"
+              defaultValue={bill.defaultCategoryId ?? ""}
+              options={[
+                { value: "", label: "Sin categoría" },
+                ...categories.map((category) => ({ value: category.id, label: category.name })),
+              ]}
+              placeholder="Sin categoría"
+              inputPlaceholder="Buscar categoría…"
+              className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-medium text-foreground hover:bg-[var(--surface-control)]"
+              contentClassName="w-[min(24rem,calc(100vw-2rem))]"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Descripción</Label>
@@ -218,10 +228,13 @@ export default async function FixedDetailPage({
             <Label>Pagado el</Label>
             <DateField name="paidAt" defaultValue={todayIso()} required />
           </div>
-          <PaymentMethodField name="paymentMethodId" defaultValue={bill.paymentMethodId ?? ""} methods={paymentMethods} quickMethods={paymentMethods} />
+          <div className="space-y-2">
+            <Label>Medio</Label>
+            <PaymentMethodField name="paymentMethodId" defaultValue={bill.paymentMethodId ?? ""} methods={paymentMethods} quickMethods={paymentMethods} />
+          </div>
           <input type="hidden" name="categoryId" value={bill.defaultCategoryId ?? ""} />
           <CheckboxLine name="createTransaction" defaultChecked>
-            Registrar también como movimiento
+            Registrar como movimiento
           </CheckboxLine>
         </section>
         <div className="sheet-action-bar">
@@ -344,19 +357,22 @@ export default async function FixedDetailPage({
                         <Label>Pagado el</Label>
                         <DateField name="paidAt" defaultValue={payment.paidAt?.toISOString().slice(0, 10) ?? ""} />
                       </div>
-                      <PaymentMethodField
-                        name="paymentMethodId"
-                        defaultValue={payment.paymentMethodId ?? bill.paymentMethodId ?? ""}
-                        methods={paymentMethods}
-                        quickMethods={paymentMethods}
-                      />
+                      <div className="space-y-2">
+                        <Label>Medio</Label>
+                        <PaymentMethodField
+                          name="paymentMethodId"
+                          defaultValue={payment.paymentMethodId ?? bill.paymentMethodId ?? ""}
+                          methods={paymentMethods}
+                          quickMethods={paymentMethods}
+                        />
+                      </div>
                       <input type="hidden" name="categoryId" value={bill.defaultCategoryId ?? ""} />
                       <div className="space-y-1.5">
                         <Label htmlFor={`payment-notes-${payment.id}`}>Notas</Label>
                         <Textarea id={`payment-notes-${payment.id}`} name="notes" defaultValue={payment.notes ?? ""} placeholder="Ej. Ajuste, débito, pago parcial" />
                       </div>
                       <CheckboxLine name="createTransaction" defaultChecked={Boolean(payment.transactionId)}>
-                        Registrar también como movimiento
+                        Registrar como movimiento
                       </CheckboxLine>
                     </section>
                     <div className="sheet-action-bar">

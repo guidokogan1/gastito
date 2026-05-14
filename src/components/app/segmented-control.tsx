@@ -25,7 +25,10 @@ export function SegmentedControl({
   const selectedValue = value ?? defaultValue ?? options[0]?.value ?? "";
 
   return (
-    <div className={cn("grid grid-cols-2 rounded-full bg-[var(--surface-pill)] p-1", className)}>
+    <div
+      className={cn("grid rounded-full bg-[var(--surface-pill)] p-1", className)}
+      style={{ gridTemplateColumns: `repeat(${Math.max(options.length, 1)}, minmax(0, 1fr))` }}
+    >
       {options.map((option) => {
         const active = option.value === selectedValue;
 

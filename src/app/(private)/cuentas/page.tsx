@@ -4,12 +4,11 @@ import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
-import { MetricStrip } from "@/components/app/metric-strip";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { EmptyState } from "@/components/app/empty-state";
+import { SegmentedControl } from "@/components/app/segmented-control";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 import { ResourceCreateButton, ResourceRowShell, ResourceSheet } from "@/components/app/resource-sheet";
 import { Button } from "@/components/ui/button";
@@ -50,7 +49,6 @@ export default async function AccountsPage({
   const createAccount = (
     <ResourceSheet
       title="Nueva cuenta"
-      description="Usá cuentas para separar dónde entra o sale la plata: banco, billetera o efectivo."
       trigger={<ResourceCreateButton />}
     >
       <form action={saveAccountAction} className="space-y-4">
@@ -62,9 +60,13 @@ export default async function AccountsPage({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="type">Tipo</Label>
-            <NativeSelect id="type" name="type" defaultValue="bank">
-              {ACCOUNT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </NativeSelect>
+            <SegmentedControl
+              name="type"
+              options={ACCOUNT_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+              defaultValue="bank"
+              size="sm"
+              className="rounded-[1rem]"
+            />
           </div>
         </section>
         <div className="sheet-action-bar">
@@ -79,17 +81,9 @@ export default async function AccountsPage({
         <ScreenHeader title="Cuentas" action={createAccount} />
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <section className="space-y-3 border-b border-border/70 pb-5">
-          <MetricStrip
-            columns={2}
-            items={[
-              { label: "Cuentas", value: totalAccounts.toString() },
-              { label: "Objetivo", value: "Separar origen" },
-            ]}
-          />
-          <p className="text-[0.92rem] leading-relaxed text-muted-foreground">
-            Cuanto mejor separemos banco, billetera y efectivo, más fácil va a ser entender por dónde se mueve tu plata.
-          </p>
+        <section className="border-b border-border/70 pb-4">
+          <p className="stat-label">Cuentas</p>
+          <p className="mt-1 text-[2rem] font-medium leading-none text-foreground tabular-nums">{totalAccounts}</p>
         </section>
         <GroupedSection>
             {accounts.length === 0 ? (
@@ -112,7 +106,6 @@ export default async function AccountsPage({
                   <ResourceSheet
                     key={account.id}
                     title={account.name}
-                    description="Ajustá el nombre o el tipo si cambió cómo usás esta cuenta en la operación diaria."
                     headerAction={
                       <ConfirmForm action={deleteAccountAction} confirm={`¿Borrar la cuenta “${account.name}”? Esta acción no se puede deshacer.`}>
                         <input type="hidden" name="id" value={account.id} />
@@ -140,18 +133,13 @@ export default async function AccountsPage({
                         </div>
                         <div className="space-y-1.5">
                           <Label htmlFor={`account-type-${account.id}`}>Tipo</Label>
-                        <NativeSelect
-                          id={`account-type-${account.id}`}
-                          name="type"
-                          defaultValue={account.type}
-                          aria-label={`Tipo de la cuenta ${account.name}`}
-                        >
-                          {ACCOUNT_TYPES.map((t) => (
-                            <option key={t.value} value={t.value}>
-                              {t.label}
-                            </option>
-                          ))}
-                        </NativeSelect>
+                          <SegmentedControl
+                            name="type"
+                            options={ACCOUNT_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                            defaultValue={account.type}
+                            size="sm"
+                            className="rounded-[1rem]"
+                          />
                         </div>
                       </section>
                       <div className="sheet-action-bar">

@@ -45,6 +45,10 @@ function withMessage(path: string, value: string) {
   return `${path}?message=${encodeURIComponent(value)}`;
 }
 
+function debtPaymentDetail(direction: "we_owe" | "they_owe_us", entityName: string) {
+  return `${direction === "we_owe" ? "Pago deuda" : "Cobro deuda"} · ${entityName}`;
+}
+
 export async function completeOnboardingAction(formData: FormData) {
   const current = await requireUser();
   if (current.household) redirect("/");
@@ -552,14 +556,13 @@ export async function saveDebtPaymentAction(formData: FormData) {
 
   await assertOwnedResource("debt", parsed.data.debtId, household.id);
   const amount = Number(parsed.data.amount);
+  const debt = await prisma.debt.findFirst({
+    where: { id: parsed.data.debtId, householdId: household.id, deletedAt: null },
+    select: { id: true, entityName: true, direction: true },
+  });
+  if (!debt) throw new Error("No encontramos esa deuda.");
 
   await prisma.$transaction(async (tx) => {
-    const debt = await tx.debt.findFirst({
-      where: { id: parsed.data.debtId, householdId: household.id, deletedAt: null },
-      select: { id: true, entityName: true, direction: true },
-    });
-    if (!debt) throw new Error("No encontramos esa deuda.");
-
     if (parsed.data.id) {
       const previous = await tx.debtPayment.findFirst({
         where: { id: parsed.data.id, householdId: household.id, debtId: parsed.data.debtId, deletedAt: null },
@@ -581,7 +584,7 @@ export async function saveDebtPaymentAction(formData: FormData) {
           date: toDate(parsed.data.date),
           amount: parsed.data.amount,
           type: debtPaymentTransactionType(debt.direction),
-          detail: `Pago deuda · ${debt.entityName}`,
+          detail: debtPaymentDetail(debt.direction, debt.entityName),
           sourceType: "debt_payment" as const,
           sourceId: previous.id,
         };
@@ -624,7 +627,7 @@ export async function saveDebtPaymentAction(formData: FormData) {
             date: toDate(parsed.data.date),
             amount: parsed.data.amount,
             type: debtPaymentTransactionType(debt.direction),
-            detail: `Pago deuda · ${debt.entityName}`,
+            detail: debtPaymentDetail(debt.direction, debt.entityName),
             sourceType: "debt_payment",
             sourceId: payment.id,
           },
@@ -653,7 +656,18 @@ export async function saveDebtPaymentAction(formData: FormData) {
   revalidatePath("/deudas");
   revalidatePath(`/deudas/${parsed.data.debtId}`);
   revalidatePath("/");
-  redirect(withMessage(`/deudas/${parsed.data.debtId}`, parsed.data.id ? "Pago actualizado." : "Pago registrado."));
+  redirect(
+    withMessage(
+      `/deudas/${parsed.data.debtId}`,
+      parsed.data.id
+        ? debt.direction === "we_owe"
+          ? "Abono actualizado."
+          : "Cobro actualizado."
+        : debt.direction === "we_owe"
+          ? "Abono registrado."
+          : "Cobro registrado.",
+    ),
+  );
 }
 
 export async function deleteDebtPaymentAction(formData: FormData) {
@@ -675,7 +689,7 @@ export async function deleteDebtPaymentAction(formData: FormData) {
   revalidatePath("/deudas");
   revalidatePath(`/deudas/${payment.debtId}`);
   revalidatePath("/");
-  redirect(withMessage(`/deudas/${payment.debtId}`, "Pago borrado."));
+  redirect(withMessage(`/deudas/${payment.debtId}`, "Registro borrado."));
 }
 
 export async function deleteDebtAction(formData: FormData) {
@@ -887,7 +901,12 @@ export async function saveRecurringBillPaymentAction(formData: FormData) {
   revalidatePath("/gastos-fijos");
   revalidatePath(`/gastos-fijos/${parsed.data.recurringBillId}`);
   revalidatePath("/");
-  redirect(withMessage(`/gastos-fijos/${parsed.data.recurringBillId}`, parsed.data.id ? "Pago actualizado." : "Pago registrado."));
+  redirect(
+    withMessage(
+      `/gastos-fijos/${parsed.data.recurringBillId}`,
+      parsed.data.id ? "Registro actualizado." : "Pago registrado.",
+    ),
+  );
 }
 
 export async function deleteRecurringBillPaymentAction(formData: FormData) {
@@ -908,7 +927,7 @@ export async function deleteRecurringBillPaymentAction(formData: FormData) {
   revalidatePath("/gastos-fijos");
   revalidatePath(`/gastos-fijos/${payment.recurringBillId}`);
   revalidatePath("/");
-  redirect(withMessage(`/gastos-fijos/${payment.recurringBillId}`, "Pago borrado."));
+  redirect(withMessage(`/gastos-fijos/${payment.recurringBillId}`, "Registro borrado."));
 }
 
 export async function deleteRecurringBillAction(formData: FormData) {

@@ -3,6 +3,7 @@ import { ChevronRight, HandCoins } from "lucide-react";
 
 import { saveDebtAction } from "@/app/actions/resources";
 import { EmptyState } from "@/components/app/empty-state";
+import { FinanceHeroSplit } from "@/components/app/finance-hero";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { ResourceCreateButton, ResourceSheet } from "@/components/app/resource-sheet";
@@ -108,18 +109,22 @@ export default async function DebtsPage({
         <EmptyState icon={HandCoins} title="Todavía no hay deudas" description="Agregá la primera para seguir pagos y saldos sin planillas." compact />
       ) : (
         <>
-          <section className="grid grid-cols-2 gap-5 border-b border-border/70 pb-5">
-            <div className="border-r border-border/70 pr-5">
-              <p className="section-eyebrow"><span className="mr-2 inline-block size-2 rounded-full bg-red-600" />Debemos</p>
-              <p className="stat-value mt-2">{formatArs(weOweTotal)}</p>
-              <p className="row-meta mt-1">{weOweItems.length} activas</p>
-            </div>
-            <div>
-              <p className="section-eyebrow"><span className="mr-2 inline-block size-2 rounded-full bg-[var(--income)]" />Nos deben</p>
-              <p className="stat-value mt-2">{formatArs(theyOweTotal)}</p>
-              <p className="row-meta mt-1">{theyOweItems.length} activas</p>
-            </div>
-          </section>
+          <FinanceHeroSplit
+            items={[
+              {
+                label: <><span className="mr-2 inline-block size-2 rounded-full bg-red-600" />Debemos</>,
+                value: formatArs(weOweTotal),
+                meta: `${weOweItems.length} activas`,
+                tone: "danger",
+              },
+              {
+                label: <><span className="mr-2 inline-block size-2 rounded-full bg-[var(--income)]" />Nos deben</>,
+                value: formatArs(theyOweTotal),
+                meta: `${theyOweItems.length} activas`,
+                tone: "income",
+              },
+            ]}
+          />
 
           <DebtList title="Activas" items={activeItems} />
           {settledItems.length > 0 ? <DebtList title="Saldadas" items={settledItems} settled /> : null}

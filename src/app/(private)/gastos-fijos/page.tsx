@@ -3,6 +3,7 @@ import { CalendarCheck2, ChevronRight, Plus, Repeat2, Trash2 } from "lucide-reac
 
 import { saveRecurringBillAction } from "@/app/actions/resources";
 import { EmptyState } from "@/components/app/empty-state";
+import { FinanceHero } from "@/components/app/finance-hero";
 import { KineticPage } from "@/components/app/kinetic";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
 import { StatusPill } from "@/components/app/pill-chip";
@@ -208,11 +209,12 @@ export default async function BillsPage({
       ) : (
         <>
           <section className="space-y-3 border-b border-border/70 pb-5">
-            <p className="section-eyebrow">Pendientes este mes</p>
-            <p className="money-hero text-amber-700">{formatArs(pendingTotal)}</p>
-            <p className="row-meta">
-              {pendingItems.length} servicios sin pagar · {paidItems.length} pagados · {formatArs(paidTotal)}
-            </p>
+            <FinanceHero
+              primaryLabel="Pendientes este mes"
+              primaryValue={<span className="text-amber-700">{formatArs(pendingTotal)}</span>}
+              description={`${pendingItems.length} servicios sin pagar · ${paidItems.length} pagados · ${formatArs(paidTotal)}`}
+              className="space-y-3"
+            />
             <div className="flex flex-wrap gap-2 pt-1">
               <StatusPill tone="warning">Pendiente</StatusPill>
               <StatusPill tone="success">Pagado</StatusPill>

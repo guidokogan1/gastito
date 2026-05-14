@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { FlashMessage } from "@/components/flash-message";
+import { FinanceHero } from "@/components/app/finance-hero";
 import { KineticPage } from "@/components/app/kinetic";
 import { FinancialAmount } from "@/components/app/financial-amount";
 import { MetricStrip } from "@/components/app/metric-strip";
@@ -216,15 +217,11 @@ export default async function DashboardPage({
       ) : null}
 
       <section className="space-y-6">
-        <div>
-          <p className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Disponible del mes</p>
-          <p className="money-hero mt-3">
-            <FinancialAmount value={availableThisMonth} direction={availableThisMonth >= 0 ? "income" : "expense"} />
-          </p>
-          <p className="mt-2 max-w-[34rem] text-[0.95rem] leading-relaxed text-muted-foreground">
-            Ingresos menos gastos cargados y vencimientos pendientes del mes. Te ayuda a ver cuánto margen real te queda hoy.
-          </p>
-        </div>
+        <FinanceHero
+          primaryLabel="Disponible del mes"
+          primaryValue={<FinancialAmount value={availableThisMonth} direction={availableThisMonth >= 0 ? "income" : "expense"} />}
+          description="Ingresos menos gastos cargados y vencimientos pendientes del mes. Te ayuda a ver cuánto margen real te queda hoy."
+        />
 
         <MetricStrip
           columns={3}

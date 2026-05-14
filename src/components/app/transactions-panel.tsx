@@ -499,7 +499,7 @@ export function TransactionsPanel({
       : null,
     categoryFilterId !== "all"
       ? {
-          label: categoryFilterId === "none" ? "Sin categoria" : `Categoria: ${filterCategoryOptions.find((category) => category.id === categoryFilterId)?.name ?? "Filtrada"}`,
+          label: categoryFilterId === "none" ? "Sin categoría" : `Categoría: ${filterCategoryOptions.find((category) => category.id === categoryFilterId)?.name ?? "Filtrada"}`,
           onClear: () => setCategoryFilterId("all"),
         }
       : null,
@@ -512,7 +512,7 @@ export function TransactionsPanel({
   ].filter(Boolean) as Array<{ label: string; onClear: () => void }>;
   const formContextSummary = [
     { label: formType === "income" ? "Tipo: ingreso" : "Tipo: gasto" },
-    { label: selectedCategoryName ? `Categoria: ${selectedCategoryName}` : "Sin categoria" },
+    { label: selectedCategoryName ? `Categoría: ${selectedCategoryName}` : "Sin categoría" },
     { label: selectedMethodName ? `${paymentMethodLabel}: ${selectedMethodName}` : paymentMethodEmptyLabel },
     { label: selectedAccountName ? `${accountLabel}: ${selectedAccountName}` : "Sin cuenta" },
   ];

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { HandCoins } from "lucide-react";
 
 import { saveDebtAction } from "@/app/actions/resources";
-import { EntityListRow } from "@/components/app/entity-list-row";
 import { EmptyState } from "@/components/app/empty-state";
 import { FinanceHeroSplit } from "@/components/app/finance-hero";
 import { KineticPage } from "@/components/app/kinetic";
@@ -153,7 +152,7 @@ function DebtList({
   return (
     <section className="space-y-2">
       <h2 className="section-eyebrow">{title}</h2>
-      <div>
+      <div className="space-y-1">
         {items.map(({ debt, total, remaining, progress }) => {
           const isWeOwe = debt.direction === "we_owe";
           const colorClass = isWeOwe ? "text-red-700" : "text-[var(--income)]";
@@ -166,23 +165,36 @@ function DebtList({
               ? "Pendiente de pago"
               : "Pendiente de cobro";
           const amountMeta = settled
-            ? isWeOwe
-              ? "Pago completado"
-              : "Cobro completado"
+            ? undefined
             : isWeOwe
               ? `de ${formatArs(total)}`
-              : `de ${formatArs(total)} por cobrar`;
+              : `de ${formatArs(total)}`;
+          const meta = debt.notes?.trim() || (settled ? statusLabel : isWeOwe ? "Debemos" : "Nos deben");
           return (
             <Link key={debt.id} href={`/deudas/${debt.id}`}>
-              <EntityListRow
-                icon={<span className="text-[0.98rem] font-semibold">{debt.entityName.slice(0, 1).toLocaleUpperCase("es-AR")}</span>}
-                title={debt.entityName}
-                meta={`${statusLabel} · ${debt.notes ?? "Sin motivo"}`}
-                value={<span className={cn(settled ? "text-muted-foreground" : colorClass)}>{settled ? statusLabel : formatArs(remaining)}</span>}
-                valueMeta={amountMeta}
-                progress={settled ? undefined : progress}
-                progressClassName={progressClass}
-              />
+              <div className="grouped-row" data-interactive="true">
+                <div className="app-icon-tile">
+                  <span className="text-[0.98rem] font-semibold">{debt.entityName.slice(0, 1).toLocaleUpperCase("es-AR")}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="row-title truncate">{debt.entityName}</p>
+                  <p className="row-meta mt-1 truncate">{meta}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className={cn("money-row", settled ? "text-muted-foreground" : colorClass)}>
+                    {settled ? statusLabel : formatArs(remaining)}
+                  </p>
+                  {amountMeta ? <p className="row-meta mt-1">{amountMeta}</p> : null}
+                </div>
+                <span className="ml-2 text-muted-foreground/70" aria-hidden>
+                  ›
+                </span>
+                {!settled ? (
+                  <div className="ml-[3.35rem] mt-2 h-1.5 basis-full overflow-hidden rounded-full bg-muted">
+                    <div className={cn("h-full rounded-full", progressClass)} style={{ width: `${progress}%` }} />
+                  </div>
+                ) : null}
+              </div>
             </Link>
           );
         })}

@@ -211,7 +211,7 @@ export default async function DebtDetailPage({
           <div>
             {debt.payments.map((payment) => (
               <div key={payment.id} className="flex items-center gap-3.5 border-b border-border/70 py-3 last:border-b-0">
-                <div className="app-icon-tile text-[var(--income)]">
+                <div className={`app-icon-tile ${isWeOwe ? "bg-red-600 text-white" : "bg-[var(--income)] text-white"}`}>
                   <Check className="size-5" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -220,7 +220,6 @@ export default async function DebtDetailPage({
                 </div>
                 <div className="shrink-0 text-right">
                   <p className={`money-row ${paymentAmountClassName}`}>{paymentAmountPrefix}{formatArs(Number(payment.amount))}</p>
-                  {payment.transactionId ? <p className="row-meta">Movimiento</p> : null}
                 </div>
                 {!readOnly ? (
                   <ConfirmForm

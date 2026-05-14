@@ -511,13 +511,6 @@ export function TransactionsPanel({
         }
       : null,
   ].filter(Boolean) as Array<{ label: string; onClear: () => void }>;
-  const formContextSummary = [
-    { label: formType === "income" ? "Tipo: ingreso" : "Tipo: gasto" },
-    { label: selectedCategoryName ? `Categoría: ${selectedCategoryName}` : "Sin categoría" },
-    { label: selectedMethodName ? `${paymentMethodLabel}: ${selectedMethodName}` : paymentMethodEmptyLabel },
-    { label: selectedAccountName ? `${accountLabel}: ${selectedAccountName}` : "Sin cuenta" },
-  ];
-
   return (
     <KineticPage className="space-y-5">
       <section className="space-y-3.5">
@@ -817,7 +810,6 @@ export function TransactionsPanel({
         <Slideout
           open={drawerOpen}
           title={panelTitle}
-          description={selected ? "Ajustá el movimiento sin perder el contexto del mes y los filtros actuales." : "Cargá el movimiento con el menor esfuerzo posible. Lo demás lo podés completar después."}
           titleSize="small"
           headerAction={
             selected ? (
@@ -847,14 +839,6 @@ export function TransactionsPanel({
           <input type="hidden" name="accountId" value={formAccountId} />
 
           <section className="grouped-form-section space-y-5">
-            <div className="rounded-[1.15rem] border border-border/70 bg-card px-4 py-3">
-              <p className="text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">Contexto del movimiento</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {formContextSummary.map((item) => (
-                  <ActiveFilterPill key={item.label} label={item.label} />
-                ))}
-              </div>
-            </div>
             <div className="space-y-2 text-center">
               <MoneyField
                 id="amount"
@@ -936,16 +920,12 @@ export function TransactionsPanel({
                 placeholder={formType === "income" ? "Ej. Sueldo abril" : "Ej. Compra semanal"}
                 defaultValue={selected?.detail ?? ""}
               />
-              <p className="text-[0.82rem] text-muted-foreground">
-                Usá un detalle que después puedas reconocer rápido en la lista y en búsquedas.
-              </p>
             </div>
           </section>
 
           <section className="grouped-form-section space-y-1">
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm font-medium">Etiquetas</p>
-              <p className="text-xs text-muted-foreground">Mejoran filtros y reportes</p>
             </div>
             <div className="divide-y divide-border/60">
               <SettingPickerRow
@@ -1031,7 +1011,6 @@ export function TransactionsPanel({
               ? paymentMethodLabel
               : accountLabel
         }
-        description="Elegí una opción para mejorar la lectura del movimiento y tus filtros futuros."
         onClose={() => setPickerOpen(null)}
       >
         {pickerOpen === "category" ? (

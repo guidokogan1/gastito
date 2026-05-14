@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { FinanceHero } from "@/components/app/finance-hero";
 import { KineticPage } from "@/components/app/kinetic";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
-import { StatusPill } from "@/components/app/pill-chip";
+import { PillChip } from "@/components/app/pill-chip";
 import { ResourceCreateButton, ResourceSheet } from "@/components/app/resource-sheet";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -217,13 +217,13 @@ export default async function BillsPage({
               className="space-y-3"
             />
             <div className="flex flex-wrap gap-2 pt-1">
-              <StatusPill tone="warning">Pendiente</StatusPill>
-              <StatusPill tone="success">Pagado</StatusPill>
-              <StatusPill tone="neutral">Sin factura</StatusPill>
+              <PillChip active>Pendiente</PillChip>
+              <PillChip active>Pagado</PillChip>
+              <PillChip active>Sin factura</PillChip>
               {overdueCount > 0 ? (
-                <StatusPill tone="danger">
+                <PillChip active>
                   {overdueCount} vencid{overdueCount === 1 ? "a" : "as"}
-                </StatusPill>
+                </PillChip>
               ) : null}
             </div>
             <div className="flex items-end justify-between gap-4 pt-2">

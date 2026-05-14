@@ -64,44 +64,55 @@ export function MonthlyTrendChart({
   const activeMonth = months[activeIndex] ?? months[months.length - 1];
   const activeExpensePoint = expensePoints[activeIndex];
   const activeIncomePoint = incomePoints[activeIndex];
+  const monthSummary = activeMonth
+    ? [
+        {
+          label: "Gastos",
+          value: formatArs(activeMonth.expenses),
+          lineClass: "bg-[var(--finance-green)]",
+          textClass: "text-foreground",
+        },
+        {
+          label: "Ingresos",
+          value: formatArs(activeMonth.incomes),
+          lineClass: "border-t-2 border-dashed border-muted-foreground/45",
+          textClass: "text-muted-foreground",
+        },
+      ]
+    : [];
 
   return (
     <section className={cn("space-y-4 border-b border-border/70 pb-5", className)}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Tendencia · 7 meses</p>
-          <p
-            className={cn(
-              "mt-1 text-[1.02rem] font-medium",
-              trendTone === "positive" && "text-[var(--income)]",
-              trendTone === "warning" && "text-amber-700",
-              trendTone === "neutral" && "text-muted-foreground",
-            )}
-          >
-            {deltaLabel}
-          </p>
-        </div>
-        <div className="shrink-0 space-y-1 text-right text-[0.88rem] font-normal text-muted-foreground">
-          <p className="flex items-center justify-end gap-2">
-            <span className="h-1 w-6 rounded-full bg-[var(--finance-green)]" />
-            Gastos
-          </p>
-          <p className="flex items-center justify-end gap-2">
-            <span className="h-0.5 w-6 border-t-2 border-dashed border-muted-foreground/45" />
-            Ingresos
-          </p>
-        </div>
+      <div className="min-w-0">
+        <p className="text-[0.74rem] font-medium uppercase tracking-[0.075em] text-muted-foreground">Tendencia · 7 meses</p>
+        <p
+          className={cn(
+            "mt-1 text-[1.02rem] font-medium",
+            trendTone === "positive" && "text-[var(--income)]",
+            trendTone === "warning" && "text-amber-700",
+            trendTone === "neutral" && "text-muted-foreground",
+          )}
+        >
+          {deltaLabel}
+        </p>
       </div>
 
-      {activeMonth ? (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.84rem]">
-          <span className="rounded-full bg-[var(--surface-pill)] px-2.5 py-1 font-medium text-foreground">{activeMonth.label}</span>
-          <span className="font-medium text-[var(--finance-green)]">Gastos {formatArs(activeMonth.expenses)}</span>
-          <span className="text-muted-foreground">Ingresos {formatArs(activeMonth.incomes)}</span>
-        </div>
-      ) : null}
-
       <div className="overflow-hidden rounded-[1.15rem] bg-[linear-gradient(180deg,rgba(15,23,42,0.02),rgba(15,23,42,0.005))] px-2 py-3">
+        <div className="min-w-0">
+          {activeMonth ? (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-2 text-[0.84rem]">
+              <span className="rounded-full bg-[var(--surface-pill)] px-2.5 py-1 font-medium text-foreground">{activeMonth.label}</span>
+              {monthSummary.map((item) => (
+                <span key={item.label} className={cn("inline-flex items-center gap-2", item.textClass)}>
+                  <span className={cn("w-5 shrink-0", item.lineClass)} />
+                  <span>
+                    {item.label} {item.value}
+                  </span>
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <div role="img" aria-label="Tendencia de gastos e ingresos de los últimos 7 meses">
           <svg viewBox="0 0 348 146" className="h-[11.25rem] w-full" preserveAspectRatio="xMidYMid meet">
             <defs>

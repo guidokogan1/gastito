@@ -70,6 +70,15 @@ function billIcon(icon: string): LucideIcon {
   return Repeat2;
 }
 
+function billIconTone(icon: string, name: string) {
+  const normalized = `${icon} ${name}`.toLowerCase();
+  if (normalized.includes("wifi") || normalized.includes("internet")) return "bg-amber-100 text-amber-700";
+  if (normalized.includes("gas")) return "bg-orange-100 text-orange-700";
+  if (normalized.includes("edenor") || normalized.includes("luz")) return "bg-yellow-100 text-yellow-700";
+  if (normalized.includes("expensa") || normalized.includes("abl") || normalized.includes("file")) return "bg-slate-100 text-slate-700";
+  return "bg-[var(--surface-pill)] text-foreground";
+}
+
 function DashboardAction({
   href,
   label,
@@ -252,7 +261,7 @@ export default async function DashboardPage({
               const Icon = billIcon(bill.icon);
               return (
                 <Link key={bill.id} href={`/gastos-fijos/${bill.recurringBillId}`} className="app-list-row" data-interactive="true">
-                  <div className="app-icon-tile rounded-[0.85rem] text-amber-700">
+                  <div className={cn("app-icon-tile rounded-full", billIconTone(bill.icon, bill.name))}>
                     <Icon className="size-4" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">

@@ -4,7 +4,6 @@ import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
-import { MetricStrip } from "@/components/app/metric-strip";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -34,7 +33,6 @@ export default async function PaymentMethodsPage({
   const createMethod = (
     <ResourceSheet
       title="Nuevo medio"
-      description="Creá medios que reconozcas al instante al cargar movimientos o revisar vencimientos."
       trigger={<ResourceCreateButton />}
     >
       <form action={savePaymentMethodAction} className="space-y-4">
@@ -57,17 +55,9 @@ export default async function PaymentMethodsPage({
         <ScreenHeader title="Medios" action={createMethod} />
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <section className="space-y-3 border-b border-border/70 pb-5">
-          <MetricStrip
-            columns={2}
-            items={[
-              { label: "Medios", value: totalMethods.toString() },
-              { label: "Mejor práctica", value: "Un nombre por uso" },
-            ]}
-          />
-          <p className="text-[0.92rem] leading-relaxed text-muted-foreground">
-            Nombralos como los ves en la vida real: tarjeta, efectivo, transferencia o billetera. Eso hace que cargar y leer movimientos sea mucho más rápido.
-          </p>
+        <section className="border-b border-border/70 pb-4">
+          <p className="stat-label">Medios</p>
+          <p className="mt-1 text-[2rem] font-medium leading-none text-foreground tabular-nums">{totalMethods}</p>
         </section>
         <GroupedSection>
             {methods.length === 0 ? (
@@ -90,7 +80,6 @@ export default async function PaymentMethodsPage({
                   <ResourceSheet
                     key={method.id}
                     title={method.name}
-                    description="Elegí un nombre estable para que este medio te sirva también en gastos fijos y filtros."
                     headerAction={
                       <ConfirmForm action={deletePaymentMethodAction} confirm={`¿Borrar el medio “${method.name}”? Esta acción no se puede deshacer.`}>
                         <input type="hidden" name="id" value={method.id} />
@@ -103,7 +92,6 @@ export default async function PaymentMethodsPage({
                       <ResourceRowShell
                         icon={<Icon className="size-4" aria-hidden />}
                         title={method.name}
-                        meta="Disponible para movimientos y pagos"
                         interactive
                       />
                     }

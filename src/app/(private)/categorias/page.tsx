@@ -4,7 +4,6 @@ import { FlashMessage } from "@/components/flash-message";
 import { ConfirmForm } from "@/components/app/confirm-form";
 import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
-import { MetricStrip } from "@/components/app/metric-strip";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -72,7 +71,6 @@ export default async function CategoriesPage({
   const createCategory = (
     <ResourceSheet
       title="Nueva categoría"
-      description="Agrupá movimientos con nombres claros para encontrar gastos e ingresos más rápido."
       trigger={<ResourceCreateButton />}
     >
       <form action={saveCategoryAction} className="space-y-4">
@@ -97,17 +95,9 @@ export default async function CategoriesPage({
         <ScreenHeader title="Categorías" action={createCategory} />
         <FlashMessage message={params.error} tone="error" />
         <FlashMessage message={params.message} tone="success" />
-        <section className="space-y-3 border-b border-border/70 pb-5">
-          <MetricStrip
-            columns={2}
-            items={[
-              { label: "Categorías", value: totalCategories.toString() },
-              { label: "Sugerencia", value: "Pocas y claras" },
-            ]}
-          />
-          <p className="text-[0.92rem] leading-relaxed text-muted-foreground">
-            Evitá categorías demasiado parecidas. Cuanto más claras sean, más fácil va a ser leer tendencias y filtrar movimientos.
-          </p>
+        <section className="border-b border-border/70 pb-4">
+          <p className="stat-label">Categorías</p>
+          <p className="mt-1 text-[2rem] font-medium leading-none text-foreground tabular-nums">{totalCategories}</p>
         </section>
         <GroupedSection>
             {categories.length === 0 ? (
@@ -128,7 +118,6 @@ export default async function CategoriesPage({
                   <ResourceSheet
                     key={category.id}
                     title={category.name}
-                    description="Usá nombres consistentes para que esta categoría siga siendo obvia cuando la veas en listas, deudas o reportes."
                     headerAction={
                       <ConfirmForm action={deleteCategoryAction} confirm={`¿Borrar la categoría “${category.name}”? Esta acción no se puede deshacer.`}>
                         <input type="hidden" name="id" value={category.id} />
@@ -141,7 +130,6 @@ export default async function CategoriesPage({
                       <ResourceRowShell
                         icon={<Icon className="size-4" aria-hidden />}
                         title={category.name}
-                        meta="Lista para usar en movimientos"
                         interactive
                       />
                     }

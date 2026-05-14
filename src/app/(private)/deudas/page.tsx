@@ -157,40 +157,37 @@ function DebtList({
           const isWeOwe = debt.direction === "we_owe";
           const colorClass = isWeOwe ? "text-red-700" : "text-[var(--income)]";
           const progressClass = isWeOwe ? "bg-red-600" : "bg-[var(--income)]";
-          const statusLabel = settled
-            ? isWeOwe
-              ? "Saldada"
-              : "Cobrada"
-            : isWeOwe
-              ? "Pendiente de pago"
-              : "Pendiente de cobro";
-          const amountMeta = settled
-            ? undefined
-            : isWeOwe
-              ? `de ${formatArs(total)}`
-              : `de ${formatArs(total)}`;
-          const meta = debt.notes?.trim() || (settled ? statusLabel : isWeOwe ? "Debemos" : "Nos deben");
+          const statusLabel = settled ? (isWeOwe ? "Saldada" : "Cobrada") : isWeOwe ? "Debemos" : "Nos deben";
+          const note = debt.notes?.trim();
+          const meta = note ? `${statusLabel} · ${note}` : statusLabel;
           return (
-            <Link key={debt.id} href={`/deudas/${debt.id}`}>
-              <div className="grouped-row" data-interactive="true">
-                <div className="app-icon-tile">
-                  <span className="text-[0.98rem] font-semibold">{debt.entityName.slice(0, 1).toLocaleUpperCase("es-AR")}</span>
+            <Link key={debt.id} href={`/deudas/${debt.id}`} className="block">
+              <div className="grouped-row flex-col items-stretch gap-2.5" data-interactive="true">
+                <div className="flex items-center gap-3.5">
+                  <div className="app-icon-tile">
+                    <span className="text-[0.98rem] font-semibold">{debt.entityName.slice(0, 1).toLocaleUpperCase("es-AR")}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="row-title truncate">{debt.entityName}</p>
+                    <p className="row-meta mt-1 truncate">{meta}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className={cn("money-row", settled ? "text-muted-foreground" : colorClass)}>
+                      {settled ? statusLabel : formatArs(remaining)}
+                    </p>
+                    {!settled ? (
+                      <p className="row-meta mt-1">
+                        de {formatArs(total)}
+                        {!isWeOwe ? " por cobrar" : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="shrink-0 text-muted-foreground/70" aria-hidden>
+                    ›
+                  </span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="row-title truncate">{debt.entityName}</p>
-                  <p className="row-meta mt-1 truncate">{meta}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className={cn("money-row", settled ? "text-muted-foreground" : colorClass)}>
-                    {settled ? statusLabel : formatArs(remaining)}
-                  </p>
-                  {amountMeta ? <p className="row-meta mt-1">{amountMeta}</p> : null}
-                </div>
-                <span className="ml-2 text-muted-foreground/70" aria-hidden>
-                  ›
-                </span>
                 {!settled ? (
-                  <div className="ml-[3.35rem] mt-2 h-1.5 basis-full overflow-hidden rounded-full bg-muted">
+                  <div className="ml-[3.35rem] h-1.5 overflow-hidden rounded-full bg-muted">
                     <div className={cn("h-full rounded-full", progressClass)} style={{ width: `${progress}%` }} />
                   </div>
                 ) : null}

@@ -65,7 +65,7 @@ function billStateMeta(hasInvoice: boolean, remainingDays: number) {
 export default async function BillsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; filter?: string }>;
 }) {
   const { household } = await requireHousehold();
   const params = await searchParams;
@@ -155,6 +155,26 @@ export default async function BillsPage({
   const paidTotal = paidItems.reduce((total, item) => total + item.amount, 0);
   const overdueCount = pendingItems.filter((item) => item.hasInvoice && daysUntil(item.dueDate) < 0).length;
   const dueDays = new Map(billItems.map((item) => [item.dueDate.getDate(), item.paid ? "paid" : "pending"]));
+  const activeFilter = params.filter ?? "all";
+  const noInvoiceItems = pendingItems.filter((item) => !item.hasInvoice);
+  const overdueItems = pendingItems.filter((item) => item.hasInvoice && daysUntil(item.dueDate) < 0);
+  const pendingFiltered =
+    activeFilter === "pending"
+      ? pendingItems
+      : activeFilter === "no_invoice"
+        ? noInvoiceItems
+        : activeFilter === "overdue"
+          ? overdueItems
+          : activeFilter === "paid"
+            ? []
+            : pendingItems;
+  const paidFiltered = activeFilter === "paid" ? paidItems : activeFilter === "all" ? paidItems : [];
+  const pendingTitle =
+    activeFilter === "no_invoice" ? "Sin factura" : activeFilter === "overdue" ? "Vencidas" : "Pendientes";
+
+  function filterHref(filter: string) {
+    return filter === "all" ? "/gastos-fijos" : `/gastos-fijos?filter=${filter}`;
+  }
 
   const createBill = previewPreset ? null : (
     <ResourceSheet title="Nuevo gasto fijo" trigger={<ResourceCreateButton />}>
@@ -213,17 +233,24 @@ export default async function BillsPage({
             <FinanceHero
               primaryLabel="Pendientes este mes"
               primaryValue={<span className="text-amber-700">{formatArs(pendingTotal)}</span>}
-              description={`${pendingItems.length} servicios sin pagar · ${paidItems.length} pagados · ${formatArs(paidTotal)}`}
               className="space-y-3"
             />
             <div className="flex flex-wrap gap-2 pt-1">
-              <PillChip active>Pendiente</PillChip>
-              <PillChip active>Pagado</PillChip>
-              <PillChip active>Sin factura</PillChip>
+              <Link href={filterHref("pending")} className="pressable">
+                <PillChip active={activeFilter === "pending" || activeFilter === "all"}>Pendiente</PillChip>
+              </Link>
+              <Link href={filterHref("paid")} className="pressable">
+                <PillChip active={activeFilter === "paid"}>Pagado</PillChip>
+              </Link>
+              <Link href={filterHref("no_invoice")} className="pressable">
+                <PillChip active={activeFilter === "no_invoice"}>Sin factura</PillChip>
+              </Link>
               {overdueCount > 0 ? (
-                <PillChip active>
-                  {overdueCount} vencid{overdueCount === 1 ? "a" : "as"}
-                </PillChip>
+                <Link href={filterHref("overdue")} className="pressable">
+                  <PillChip active={activeFilter === "overdue"}>
+                    {overdueCount} vencid{overdueCount === 1 ? "a" : "as"}
+                  </PillChip>
+                </Link>
               ) : null}
             </div>
             <div className="flex items-end justify-between gap-4 pt-2">
@@ -251,8 +278,8 @@ export default async function BillsPage({
             </div>
           </section>
 
-          <BillList title="Pendientes" items={pendingItems} />
-          {paidItems.length > 0 ? <BillList title="Pagados" items={paidItems} paid /> : null}
+          {activeFilter !== "paid" ? <BillList title={pendingTitle} items={pendingFiltered} /> : null}
+          {paidFiltered.length > 0 ? <BillList title="Pagados" items={paidFiltered} paid /> : null}
         </>
       )}
     </KineticPage>
@@ -289,17 +316,24 @@ function BillList({
         {items.map(({ bill, dueDate, amount, hasInvoice }) => {
           const remainingDays = daysUntil(dueDate);
           const state = billStateMeta(hasInvoice, remainingDays);
+          const shortDate = new Intl.DateTimeFormat("es-AR", {
+            day: "numeric",
+            month: "short",
+          })
+            .format(dueDate)
+            .replace(".", "");
           const dateMeta = paid
             ? `~día ${bill.dueDay} · ${bill.paymentMethod?.name ?? "Sin medio"}`
             : hasInvoice
-              ? `Vence ${formatDate(dueDate)} · ${state.badge.toLowerCase()}`
-              : `Sin factura cargada · vence ~día ${bill.dueDay}`;
-          const badgeClassName =
-            state.tone === "danger"
-              ? "bg-red-100 text-red-700"
-              : state.tone === "warning"
-                ? "bg-amber-100 text-amber-800"
-                : "bg-muted text-muted-foreground";
+              ? `Vence ${shortDate}`
+              : `Vence ~día ${bill.dueDay}`;
+          const badgeClassName = [
+            state.tone === "danger" && "bg-red-100 text-red-700",
+            state.tone === "warning" && "bg-amber-100 text-amber-800",
+            state.tone === "muted" && "bg-[var(--surface-pill)] text-muted-foreground",
+          ]
+            .filter(Boolean)
+            .join(" ");
           return (
             <Link key={bill.id} href={`/gastos-fijos/${bill.id}`}>
               <EntityListRow
@@ -308,9 +342,7 @@ function BillList({
                 meta={dateMeta}
                 status={
                   !paid ? (
-                    <span className={`rounded-full px-2.5 py-1 text-[0.74rem] font-medium ${badgeClassName}`}>
-                      {state.badge}
-                    </span>
+                    <PillChip className={badgeClassName}>{state.badge}</PillChip>
                   ) : null
                 }
                 value={amount > 0 ? formatArs(amount) : "Sin monto"}

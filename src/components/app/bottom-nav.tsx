@@ -60,7 +60,12 @@ export function BottomNav({ links }: { links: readonly BottomNavLink[] }) {
 function BottomNavItem({ link }: { link: BottomNavLink }) {
   const Icon = icons[link.iconKey];
   const router = useRouter();
-  const shortLabel = link.iconKey === "recurringBills" ? "Fijos" : link.label;
+  const shortLabel =
+    link.iconKey === "transactions"
+      ? "Movs."
+      : link.iconKey === "recurringBills"
+        ? "Fijos"
+        : link.label;
 
   return (
     <NavLink

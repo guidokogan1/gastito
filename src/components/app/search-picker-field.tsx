@@ -11,6 +11,7 @@ export function SearchPickerField({
   options,
   placeholder,
   inputPlaceholder,
+  sheetTitle,
   className,
   contentClassName,
 }: {
@@ -20,6 +21,7 @@ export function SearchPickerField({
   options: SearchPickerOption[];
   placeholder?: string;
   inputPlaceholder?: string;
+  sheetTitle?: string;
   className?: string;
   contentClassName?: string;
 }) {
@@ -34,6 +36,7 @@ export function SearchPickerField({
         onValueChange={setValue}
         placeholder={placeholder}
         inputPlaceholder={inputPlaceholder}
+        sheetTitle={sheetTitle}
         className={className}
         contentClassName={contentClassName}
       />

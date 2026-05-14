@@ -197,6 +197,7 @@ export default async function FixedDetailPage({
               ]}
               placeholder="Sin categoría"
               inputPlaceholder="Buscar categoría…"
+              sheetTitle="Categoría default"
               className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-medium text-foreground hover:bg-[var(--surface-control)]"
               contentClassName="w-[min(24rem,calc(100vw-2rem))]"
             />
@@ -323,7 +324,7 @@ export default async function FixedDetailPage({
                   title={payment.paidAt ? "Editar pago" : "Editar factura"}
                   triggerAsChild
                   trigger={
-                    <button type="button" disabled={readOnly} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18 disabled:cursor-default">
+                    <button type="button" disabled={readOnly} className="block w-full min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18 disabled:cursor-default">
                       <EntityListRow
                         icon={payment.paidAt ? <CalendarCheck2 className="size-4" /> : <Clock3 className="size-4" />}
                         title={formatArs(payment.amount)}

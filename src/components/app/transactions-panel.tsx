@@ -18,7 +18,6 @@ import {
 
 import { formatArs, moneyInputValue, toNumber } from "@/lib/format";
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
-import { ConfirmForm } from "@/components/app/confirm-form";
 import { AppIconAction } from "@/components/app/icon-action";
 import { KineticPage } from "@/components/app/kinetic";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -596,17 +595,6 @@ export function TransactionsPanel({
                   <PillChip variant="scope" active={typeFilter === "income"}>Ingresos</PillChip>
                 </button>
               </div>
-              <div className="mobile-scroll-row gap-2.5 pb-0.5">
-                <button type="button" className="pressable" aria-pressed={dateFilter === "today"} onClick={() => setDateFilter(dateFilter === "today" ? "all" : "today")}>
-                  <PillChip active={dateFilter === "today"}>Hoy</PillChip>
-                </button>
-                <button type="button" className="pressable" aria-pressed={dateFilter === "7d"} onClick={() => setDateFilter(dateFilter === "7d" ? "all" : "7d")}>
-                  <PillChip active={dateFilter === "7d"} className="whitespace-nowrap">7 días</PillChip>
-                </button>
-                <button type="button" className="pressable" aria-pressed={dateFilter === "30d"} onClick={() => setDateFilter(dateFilter === "30d" ? "all" : "30d")}>
-                  <PillChip active={dateFilter === "30d"} className="whitespace-nowrap">30 días</PillChip>
-                </button>
-              </div>
               {activeFilterLabels.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-2">
                   {activeFilterLabels.map((item) => (
@@ -975,29 +963,24 @@ export function TransactionsPanel({
       {!readOnly ? (
         <Slideout
           open={deleteConfirmOpen}
-          title="Borrar movimiento"
+          title={selected ? `Borrar ${toDetail(selected)}` : "Borrar movimiento"}
           description="Esta acción no se puede deshacer."
           onClose={() => setDeleteConfirmOpen(false)}
         >
           {selected ? (
-            <div className="space-y-5">
-              <div className="rounded-[1.25rem] bg-destructive/6 p-4 text-sm font-medium text-muted-foreground">
-                Se va a borrar “{toDetail(selected)}” de forma permanente.
-              </div>
+            <form action={deleteAction} className="space-y-5">
+              <input type="hidden" name="id" value={selected.id} />
               <div className="sheet-action-bar">
                 <div className="flex flex-col gap-2">
-                  <ConfirmForm action={deleteAction} confirm="¿Borrar este movimiento? Esta acción no se puede deshacer.">
-                    <input type="hidden" name="id" value={selected.id} />
-                    <SubmitButton variant="destructive" className="w-full" pendingText="Borrando...">
-                      Borrar
-                    </SubmitButton>
-                  </ConfirmForm>
+                  <SubmitButton variant="destructive" className="w-full" pendingText="Borrando...">
+                    Borrar
+                  </SubmitButton>
                   <Button type="button" variant="ghost" className="w-full" onClick={() => setDeleteConfirmOpen(false)}>
                     Cancelar
                   </Button>
                 </div>
               </div>
-            </div>
+            </form>
           ) : null}
         </Slideout>
       ) : null}

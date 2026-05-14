@@ -9,10 +9,10 @@ import { KineticPage } from "@/components/app/kinetic";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
 import { PillChip } from "@/components/app/pill-chip";
 import { ResourceCreateButton, ResourceSheet } from "@/components/app/resource-sheet";
+import { SearchPickerField } from "@/components/app/search-picker-field";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { SubmitButton } from "@/components/app/submit-button";
 import { FlashMessage } from "@/components/flash-message";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -145,7 +145,6 @@ export default async function BillsPage({
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const calendarDays = Array.from({ length: daysInMonth }, (_, index) => index + 1);
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long" }).format(now);
-  const quickDays = [...new Set(bills.map((bill) => bill.dueDay))].slice(0, 8);
   const billItems = bills.map((bill) => {
     const currentPayment = bill.payments.find((payment) => isSameMonth(payment.dueDate, now)) ?? null;
     const dueDate = currentPayment?.dueDate ?? new Date(now.getFullYear(), now.getMonth(), Math.max(1, Math.min(28, bill.dueDay)));
@@ -210,7 +209,7 @@ export default async function BillsPage({
           </div>
           <div className="space-y-2">
             <Label htmlFor="dueDay">Vence cada</Label>
-            <DayOfMonthField id="dueDay" name="dueDay" defaultValue={10} quickDays={quickDays.length ? quickDays : undefined} />
+            <DayOfMonthField id="dueDay" name="dueDay" defaultValue={10} />
           </div>
           <div className="space-y-2">
             <Label>Medio habitual</Label>
@@ -218,14 +217,19 @@ export default async function BillsPage({
           </div>
           <div className="space-y-2">
             <Label htmlFor="defaultCategoryId">Categoría default</Label>
-            <select id="defaultCategoryId" name="defaultCategoryId" className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-semibold">
-              <option value="">Sin categoría</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+            <SearchPickerField
+              id="defaultCategoryId"
+              name="defaultCategoryId"
+              defaultValue=""
+              options={[
+                { value: "", label: "Sin categoría" },
+                ...categories.map((category) => ({ value: category.id, label: category.name })),
+              ]}
+              placeholder="Sin categoría"
+              inputPlaceholder="Buscar categoría…"
+              className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-medium text-foreground hover:bg-[var(--surface-control)]"
+              contentClassName="w-[min(24rem,calc(100vw-2rem))]"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Descripción</Label>

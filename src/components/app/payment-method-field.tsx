@@ -2,8 +2,7 @@
 
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { PillChip } from "@/components/app/pill-chip";
 
 type Option = { id: string; name: string };
 
@@ -36,26 +35,19 @@ export function PaymentMethodField({
     <div className="space-y-2">
       <input type="hidden" name={name} value={value} />
       <div className="flex flex-wrap gap-2.5">
-        <Button
-          type="button"
-          aria-pressed={value === ""}
-          variant={value === "" ? "default" : "outline"}
-          className={cn("h-11 rounded-full px-4 text-[0.98rem]", value !== "" && "bg-background")}
-          onClick={() => setValue("")}
-        >
-          Sin medio
-        </Button>
+        <button type="button" className="pressable" aria-pressed={value === ""} onClick={() => setValue("")}>
+          <PillChip active={value === ""}>Sin medio</PillChip>
+        </button>
         {normalizedQuick.map((method) => (
-          <Button
+          <button
             key={method.id}
             type="button"
+            className="pressable"
             aria-pressed={value === method.id}
-            variant={value === method.id ? "default" : "outline"}
-            className={cn("h-11 rounded-full px-4 text-[0.98rem]", value !== method.id && "bg-background")}
             onClick={() => setValue(method.id)}
           >
-            {method.name}
-          </Button>
+            <PillChip active={value === method.id}>{method.name}</PillChip>
+          </button>
         ))}
       </div>
     </div>

@@ -69,14 +69,12 @@ export function MonthlyTrendChart({
         {
           label: "Gastos",
           value: formatArs(activeMonth.expenses),
-          lineClass: "bg-[var(--finance-green)]",
-          textClass: "text-foreground",
+          toneClass: "text-foreground",
         },
         {
           label: "Ingresos",
           value: formatArs(activeMonth.incomes),
-          lineClass: "border-t-2 border-dashed border-muted-foreground/45",
-          textClass: "text-muted-foreground",
+          toneClass: "text-muted-foreground",
         },
       ]
     : [];
@@ -100,16 +98,22 @@ export function MonthlyTrendChart({
       <div className="overflow-hidden rounded-[1.15rem] bg-[linear-gradient(180deg,rgba(15,23,42,0.02),rgba(15,23,42,0.005))] px-2 py-3">
         <div className="min-w-0">
           {activeMonth ? (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-2 text-[0.84rem]">
-              <span className="rounded-full bg-[var(--surface-pill)] px-2.5 py-1 font-medium text-foreground">{activeMonth.label}</span>
-              {monthSummary.map((item) => (
-                <span key={item.label} className={cn("inline-flex items-center gap-2", item.textClass)}>
-                  <span className={cn("w-5 shrink-0", item.lineClass)} />
-                  <span>
-                    {item.label} {item.value}
-                  </span>
-                </span>
-              ))}
+            <div className="grid min-h-[3.6rem] grid-cols-[auto,1fr] gap-3 px-1 pb-2">
+              <span className="self-start rounded-full bg-[var(--surface-pill)] px-2.5 py-1 text-[0.84rem] font-medium text-foreground">
+                {activeMonth.label}
+              </span>
+              <div className="grid min-w-0 grid-cols-2 gap-3">
+                {monthSummary.map((item) => (
+                  <div key={item.label} className="min-w-0">
+                    <p className="truncate text-[0.72rem] font-medium uppercase tracking-[0.07em] text-muted-foreground">
+                      {item.label}
+                    </p>
+                    <p className={cn("truncate text-[0.98rem] font-medium tabular-nums", item.toneClass)}>
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
         </div>

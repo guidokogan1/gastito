@@ -120,22 +120,19 @@ export default async function DashboardPage({
   const availableThisMonth = snapshot.savings - snapshot.recurringTotal;
   const projectionDelta = snapshot.projectedExpenses - snapshot.expenses;
   const signals = [
-    {
-      icon: snapshot.overdueBillsCount > 0 ? AlertTriangle : Repeat2,
-      title: snapshot.overdueBillsCount > 0 ? "Vencimientos atrasados" : "Por pagar",
-      value:
-        snapshot.recurringTotal > 0
-          ? `${formatArs(snapshot.recurringTotal)}`
-          : "Sin pendientes",
-      description:
-        snapshot.overdueBillsCount > 0
-          ? `${snapshot.overdueBillsCount} factura${snapshot.overdueBillsCount === 1 ? "" : "s"} ya vencida${snapshot.overdueBillsCount === 1 ? "" : "s"}.`
-          : snapshot.upcomingBills.length > 0
-            ? `${snapshot.upcomingBills.length} servicio${snapshot.upcomingBills.length === 1 ? "" : "s"} por resolver este mes.`
-            : "No tenés servicios pendientes cargados este mes.",
-      href: "/gastos-fijos",
-      tone: snapshot.overdueBillsCount > 0 ? "warning" : "default",
-    },
+    (snapshot.overdueBillsCount > 0 || snapshot.upcomingBills.length > 0 || snapshot.recurringTotal > 0)
+      ? {
+          icon: snapshot.overdueBillsCount > 0 ? AlertTriangle : Repeat2,
+          title: snapshot.overdueBillsCount > 0 ? "Vencimientos atrasados" : "Por pagar",
+          value: formatArs(snapshot.recurringTotal),
+          description:
+            snapshot.overdueBillsCount > 0
+              ? `${snapshot.overdueBillsCount} factura${snapshot.overdueBillsCount === 1 ? "" : "s"} ya vencida${snapshot.overdueBillsCount === 1 ? "" : "s"}.`
+              : `${snapshot.upcomingBills.length} servicio${snapshot.upcomingBills.length === 1 ? "" : "s"} por resolver este mes.`,
+          href: "/gastos-fijos",
+          tone: snapshot.overdueBillsCount > 0 ? "warning" : "default",
+        }
+      : null,
     {
       icon: HandCoins,
       title: "Deudas activas",
@@ -165,13 +162,19 @@ export default async function DashboardPage({
       href: `/movimientos?month=${snapshot.monthKey}`,
       tone: projectionDelta > 0 ? "warning" : "default",
     },
-  ] as const;
+  ].filter(Boolean) as Array<{
+    icon: LucideIcon;
+    title: string;
+    value: string;
+    description: string;
+    href: string;
+    tone: "warning" | "income" | "danger" | "default";
+  }>;
 
   return (
     <KineticPage className="space-y-7 pb-8">
       <header className="pt-1 text-[1rem] font-normal leading-tight text-muted-foreground">
         <p>Hola, {displayHouseholdName}</p>
-        <p className="mt-1">{dashboardMonthLabel(snapshot.monthKey)}</p>
       </header>
 
       <FlashMessage message={params.message} tone="success" />

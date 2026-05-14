@@ -1,3 +1,8 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+import { formatArs } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type TrendMonth = {
@@ -8,28 +13,28 @@ type TrendMonth = {
 };
 
 function buildPoints(values: number[], maxValue: number) {
-  const left = 20;
-  const right = 340;
-  const top = 16;
-  const height = 88;
+  const left = 18;
+  const right = 330;
+  const top = 20;
+  const height = 96;
   const step = (right - left) / Math.max(values.length - 1, 1);
   const safeMax = maxValue > 0 ? maxValue : 1;
 
   return values.map((value, index) => {
-    const x = Math.round(left + index * step);
-    const y = maxValue > 0 ? Math.round(top + (1 - value / safeMax) * height) : top + Math.round(height * 0.55);
+    const x = left + index * step;
+    const y = maxValue > 0 ? top + (1 - value / safeMax) * height : top + height * 0.55;
     return { x, y };
   });
 }
 
 function toPath(points: Array<{ x: number; y: number }>) {
   if (points.length === 0) return "";
-  return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ");
 }
 
 function toAreaPath(points: Array<{ x: number; y: number }>) {
   if (points.length === 0) return "";
-  const baseline = 128;
+  const baseline = 132;
   return `${toPath(points)} L ${points[points.length - 1]?.x ?? 0} ${baseline} L ${points[0]?.x ?? 0} ${baseline} Z`;
 }
 
@@ -44,12 +49,21 @@ export function MonthlyTrendChart({
   trendTone?: "positive" | "warning" | "neutral";
   className?: string;
 }) {
-  const expenses = months.map((month) => month.expenses);
-  const incomes = months.map((month) => month.incomes);
-  const maxValue = Math.max(0, ...expenses, ...incomes);
-  const expensePoints = buildPoints(expenses, maxValue);
-  const incomePoints = buildPoints(incomes, maxValue);
-  const lastExpensePoint = expensePoints[expensePoints.length - 1];
+  const [activeIndex, setActiveIndex] = useState(Math.max(months.length - 1, 0));
+
+  const { expensePoints, incomePoints } = useMemo(() => {
+    const expenses = months.map((month) => month.expenses);
+    const incomes = months.map((month) => month.incomes);
+    const maxValue = Math.max(0, ...expenses, ...incomes);
+    return {
+      expensePoints: buildPoints(expenses, maxValue),
+      incomePoints: buildPoints(incomes, maxValue),
+    };
+  }, [months]);
+
+  const activeMonth = months[activeIndex] ?? months[months.length - 1];
+  const activeExpensePoint = expensePoints[activeIndex];
+  const activeIncomePoint = incomePoints[activeIndex];
 
   return (
     <section className={cn("space-y-4 border-b border-border/70 pb-5", className)}>
@@ -79,45 +93,111 @@ export function MonthlyTrendChart({
         </div>
       </div>
 
-      <div role="img" aria-label="Tendencia de gastos e ingresos de los últimos 7 meses" className="-mx-1">
-        <svg viewBox="0 0 360 158" className="h-[12.25rem] w-full overflow-visible" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <linearGradient id="dashboard-expense-fill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="var(--finance-green)" stopOpacity="0.13" />
-              <stop offset="100%" stopColor="var(--finance-green)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={toAreaPath(expensePoints)} fill="url(#dashboard-expense-fill)" />
-          <path
-            d={toPath(incomePoints)}
-            fill="none"
-            stroke="currentColor"
-            strokeDasharray="5 6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            className="text-muted-foreground/45"
-          />
-          <path
-            d={toPath(expensePoints)}
-            fill="none"
-            stroke="var(--finance-green)"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="3"
-          />
-          {lastExpensePoint ? (
-            <circle cx={lastExpensePoint.x} cy={lastExpensePoint.y} r="4.5" fill="var(--surface-base)" stroke="var(--finance-green)" strokeWidth="3" />
-          ) : null}
-          {months.map((month, index) => {
-            const x = expensePoints[index]?.x ?? 0;
-            return (
-              <text key={month.key} x={x} y="150" textAnchor="middle" className="fill-muted-foreground text-[0.72rem] font-medium">
-                {month.label}
-              </text>
-            );
-          })}
-        </svg>
+      {activeMonth ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.84rem]">
+          <span className="rounded-full bg-[var(--surface-pill)] px-2.5 py-1 font-medium text-foreground">{activeMonth.label}</span>
+          <span className="font-medium text-[var(--finance-green)]">Gastos {formatArs(activeMonth.expenses)}</span>
+          <span className="text-muted-foreground">Ingresos {formatArs(activeMonth.incomes)}</span>
+        </div>
+      ) : null}
+
+      <div className="overflow-hidden rounded-[1.15rem] bg-[linear-gradient(180deg,rgba(15,23,42,0.02),rgba(15,23,42,0.005))] px-2 py-3">
+        <div role="img" aria-label="Tendencia de gastos e ingresos de los últimos 7 meses">
+          <svg viewBox="0 0 348 146" className="h-[11.25rem] w-full" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="dashboard-expense-fill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="var(--finance-green)" stopOpacity="0.16" />
+                <stop offset="100%" stopColor="var(--finance-green)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            <line x1="18" x2="330" y1="132" y2="132" stroke="currentColor" strokeOpacity="0.08" />
+            <line x1="18" x2="330" y1="76" y2="76" stroke="currentColor" strokeOpacity="0.05" strokeDasharray="4 6" />
+
+            <path d={toAreaPath(expensePoints)} fill="url(#dashboard-expense-fill)" />
+            <path
+              d={toPath(incomePoints)}
+              fill="none"
+              stroke="currentColor"
+              strokeDasharray="5 6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="text-muted-foreground/45"
+            />
+            <path
+              d={toPath(expensePoints)}
+              fill="none"
+              stroke="var(--finance-green)"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="3"
+            />
+
+            {activeExpensePoint ? (
+              <>
+                <line
+                  x1={activeExpensePoint.x}
+                  x2={activeExpensePoint.x}
+                  y1="14"
+                  y2="132"
+                  stroke="var(--finance-green)"
+                  strokeOpacity="0.12"
+                  strokeDasharray="4 6"
+                />
+                <circle cx={activeExpensePoint.x} cy={activeExpensePoint.y} r="5" fill="var(--surface-base)" stroke="var(--finance-green)" strokeWidth="3" />
+              </>
+            ) : null}
+
+            {activeIncomePoint ? (
+              <circle
+                cx={activeIncomePoint.x}
+                cy={activeIncomePoint.y}
+                r="4"
+                fill="var(--surface-base)"
+                stroke="currentColor"
+                strokeOpacity="0.4"
+                strokeWidth="2"
+                className="text-muted-foreground"
+              />
+            ) : null}
+
+            {months.map((month, index) => {
+              const point = expensePoints[index];
+              if (!point) return null;
+              return (
+                <g key={month.key}>
+                  <rect
+                    x={point.x - 22}
+                    y="0"
+                    width="44"
+                    height="132"
+                    rx="12"
+                    fill="transparent"
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => setActiveIndex(index)}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        <div className="mt-2 grid grid-cols-7 gap-1">
+          {months.map((month, index) => (
+            <button
+              key={month.key}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className={cn(
+                "rounded-full px-1 py-1 text-center text-[0.74rem] font-medium capitalize text-muted-foreground transition-colors",
+                activeIndex === index && "bg-[var(--surface-pill)] text-foreground",
+              )}
+            >
+              {month.label}
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );

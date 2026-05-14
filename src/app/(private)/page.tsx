@@ -8,13 +8,13 @@ import {
   HandCoins,
   PiggyBank,
   Repeat2,
-  Sparkles,
   Wifi,
   type LucideIcon,
 } from "lucide-react";
 
 import { FlashMessage } from "@/components/flash-message";
 import { FinanceHero } from "@/components/app/finance-hero";
+import { EntityListRow } from "@/components/app/entity-list-row";
 import { KineticPage } from "@/components/app/kinetic";
 import { FinancialAmount } from "@/components/app/financial-amount";
 import { MetricStrip } from "@/components/app/metric-strip";
@@ -88,49 +88,6 @@ function DashboardAction({
     >
       <Icon className={cn("size-4", toneClass)} aria-hidden />
       {label}
-    </Link>
-  );
-}
-
-function InsightCard({
-  icon: Icon,
-  title,
-  value,
-  description,
-  href,
-  tone = "default",
-}: {
-  icon: LucideIcon;
-  title: string;
-  value: string;
-  description: string;
-  href: string;
-  tone?: "default" | "warning" | "income" | "danger";
-}) {
-  const toneClass =
-    tone === "warning"
-      ? "text-amber-800 bg-amber-100"
-      : tone === "income"
-        ? "text-[var(--income)] bg-[var(--income-soft)]"
-        : tone === "danger"
-          ? "text-red-700 bg-red-100"
-          : "text-foreground bg-[var(--surface-pill)]";
-
-  return (
-    <Link
-      href={href}
-      className="block rounded-[1.2rem] border border-border/70 bg-card px-4 py-4 transition-colors duration-150 hover:bg-muted/35"
-    >
-      <div className="flex items-start gap-3">
-        <div className={cn("grid size-10 shrink-0 place-items-center rounded-full", toneClass)}>
-          <Icon className="size-4" aria-hidden />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[0.78rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">{title}</p>
-          <p className="mt-1 text-[1.15rem] font-semibold tracking-[-0.02em] text-foreground">{value}</p>
-          <p className="mt-1 text-[0.9rem] leading-relaxed text-muted-foreground">{description}</p>
-        </div>
-      </div>
     </Link>
   );
 }
@@ -220,16 +177,14 @@ export default async function DashboardPage({
         <FinanceHero
           primaryLabel="Disponible del mes"
           primaryValue={<FinancialAmount value={availableThisMonth} direction={availableThisMonth >= 0 ? "income" : "expense"} />}
-          description="Ingresos menos gastos cargados y vencimientos pendientes del mes. Te ayuda a ver cuánto margen real te queda hoy."
         />
 
         <MetricStrip
-          columns={3}
+          columns={2}
           className="[&_p:last-child]:text-[1.42rem]"
           items={[
             { label: "Ingresos", value: <FinancialAmount value={snapshot.incomes} direction="income" showSign />, tone: "income" },
             { label: "Gastos", value: <FinancialAmount value={snapshot.expenses} direction="expense" showSign /> },
-            { label: "Comprometido", value: formatArs(snapshot.recurringTotal), tone: snapshot.recurringTotal > 0 ? "danger" : "default" },
           ]}
         />
 
@@ -246,13 +201,34 @@ export default async function DashboardPage({
       />
 
       <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-[var(--finance-green)]" aria-hidden />
-          <h2 className="section-title">Señales del mes</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <SectionHeaderLink title="Señales del mes" />
+        <div>
           {signals.map((signal) => (
-            <InsightCard key={signal.title} {...signal} />
+            <Link key={signal.title} href={signal.href}>
+              {(() => {
+                const Icon = signal.icon;
+                return (
+              <EntityListRow
+                icon={
+                  <div
+                    className={cn(
+                      "grid size-9 place-items-center rounded-full",
+                      signal.tone === "warning" && "bg-amber-100 text-amber-800",
+                      signal.tone === "income" && "bg-[var(--income-soft)] text-[var(--income)]",
+                      signal.tone === "danger" && "bg-red-100 text-red-700",
+                      signal.tone === "default" && "bg-[var(--surface-pill)] text-foreground",
+                    )}
+                  >
+                    <Icon className="size-4" aria-hidden />
+                  </div>
+                }
+                title={signal.title}
+                meta={signal.description}
+                value={signal.value}
+              />
+                );
+              })()}
+            </Link>
           ))}
         </div>
       </section>

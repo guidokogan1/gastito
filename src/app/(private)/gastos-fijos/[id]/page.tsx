@@ -16,6 +16,7 @@ import { GroupedSection } from "@/components/app/grouped-section";
 import { KineticPage } from "@/components/app/kinetic";
 import { MoneyField } from "@/components/app/money-field";
 import { PaymentMethodField } from "@/components/app/payment-method-field";
+import { QueryToast } from "@/components/app/query-toast";
 import { ResourceSheet } from "@/components/app/resource-sheet";
 import { SearchPickerField } from "@/components/app/search-picker-field";
 import { SubmitButton } from "@/components/app/submit-button";
@@ -47,6 +48,24 @@ function daysUntil(date: Date) {
   const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
   const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   return Math.ceil((startDate - startToday) / 86_400_000);
+}
+
+function formatShortDate(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "short",
+  })
+    .format(date)
+    .replace(".", "");
+}
+
+function formatInvoiceLabel(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    month: "long",
+    year: "numeric",
+  })
+    .format(date)
+    .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
 }
 
 export default async function FixedDetailPage({
@@ -231,7 +250,19 @@ export default async function FixedDetailPage({
           </div>
           <div className="space-y-2">
             <Label>Medio</Label>
-            <PaymentMethodField name="paymentMethodId" defaultValue={bill.paymentMethodId ?? ""} methods={paymentMethods} quickMethods={paymentMethods} />
+            <SearchPickerField
+              name="paymentMethodId"
+              defaultValue={bill.paymentMethodId ?? ""}
+              options={[
+                { value: "", label: "Sin medio" },
+                ...paymentMethods.map((method) => ({ value: method.id, label: method.name })),
+              ]}
+              placeholder="Sin medio"
+              inputPlaceholder="Buscar medio…"
+              sheetTitle="Medio"
+              className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-medium text-foreground hover:bg-[var(--surface-control)]"
+              contentClassName="w-[min(24rem,calc(100vw-2rem))]"
+            />
           </div>
           <input type="hidden" name="categoryId" value={bill.defaultCategoryId ?? ""} />
           <CheckboxLine name="createTransaction" defaultChecked>
@@ -247,13 +278,18 @@ export default async function FixedDetailPage({
 
   return (
     <KineticPage className="space-y-6">
+      <QueryToast message={query.message} />
       <header className="space-y-6">
         <div className="flex items-center justify-between">
           <AppIconAction asChild aria-label="Volver a gastos fijos">
             <Link href="/gastos-fijos"><ArrowLeft className="size-5" /></Link>
           </AppIconAction>
           {!readOnly ? (
-            <ConfirmForm action={deleteRecurringBillAction} confirm={`¿Borrar el gasto fijo “${bill.name}”?`}>
+            <ConfirmForm
+              action={deleteRecurringBillAction}
+              confirmTitle="Borrar gasto fijo"
+              confirm={`Se va a borrar “${bill.name}” de forma permanente.`}
+            >
               <input type="hidden" name="id" value={bill.id} />
               <AppIconAction type="submit" tone="danger" aria-label="Borrar gasto fijo">
                 <Trash2 className="size-4" />
@@ -278,7 +314,6 @@ export default async function FixedDetailPage({
       </header>
 
       <FlashMessage message={query.error} tone="error" />
-      <FlashMessage message={query.message} tone="success" />
 
       {pendingInvoice ? (
         <section className="space-y-3 border-b border-border/70 pb-5">
@@ -327,8 +362,13 @@ export default async function FixedDetailPage({
                     <button type="button" disabled={readOnly} className="block w-full min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/18 disabled:cursor-default">
                       <EntityListRow
                         icon={payment.paidAt ? <CalendarCheck2 className="size-4" /> : <Clock3 className="size-4" />}
-                        title={formatArs(payment.amount)}
-                        meta={`${payment.paidAt ? `Pagado ${formatDate(payment.paidAt)}` : `Vence ${formatDate(payment.dueDate)}`} · ${payment.transactionId ? "Con movimiento" : "Sin movimiento"}`}
+                        title={formatInvoiceLabel(payment.dueDate)}
+                        meta={
+                          payment.paidAt
+                            ? `Pagado ${formatShortDate(payment.paidAt)}${payment.paymentMethod?.name ? ` · ${payment.paymentMethod.name}` : ""}`
+                            : `Vence ${formatShortDate(payment.dueDate)}${payment.paymentMethod?.name ? ` · ${payment.paymentMethod.name}` : ""}`
+                        }
+                        value={formatArs(payment.amount)}
                         chevron={false}
                         className="border-b-0 py-0"
                       />
@@ -360,11 +400,18 @@ export default async function FixedDetailPage({
                       </div>
                       <div className="space-y-2">
                         <Label>Medio</Label>
-                        <PaymentMethodField
+                        <SearchPickerField
                           name="paymentMethodId"
                           defaultValue={payment.paymentMethodId ?? bill.paymentMethodId ?? ""}
-                          methods={paymentMethods}
-                          quickMethods={paymentMethods}
+                          options={[
+                            { value: "", label: "Sin medio" },
+                            ...paymentMethods.map((method) => ({ value: method.id, label: method.name })),
+                          ]}
+                          placeholder="Sin medio"
+                          inputPlaceholder="Buscar medio…"
+                          sheetTitle="Medio"
+                          className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-medium text-foreground hover:bg-[var(--surface-control)]"
+                          contentClassName="w-[min(24rem,calc(100vw-2rem))]"
                         />
                       </div>
                       <input type="hidden" name="categoryId" value={bill.defaultCategoryId ?? ""} />

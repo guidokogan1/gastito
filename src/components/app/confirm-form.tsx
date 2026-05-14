@@ -13,6 +13,7 @@ export function ConfirmForm({
   cancelLabel = "Cancelar",
   onConfirm,
   onCancel,
+  children,
   ...props
 }: Omit<React.ComponentProps<"form">, "action"> & {
   action?: FormAction;
@@ -22,6 +23,7 @@ export function ConfirmForm({
   cancelLabel?: string;
   onConfirm?: () => void;
   onCancel?: () => void;
+  children?: React.ReactNode;
 }) {
   const formRef = React.useRef<HTMLFormElement>(null);
   const [open, setOpen] = React.useState(false);
@@ -49,7 +51,9 @@ export function ConfirmForm({
           event.preventDefault();
           setOpen(true);
         }}
-      />
+      >
+        {children}
+      </form>
       <ConfirmDialog
         open={open}
         title={confirmTitle}

@@ -19,6 +19,7 @@ import {
 import { formatArs, moneyInputValue, toNumber } from "@/lib/format";
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/catalog";
 import { AppIconAction } from "@/components/app/icon-action";
+import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { KineticPage } from "@/components/app/kinetic";
 import { SubmitButton } from "@/components/app/submit-button";
 import { Slideout } from "@/components/app/slideout";
@@ -961,28 +962,23 @@ export function TransactionsPanel({
       ) : null}
 
       {!readOnly ? (
-        <Slideout
+        <ConfirmDialog
           open={deleteConfirmOpen}
-          title={selected ? `Borrar ${toDetail(selected)}` : "Borrar movimiento"}
-          description="Esta acción no se puede deshacer."
-          onClose={() => setDeleteConfirmOpen(false)}
-        >
-          {selected ? (
-            <form action={deleteAction} className="space-y-5">
-              <input type="hidden" name="id" value={selected.id} />
-              <div className="sheet-action-bar">
-                <div className="flex flex-col gap-2">
-                  <SubmitButton variant="destructive" className="w-full" pendingText="Borrando...">
-                    Borrar
-                  </SubmitButton>
-                  <Button type="button" variant="ghost" className="w-full" onClick={() => setDeleteConfirmOpen(false)}>
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            </form>
-          ) : null}
-        </Slideout>
+          title="Borrar movimiento"
+          description={selected ? `Se va a borrar "${toDetail(selected)}".` : "Esta acción no se puede deshacer."}
+          confirmLabel="Borrar"
+          cancelLabel="Cancelar"
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={() => {
+            const form = document.getElementById("delete-transaction-form") as HTMLFormElement | null;
+            form?.requestSubmit();
+          }}
+        />
+      ) : null}
+      {!readOnly && selected ? (
+        <form id="delete-transaction-form" action={deleteAction} className="hidden">
+          <input type="hidden" name="id" value={selected.id} />
+        </form>
       ) : null}
 
       <Slideout

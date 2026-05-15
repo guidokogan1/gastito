@@ -216,7 +216,7 @@ export default async function BillsPage({
             <PaymentMethodField name="paymentMethodId" defaultValue="" methods={paymentMethods} quickMethods={paymentMethods} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="defaultCategoryId">Categoría default</Label>
+            <Label htmlFor="defaultCategoryId">Categoría</Label>
             <SearchPickerField
               id="defaultCategoryId"
               name="defaultCategoryId"
@@ -227,7 +227,7 @@ export default async function BillsPage({
               ]}
               placeholder="Sin categoría"
               inputPlaceholder="Buscar categoría…"
-              sheetTitle="Categoría default"
+              sheetTitle="Categoría"
               className="h-12 w-full rounded-[1rem] bg-[var(--surface-control)] px-4 text-base font-medium text-foreground hover:bg-[var(--surface-control)]"
               contentClassName="w-[min(24rem,calc(100vw-2rem))]"
             />

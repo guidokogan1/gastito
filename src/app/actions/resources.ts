@@ -719,59 +719,58 @@ export async function saveRecurringBillAction(formData: FormData) {
   if (!parsed.success) {
     redirect(`/gastos-fijos?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "No se pudo guardar el gasto fijo.")}`);
   }
+  try {
+    if (parsed.data.id) {
+      await assertOwnedResource("recurringBill", parsed.data.id, household.id);
+      await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+      await assertOptionalOwnedResource("category", toNullableId(parsed.data.defaultCategoryId ?? ""), household.id);
+      await prisma.recurringBill.updateMany({
+        where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
+        data: {
+          name: parsed.data.name,
+          amount: parsed.data.amount,
+          dueDay: parsed.data.dueDay,
+          icon: parsed.data.icon,
+          defaultCategoryId: toNullableId(parsed.data.defaultCategoryId ?? ""),
+          notes: parsed.data.notes,
+          paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
+          isActive: parsed.data.isActive,
+        },
+      });
+    } else {
+      await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
+      await assertOptionalOwnedResource("category", toNullableId(parsed.data.defaultCategoryId ?? ""), household.id);
+      await prisma.recurringBill.create({
+        data: {
+          householdId: household.id,
+          name: parsed.data.name,
+          amount: parsed.data.amount,
+          dueDay: parsed.data.dueDay,
+          icon: parsed.data.icon,
+          defaultCategoryId: toNullableId(parsed.data.defaultCategoryId ?? ""),
+          notes: parsed.data.notes,
+          paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
+          isActive: parsed.data.isActive,
+        },
+      });
+    }
 
-  if (parsed.data.id) {
-    await assertOwnedResource("recurringBill", parsed.data.id, household.id);
-    await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
-    await assertOptionalOwnedResource("category", toNullableId(parsed.data.defaultCategoryId ?? ""), household.id);
-    await prisma.recurringBill.updateMany({
-      where: { id: parsed.data.id, householdId: household.id, deletedAt: null },
-      data: {
-        name: parsed.data.name,
-        amount: parsed.data.amount,
-        dueDay: parsed.data.dueDay,
-        icon: parsed.data.icon,
-        defaultCategoryId: toNullableId(parsed.data.defaultCategoryId ?? ""),
-        notes: parsed.data.notes,
-        paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
-        isActive: parsed.data.isActive,
-      },
+    await recordAuditEvent({
+      userId: user.id,
+      householdId: household.id,
+      requestId,
+      action: parsed.data.id ? "recurring_bill.update" : "recurring_bill.create",
+      targetType: "recurringBill",
+      targetId: parsed.data.id,
+      after: { name: parsed.data.name, amount: parsed.data.amount, dueDay: parsed.data.dueDay },
     });
-  } else {
-    await assertOptionalOwnedResource("paymentMethod", toNullableId(parsed.data.paymentMethodId ?? ""), household.id);
-    await assertOptionalOwnedResource("category", toNullableId(parsed.data.defaultCategoryId ?? ""), household.id);
-    await prisma.recurringBill.create({
-      data: {
-        householdId: household.id,
-        name: parsed.data.name,
-        amount: parsed.data.amount,
-        dueDay: parsed.data.dueDay,
-        icon: parsed.data.icon,
-        defaultCategoryId: toNullableId(parsed.data.defaultCategoryId ?? ""),
-        notes: parsed.data.notes,
-        paymentMethodId: toNullableId(parsed.data.paymentMethodId ?? ""),
-        isActive: parsed.data.isActive,
-      },
-    });
+  } catch (error) {
+    console.error("saveRecurringBillAction failed", error);
+    redirect("/gastos-fijos?error=No pudimos guardar el gasto fijo. Probá de nuevo en unos segundos.");
   }
 
-  await recordAuditEvent({
-    userId: user.id,
-    householdId: household.id,
-    requestId,
-    action: parsed.data.id ? "recurring_bill.update" : "recurring_bill.create",
-    targetType: "recurringBill",
-    targetId: parsed.data.id,
-    after: { name: parsed.data.name, amount: parsed.data.amount, dueDay: parsed.data.dueDay },
-  });
-
   revalidatePath("/gastos-fijos");
-  redirect(
-    withMessage(
-      "/gastos-fijos",
-      parsed.data.id ? "Gasto fijo actualizado." : "Gasto fijo creado.",
-    ),
-  );
+  redirect(withMessage("/gastos-fijos", parsed.data.id ? "Gasto fijo actualizado." : "Gasto fijo creado."));
 }
 
 export async function saveRecurringBillPaymentAction(formData: FormData) {
